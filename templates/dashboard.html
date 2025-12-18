@@ -1,0 +1,432 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - Gym Manager{% endblock %}
+
+{% block content %}
+<!-- Sliding Header Carousel -->
+<div
+    style="position: relative; border-radius: 16px; overflow: hidden; margin-bottom: 2rem; height: 200px; background: linear-gradient(135deg, var(--primary), var(--secondary));">
+    <div class="carousel-slides" style="display: flex; transition: transform 0.5s ease-in-out; height: 100%;">
+        <!-- Slide 1 -->
+        <div class="carousel-slide"
+            style="min-width: 100%; display: flex; align-items: center; justify-content: center; flex-direction: column; padding: 2rem; text-align: center;">
+            <h2 style="font-size: 2rem; margin-bottom: 1rem; color: white;">🎉 Welcome to {{ gym_details.name }}!</h2>
+            <p style="font-size: 1.2rem; color: rgba(255,255,255,0.9);">Manage your gym with ease</p>
+        </div>
+
+        <!-- Slide 2 -->
+        <div class="carousel-slide"
+            style="min-width: 100%; display: flex; align-items: center; justify-content: center; flex-direction: column; padding: 2rem; text-align: center;">
+            <h2 style="font-size: 2rem; margin-bottom: 1rem; color: white;">📊 Track Progress</h2>
+            <p style="font-size: 1.2rem; color: rgba(255,255,255,0.9);">Monitor attendance & payments</p>
+        </div>
+
+        <!-- Slide 3 -->
+        <div class="carousel-slide"
+            style="min-width: 100%; display: flex; align-items: center; justify-content: center; flex-direction: column; padding: 2rem; text-align: center;">
+            <h2 style="font-size: 2rem; margin-bottom: 1rem; color: white;">💪 Grow Your Business</h2>
+            <p style="font-size: 1.2rem; color: rgba(255,255,255,0.9);">Streamline operations & boost revenue</p>
+        </div>
+    </div>
+
+    <!-- Carousel Dots -->
+    <div style="position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); display: flex; gap: 10px;">
+        <span class="carousel-dot" onclick="goToSlide(0)"
+            style="width: 12px; height: 12px; border-radius: 50%; background: rgba(255,255,255,0.5); cursor: pointer; transition: all 0.3s;"></span>
+        <span class="carousel-dot" onclick="goToSlide(1)"
+            style="width: 12px; height: 12px; border-radius: 50%; background: rgba(255,255,255,0.5); cursor: pointer; transition: all 0.3s;"></span>
+        <span class="carousel-dot" onclick="goToSlide(2)"
+            style="width: 12px; height: 12px; border-radius: 50%; background: rgba(255,255,255,0.5); cursor: pointer; transition: all 0.3s;"></span>
+    </div>
+</div>
+
+<script>
+    let currentSlide = 0;
+    const slides = document.querySelector('.carousel-slides');
+    const dots = document.querySelectorAll('.carousel-dot');
+    const totalSlides = 3;
+
+    function updateSlide() {
+        slides.style.transform = `translateX(-${currentSlide * 100}%)`;
+        dots.forEach((dot, index) => {
+            dot.style.background = index === currentSlide ? 'white' : 'rgba(255,255,255,0.5)';
+        });
+    }
+
+    function goToSlide(index) {
+        currentSlide = index;
+        updateSlide();
+    }
+
+    function nextSlide() {
+        currentSlide = (currentSlide + 1) % totalSlides;
+        updateSlide();
+    }
+
+    // Auto-slide every 4 seconds
+    setInterval(nextSlide, 4000);
+    updateSlide();
+</script>
+
+<!-- Advanced Analytics Cards -->
+<div
+    style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.5rem; margin-bottom: 2rem;">
+    <!-- Total Members -->
+    <div class="card"
+        style="text-align: center; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">
+        <div style="font-size: 2.5rem; margin-bottom: 0.5rem;">👥</div>
+        <h3 style="font-size: 0.9rem; opacity: 0.9; margin-bottom: 0.5rem;">Total Members</h3>
+        <div style="font-size: 2.5rem; font-weight: bold;">{{ total_members }}</div>
+    </div>
+
+    <!-- Monthly Revenue vs Last Month -->
+    <div class="card"
+        style="text-align: center; background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); color: white;">
+        <div style="font-size: 2.5rem; margin-bottom: 0.5rem;">💰</div>
+        <h3 style="font-size: 0.9rem; opacity: 0.9; margin-bottom: 0.5rem;">This Month Revenue</h3>
+        <div style="font-size: 2.5rem; font-weight: bold;">{{ gym_details.currency or '$' }}{{ revenue }}</div>
+        {% if revenue_change %}
+        <div style="font-size: 0.85rem; margin-top: 0.5rem; opacity: 0.95;">
+            {% if revenue_change > 0 %}
+            📈 +{{ revenue_change }}% vs last month
+            {% else %}
+            📉 {{ revenue_change }}% vs last month
+            {% endif %}
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Active Members -->
+    <div class="card"
+        style="text-align: center; background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); color: white;">
+        <div style="font-size: 2.5rem; margin-bottom: 0.5rem;">✅</div>
+        <h3 style="font-size: 0.9rem; opacity: 0.9; margin-bottom: 0.5rem;">Active (Paid)</h3>
+        <div style="font-size: 2.5rem; font-weight: bold;">{{ paid|length }}</div>
+        <div style="font-size: 0.85rem; margin-top: 0.5rem; opacity: 0.95;">
+            {{ unpaid|length }} unpaid
+        </div>
+    </div>
+
+    <!-- Expiring Soon -->
+    <div class="card"
+        style="text-align: center; background: linear-gradient(135deg, #fa709a 0%, #fee140 100%); color: white;">
+        <div style="font-size: 2.5rem; margin-bottom: 0.5rem;">⏰</div>
+        <h3 style="font-size: 0.9rem; opacity: 0.9; margin-bottom: 0.5rem;">Expiring Soon</h3>
+        <div style="font-size: 2.5rem; font-weight: bold;">{{ expiring_count }}</div>
+        <div style="font-size: 0.85rem; margin-top: 0.5rem; opacity: 0.95;">
+            Next 3 days
+        </div>
+    </div>
+</div>
+
+<!-- Payment Reminder Widget -->
+{% if unpaid|length > 0 %}
+<div class="card" style="background: linear-gradient(135deg, #f39c12, #e67e22); color: white; margin-bottom: 2rem;">
+    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+        <div>
+            <div style="font-size: 2rem; margin-bottom: 0.5rem;">⚠️</div>
+            <h3 style="margin: 0; font-size: 1.3rem;">Payment Reminders</h3>
+            <p style="opacity: 0.9; margin: 0.5rem 0 0 0;">{{ unpaid|length }} members haven't paid for {{ current_month
+                }}</p>
+        </div>
+        <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+            <button class="btn" onclick="sendBulkWhatsApp()"
+                style="background: #25D366; border: none; box-shadow: 0 4px 15px rgba(37, 211, 102, 0.3);">
+                📱 WhatsApp All
+            </button>
+            <button class="btn" onclick="sendBulkEmail()"
+                style="background: #EA4335; border: none; box-shadow: 0 4px 15px rgba(234, 67, 53, 0.3);">
+                ✉️ Email All
+            </button>
+        </div>
+    </div>
+</div>
+
+<div id="unpaid-data" style="display: none;" data-unpaid='{{ unpaid|tojson }}' data-month="{{ current_month }}"></div>
+
+<script>
+    function sendBulkWhatsApp() {
+        var dataEl = document.getElementById('unpaid-data');
+        var unpaidMembers = JSON.parse(dataEl.getAttribute('data-unpaid'));
+        var monthVal = dataEl.getAttribute('data-month');
+
+        unpaidMembers.forEach(function (member) {
+            var message = encodeURIComponent(
+                "Hi " + member.name + ", this is a reminder that your gym fee for " + monthVal + " is pending. " +
+                "Please pay at your earliest convenience. Thank you!"
+            );
+            var url = "https://wa.me/" + member.phone.replace(/[^0-9]/g, '') + "?text=" + message;
+            window.open(url, '_blank');
+        });
+    }
+
+    function sendBulkEmail() {
+        var dataEl = document.getElementById('unpaid-data');
+        var unpaidMembers = JSON.parse(dataEl.getAttribute('data-unpaid'));
+        var monthVal = dataEl.getAttribute('data-month');
+
+        var emails = unpaidMembers.map(function (m) { return m.email; }).filter(function (e) { return e; }).join(',');
+        var subject = encodeURIComponent("Payment Reminder - " + monthVal);
+        var body = encodeURIComponent(
+            "Dear Member,\n\n" +
+            "This is a friendly reminder that your gym membership fee for " + monthVal + " is pending.\n\n" +
+            "Please make the payment at your earliest convenience.\n\n" +
+            "Thank you!"
+        );
+
+        window.location.href = "mailto:" + emails + "?subject=" + subject + "&body=" + body;
+    }
+</script>
+{% endif %}
+
+<!-- Search Members -->
+<div
+    style="margin-bottom: 2rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+    <h1 style="font-size: 2.5rem; font-weight: 700;">Dashboard</h1>
+
+    <div style="position: relative;">
+        <input type="text" id="memberSearch" onkeyup="filterMembers()" placeholder="🔍 Search members..."
+            style="padding: 0.5rem 0.5rem 0.5rem 2rem; border-radius: 20px; border: 1px solid var(--border); background: var(--bg-card); color: var(--text); width: 200px; transition: width 0.3s;">
+    </div>
+    <form method="GET" action="{{ url_for('dashboard') }}" style="display: flex; align-items: center; gap: 0.5rem;">
+        <label for="month" style="font-weight: 600;">Month:</label>
+        <select name="month" id="month" onchange="this.form.submit()"
+            style="padding: 0.5rem; border-radius: 6px; border: 1px solid var(--border); background: var(--bg-card); color: var(--text);">
+            {% for m in available_months %}
+            <option value="{{ m.value }}" {% if m.value==current_month %}selected{% endif %}>{{ m.label }}</option>
+            {% endfor %}
+        </select>
+    </form>
+</div>
+<div style="display: flex; gap: 1rem; flex-wrap: wrap; margin-bottom: 2rem;">
+    <a href="{{ url_for('scanner') }}" class="btn btn-secondary"
+        style="display: inline-flex; align-items: center; gap: 0.5rem;">
+        📷 Scan QR Code
+    </a>
+    <a href="{{ url_for('download_excel') }}" class="btn btn-success"
+        style="display: inline-flex; align-items: center; gap: 0.5rem;">
+        📊 Export to Excel
+    </a>
+</div>
+
+<script>
+    function filterMembers() {
+        var input, filter, tables, tr, td, i, j, txtValue;
+        input = document.getElementById("memberSearch");
+        filter = input.value.toUpperCase();
+
+        // Get all tables in the dashboard (Paid and Unpaid)
+        tables = document.getElementsByTagName("table");
+
+        for (j = 0; j < tables.length; j++) {
+            tr = tables[j].getElementsByTagName("tr");
+            for (i = 0; i < tr.length; i++) {
+                // Check Name (col 2) and Phone (col 3) - Index 2 and 3 because of Photo at 0? 
+                // Checking headers: Photo(0), ID(1), Name(2), Phone(3)
+                // Let's check all text content of the row for simplicity
+                td = tr[i].getElementsByTagName("td");
+                if (td.length > 0) {
+                    var rowText = tr[i].textContent || tr[i].innerText;
+                    if (rowText.toUpperCase().indexOf(filter) > -1) {
+                        tr[i].style.display = "";
+                    } else {
+                        tr[i].style.display = "none";
+                    }
+                }
+            }
+        }
+    }
+</script>
+
+<div
+    style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem; margin-bottom: 2rem;">
+    <!-- Total Members Card -->
+    <div class="card"
+        style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none;">
+        <div style="font-size: 0.9rem; opacity: 0.9; margin-bottom: 0.5rem;">Total Members</div>
+        <div style="font-size: 2.5rem; font-weight: 700;">{{ total_members }}</div>
+        <div style="font-size: 0.8rem; opacity: 0.8;">Active in {{ current_month }}</div>
+    </div>
+
+    <!-- Revenue Card -->
+    <div class="card"
+        style="background: linear-gradient(135deg, #2af598 0%, #009efd 100%); color: white; border: none;">
+        <div style="font-size: 0.9rem; opacity: 0.9; margin-bottom: 0.5rem;">Revenue Collected</div>
+        <div style="font-size: 2rem; font-weight: 700; display: flex; align-items: center; gap: 10px;">
+            <span id="revenue-amount">{{ gym_details.currency }} {{ revenue }}</span>
+            <button onclick="toggleRevenue()"
+                style="background: none; border: none; cursor: pointer; color: white; font-size: 1.2rem; opacity: 0.8;">
+                👁️
+            </button>
+        </div>
+        <div style="font-size: 0.8rem; opacity: 0.8;">For {{ current_month }}</div>
+    </div>
+
+    <script>
+        let isRevenueHidden = false;
+        // Use safe templating to avoid JS syntax errors if variable empty
+        const originalRevenue = "{{ gym_details.currency }} {{ revenue }}";
+
+        function toggleRevenue() {
+            const el = document.getElementById('revenue-amount');
+            isRevenueHidden = !isRevenueHidden;
+            if (isRevenueHidden) {
+                el.innerText = "{{ gym_details.currency }} ****";
+            } else {
+                el.innerText = originalRevenue;
+            }
+        }
+    </script>
+
+    <!-- Status Breakdown -->
+    <div class="card" style="display: flex; gap: 1rem; align-items: center; justify-content: space-around;">
+        <div style="text-align: center; cursor: pointer;"
+            onclick="document.getElementById('paid-members').scrollIntoView({behavior: 'smooth'})">
+            <div style="color: var(--success); font-size: 1.5rem; font-weight: 700;">{{ paid|length }}</div>
+            <div style="font-size: 0.8rem; color: var(--text-muted);">Paid ✅</div>
+        </div>
+        <div style="height: 40px; width: 1px; background: var(--border);"></div>
+        <div style="text-align: center; cursor: pointer;"
+            onclick="document.getElementById('unpaid-members').scrollIntoView({behavior: 'smooth'})">
+            <div style="color: var(--error); font-size: 1.5rem; font-weight: 700;">{{ unpaid|length }}</div>
+            <div style="font-size: 0.8rem; color: var(--text-muted);">Unpaid ❌</div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .table-responsive {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+</style>
+
+<div class="card" id="paid-members">
+    <h2 style="margin-bottom: 1.5rem; color: var(--success);">✅ Paid Members ({{ current_month }})</h2>
+    {% if paid %}
+    <div class="table-responsive">
+        <table>
+            <thead>
+                <tr>
+                    <th>Photo</th>
+                    <th>ID</th>
+                    <th>Name</th>
+                    <th>Phone</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for member in paid %}
+                <tr>
+                    <td>
+                        {% if member.photo %}
+                        <img src="{{ url_for('static', filename='uploads/' + member.photo) }}" class="member-photo"
+                            alt="{{ member.name }}">
+                        {% else %}
+                        <div class="member-photo"
+                            style="background: var(--primary); display: flex; align-items: center; justify-content: center; font-weight: 700;">
+                            {{ member.name[0] }}
+                        </div>
+                        {% endif %}
+                    </td>
+                    <td>{{ member.id }}</td>
+                    <td><a href="{{ url_for('member_details', member_id=member.id) }}"
+                            style="color: var(--text); font-weight: 600; text-decoration: none;">{{ member.name }}</a>
+                    </td>
+                    <td>{{ member.phone }}</td>
+                    <td><span class="badge paid">PAID</span></td>
+                    <td>
+                    <td>
+                        <div style="display: flex; gap: 0.5rem;">
+                            <a href="{{ url_for('member_details', member_id=member.id) }}" class="btn btn-success"
+                                style="padding: 0.25rem 0.75rem; font-size: 0.8rem;">
+                                💰 Pay
+                            </a>
+                            <a href="{{ url_for('generate_card', member_id=member.id) }}" class="btn"
+                                style="padding: 0.5rem 1rem; font-size: 0.875rem;">
+                                📄 Card
+                            </a>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <p style="color: var(--text-muted); text-align: center; padding: 2rem;">No paid members yet.</p>
+    {% endif %}
+</div>
+
+<div class="card" id="unpaid-members">
+    <h2 style="margin-bottom: 1.5rem; color: var(--error);">❌ Unpaid / Trial Members ({{ current_month }})</h2>
+    {% if unpaid %}
+    <div class="table-responsive">
+        <table>
+            <thead>
+                <tr>
+                    <th>Photo</th>
+                    <th>ID</th>
+                    <th>Name</th>
+                    <th>Phone</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for member in unpaid %}
+                <tr>
+                    <td>
+                        {% if member.photo %}
+                        <img src="{{ url_for('static', filename='uploads/' + member.photo) }}" class="member-photo"
+                            alt="{{ member.name }}">
+                        {% else %}
+                        <div class="member-photo"
+                            style="background: var(--error); display: flex; align-items: center; justify-content: center; font-weight: 700;">
+                            {{ member.name[0] }}
+                        </div>
+                        {% endif %}
+                    </td>
+                    <td>{{ member.id }}</td>
+                    <td><a href="{{ url_for('member_details', member_id=member.id) }}"
+                            style="color: var(--text); font-weight: 600; text-decoration: none;">{{ member.name }}</a>
+                    </td>
+                    <td>{{ member.phone }}</td>
+                    <td>
+                        {% if member.is_trial %}
+                        <span class="badge" style="background: hsla(200, 90%, 55%, 0.2); color: var(--secondary);">
+                            ⏳ Trial (Ends {{ member.trial_end_date }})
+                        </span>
+                        {% else %}
+                        <span class="badge unpaid">UNPAID</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <a href="https://wa.me/{{ member.phone|replace(' ', '')|replace('-', '') }}?text=Hello {{ member.name }}, Your gym fee for {{ current_month }} is pending. Please pay soon!"
+                            target="_blank" class="btn"
+                            style="padding: 0.5rem 1rem; font-size: 0.875rem; background-color: #25D366; color: white; display: inline-flex; align-items: center; gap: 0.5rem; text-decoration: none;">
+                            💬 WhatsApp
+                        </a>
+                    <td>
+                        <div style="display: flex; gap: 0.5rem;">
+                            <a href="{{ url_for('member_details', member_id=member.id) }}" class="btn btn-success"
+                                style="padding: 0.25rem 0.75rem; font-size: 0.8rem;">
+                                💰 Pay
+                            </a>
+                            <a href="{{ url_for('generate_card', member_id=member.id) }}" class="btn"
+                                style="padding: 0.5rem 1rem; font-size: 0.875rem;">
+                                📄 Card
+                            </a>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <p style="color: var(--text-muted); text-align: center; padding: 2rem;">All members have paid!</p>
+    {% endif %}
+</div>
+{% endblock %}
