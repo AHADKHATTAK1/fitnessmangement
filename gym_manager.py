@@ -1,6 +1,7 @@
 """
 Database-backed Gym Manager
 Uses PostgreSQL via SQLAlchemy instead of JSON files
+Build Tag: 20251218-2135
 """
 
 from models import User, Gym, Member, Fee, Attendance, Expense, get_session
