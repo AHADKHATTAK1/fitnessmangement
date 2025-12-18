@@ -161,6 +161,17 @@ class GymManager:
 
     def delete_member(self, member_id):
         """Delete member and their records"""
+        if self.legacy:
+            if str(member_id) in self.data['members']:
+                del self.data['members'][str(member_id)]
+                if str(member_id) in self.data['fees']:
+                    del self.data['fees'][str(member_id)]
+                if str(member_id) in self.data['attendance']:
+                    del self.data['attendance'][str(member_id)]
+                self.save_legacy_data()
+                return True
+            return False
+
         member = self.session.query(Member).get(int(member_id))
         if member:
             self.session.delete(member)
@@ -170,6 +181,9 @@ class GymManager:
 
     def get_member(self, member_id):
         """Get member by ID"""
+        if self.legacy:
+            return self.data['members'].get(str(member_id))
+
         member = self.session.query(Member).get(int(member_id))
         if not member:
             return None
@@ -208,6 +222,25 @@ class GymManager:
 
     def record_fee(self, member_id, month, amount, date=None):
         """Record a fee payment"""
+        if self.legacy:
+            if str(member_id) not in self.data['fees']:
+                self.data['fees'][str(member_id)] = {}
+            
+            if not date:
+                date = datetime.now()
+            elif isinstance(date, str):
+                try:
+                    date = datetime.strptime(date, '%Y-%m-%d %H:%M:%S')
+                except:
+                    date = datetime.strptime(date, '%Y-%m-%d')
+            
+            self.data['fees'][str(member_id)][month] = {
+                'amount': amount,
+                'date': date.strftime('%Y-%m-%d %H:%M:%S')
+            }
+            self.save_legacy_data()
+            return True
+
         if not date:
             date = datetime.now()
         elif isinstance(date, str):
@@ -233,6 +266,14 @@ class GymManager:
 
     def get_member_fees(self, member_id):
         """Get all fee records for a member"""
+        if self.legacy:
+            member_fees = self.data['fees'].get(str(member_id), {})
+            return [{
+                'month': m,
+                'amount': float(info.get('amount', 0)),
+                'date': info.get('date', info.get('timestamp', 'N/A'))
+            } for m, info in member_fees.items()]
+
         fees = self.session.query(Fee).filter_by(member_id=int(member_id)).order_by(Fee.month.desc()).all()
         return [{
             'month': f.month,
@@ -250,6 +291,24 @@ class GymManager:
         if not month:
             month = datetime.now().strftime('%Y-%m')
             
+        if self.legacy:
+            paid = []
+            unpaid = []
+            fees = self.data.get('fees', {})
+            members = self.data.get('members', {})
+            
+            for mid, m in members.items():
+                member_data = m.copy()
+                if mid in fees and month in fees[mid]:
+                    fee_info = fees[mid][month]
+                    member_data['amount'] = fee_info.get('amount', 0)
+                    # Safety check for 'date' key
+                    member_data['date'] = fee_info.get('date', fee_info.get('timestamp', 'N/A'))
+                    paid.append(member_data)
+                else:
+                    unpaid.append(member_data)
+            return {'paid': paid, 'unpaid': unpaid}
+
         if not self.gym:
             return {'paid': [], 'unpaid': []}
             
