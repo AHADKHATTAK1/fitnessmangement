@@ -46,12 +46,24 @@ class AuthManager:
         return True
     
     def verify_user(self, username, password):
-        """Verify user credentials"""
+        """Verify user credentials - supports both old SHA256 and new Werkzeug hashes"""
         user = self.session.query(User).filter_by(email=username).first()
         if not user:
             return False
         
-        return self.check_password(user.password_hash, password)
+        # Try Werkzeug hash first (new format)
+        if user.password_hash.startswith('scrypt:') or user.password_hash.startswith('pbkdf2:'):
+            return self.check_password(user.password_hash, password)
+        else:
+            # Old SHA256 format - check directly
+            import hashlib
+            sha256_hash = hashlib.sha256(password.encode()).hexdigest()
+            if user.password_hash == sha256_hash:
+                # Update to new format for future logins
+                user.password_hash = self.hash_password(password)
+                self.session.commit()
+                return True
+            return False
     
     def get_user_data_file(self, username):
         """Get user's data file path (legacy - not used with PostgreSQL)"""
