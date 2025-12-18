@@ -7,6 +7,8 @@ from models import User, get_session
 from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime, timedelta
 import secrets
+import os
+import json
 
 class AuthManager:
     def __init__(self):
@@ -19,6 +21,7 @@ class AuthManager:
             self.users = self.load_users()
         else:
             self.legacy = False
+            self.users = {} # Prevent AttributeError in context processors
             print("✅ Running in DATABASE MODE")
 
     def load_users(self):
@@ -40,6 +43,9 @@ class AuthManager:
     
     def user_exists(self, username):
         """Check if user exists"""
+        if self.legacy:
+            return username in self.users
+            
         user = self.session.query(User).filter_by(email=username).first()
         return user is not None
     
@@ -115,6 +121,10 @@ class AuthManager:
     # Password Reset Methods
     def generate_reset_code(self, username):
         """Generate a 6-digit reset code"""
+        if self.legacy:
+            if username not in self.users: return None
+            return str(secrets.randbelow(900000) + 100000)
+
         user = self.session.query(User).filter_by(email=username).first()
         if not user:
             return None
@@ -128,6 +138,13 @@ class AuthManager:
     
     def update_password(self, username, new_password):
         """Update user password"""
+        if self.legacy:
+            if username not in self.users: return False
+            self.users[username]['password'] = self.hash_password(new_password)
+            with open(self.users_file, 'w') as f:
+                json.dump(self.users, f)
+            return True
+
         user = self.session.query(User).filter_by(email=username).first()
         if not user:
             return False
