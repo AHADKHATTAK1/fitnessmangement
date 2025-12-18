@@ -18,12 +18,17 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir --upgrade pip && \
     pip install --no-cache-dir -r requirements.txt
 
-# Copy entrypoint script
-COPY docker-entrypoint.sh /usr/local/bin/
-RUN chmod +x /usr/local/bin/docker-entrypoint.sh
+# Copy application code
+COPY . .
+
+# Create necessary directories
+RUN mkdir -p static/uploads gym_data
+
+# Make entrypoint executable
+RUN chmod +x docker-entrypoint.sh
 
 # Expose port
 EXPOSE 8080
 
 # Use entrypoint script
-ENTRYPOINT ["docker-entrypoint.sh"]
+ENTRYPOINT ["./docker-entrypoint.sh"]
