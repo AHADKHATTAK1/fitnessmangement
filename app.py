@@ -21,16 +21,30 @@ from google_wallet import GymWalletPass
 # Load environment variables from .env file
 load_dotenv()
 
+print("=" * 80)
+print("🚀 STARTING GYM MANAGER APPLICATION")
+print("=" * 80)
+
 # Initialize database tables on startup
 try:
     from models import init_db
+    print("📊 Attempting database initialization...")
     init_db()
-    print("✅ Database initialized")
+    print("✅ Database initialized successfully")
 except Exception as e:
-    print(f"⚠️ Database init warning: {str(e)}")
+    print(f"⚠️  Database init warning: {str(e)}")
+    import traceback
+    traceback.print_exc()
 
 app = Flask(__name__)
-app.secret_key = os.getenv('FLASK_SECRET_KEY', 'dev-secret-key-change-in-production')
+
+# Check secret key
+secret_key = os.getenv('FLASK_SECRET_KEY', 'dev-secret-key-change-in-production')
+if secret_key == 'dev-secret-key-change-in-production':
+    print("⚠️  Using default secret key (not recommended for production)")
+else:
+    print("✅ Custom secret key configured")
+app.secret_key = secret_key
 
 # Enable compression for all responses
 Compress(app)

@@ -144,6 +144,10 @@ def migrate():
                     if not db_mid: continue
                     
                     for r in records:
+                        # Skip if not a dict (malformed data)
+                        if not isinstance(r, dict):
+                            continue
+                            
                         try:
                             ts = datetime.strptime(r.get('timestamp'), '%Y-%m-%d %H:%M:%S')
                         except:
