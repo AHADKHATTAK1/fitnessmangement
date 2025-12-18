@@ -34,9 +34,13 @@ app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max file size
 
 # Create upload folder if it doesn't exist
-os.makedirs(UPLOAD_FOLDER, exist_ok=True)
-os.makedirs('gym_data', exist_ok=True)
-os.makedirs('static/uploads', exist_ok=True)
+try:
+    os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+    os.makedirs('gym_data', exist_ok=True)
+    os.makedirs('static/uploads', exist_ok=True)
+    print(f"✅ Directories created: {UPLOAD_FOLDER}, gym_data, static/uploads")
+except Exception as e:
+    print(f"⚠️ Directory creation warning: {str(e)}")
 
 # Ensure users.json exists
 if not os.path.exists('users.json'):
