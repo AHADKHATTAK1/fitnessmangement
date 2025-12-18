@@ -1,5 +1,7 @@
 [build]
-builder = "NIXPACKS"
+builder = "DOCKERFILE"
 
-[build.nixPacks]
-python = "3.11"
+[deploy]
+startCommand = "gunicorn app:app --bind 0.0.0.0:$PORT --timeout 120 --workers 2"
+restartPolicyType = "ON_FAILURE"
+restartPolicyMaxRetries = 10
