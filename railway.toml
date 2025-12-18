@@ -1,5 +1,7 @@
+# Railway Configuration - FORCE DOCKERFILE
 [build]
-builder = "DOCKERFILE"
+builder = "dockerfile"
+dockerfilePath = "Dockerfile"
 
 [deploy]
 restartPolicyType = "ON_FAILURE"
