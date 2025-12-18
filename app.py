@@ -21,6 +21,14 @@ from google_wallet import GymWalletPass
 # Load environment variables from .env file
 load_dotenv()
 
+# Initialize database tables on startup
+try:
+    from models import init_db
+    init_db()
+    print("✅ Database initialized")
+except Exception as e:
+    print(f"⚠️ Database init warning: {str(e)}")
+
 app = Flask(__name__)
 app.secret_key = os.getenv('FLASK_SECRET_KEY', 'dev-secret-key-change-in-production')
 
@@ -49,22 +57,14 @@ if not os.path.exists('users.json'):
         json.dump({}, f)
 
 # Initialize Auth Manager
-print("Initializing AuthManager...")
-try:
-    auth_manager = AuthManager()
-    print("✅ AuthManager initialized")
-except Exception as e:
-    print(f"❌ AuthManager error: {str(e)}")
-    import traceback
-    traceback.print_exc()
+auth_manager = AuthManager()
 
 def get_gym():
     """Get GymManager instance for logged-in user"""
     if 'logged_in' not in session:
         return None
     username = session.get('username')
-    data_file = f"gym_data/{username}.json"
-    return GymManager(data_file)
+    return GymManager(username)  # Now uses email directly
 
 @app.context_processor
 def inject_gym_details():

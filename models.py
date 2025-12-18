@@ -120,7 +120,11 @@ def init_db():
     return engine
 
 def get_session():
-    """Get database session"""
-    engine = create_engine(get_database_url())
-    Session = sessionmaker(bind=engine)
-    return Session()
+    """Get database session with error handling"""
+    try:
+        engine = create_engine(get_database_url(), pool_pre_ping=True)
+        Session = sessionmaker(bind=engine)
+        return Session()
+    except Exception as e:
+        print(f"❌ Database connection failed: {str(e)}")
+        return None
