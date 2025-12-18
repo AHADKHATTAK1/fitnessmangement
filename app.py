@@ -40,18 +40,27 @@ os.makedirs('static/uploads', exist_ok=True)
 
 # Ensure users.json exists
 if not os.path.exists('users.json'):
+    print("Creating users.json...")
     with open('users.json', 'w') as f:
         json.dump({}, f)
 
 # Initialize Auth Manager
-auth_manager = AuthManager()
+print("Initializing AuthManager...")
+try:
+    auth_manager = AuthManager()
+    print("✅ AuthManager initialized")
+except Exception as e:
+    print(f"❌ AuthManager error: {str(e)}")
+    import traceback
+    traceback.print_exc()
 
 def get_gym():
     """Get GymManager instance for logged-in user"""
     if 'logged_in' not in session:
         return None
     username = session.get('username')
-    return GymManager(username)  # Now uses email directly
+    data_file = f"gym_data/{username}.json"
+    return GymManager(data_file)
 
 @app.context_processor
 def inject_gym_details():
