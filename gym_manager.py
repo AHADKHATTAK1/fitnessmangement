@@ -334,6 +334,17 @@ class GymManager:
 
     def get_revenue(self, month=None):
         """Get total revenue for a month"""
+        if self.legacy:
+            total = 0.0
+            for mid, member_fees in self.data.get('fees', {}).items():
+                if month:
+                    if month in member_fees:
+                        total += float(member_fees[month].get('amount', 0))
+                else:
+                    for m, info in member_fees.items():
+                        total += float(info.get('amount', 0))
+            return total
+
         if not self.gym:
             return 0.0
             
@@ -349,6 +360,21 @@ class GymManager:
 
     def add_expense(self, category, amount, date, description=''):
         """Add an expense record"""
+        if self.legacy:
+            if isinstance(date, str):
+                date_str = date
+            else:
+                date_str = date.strftime('%Y-%m-%d')
+                
+            self.data['expenses'].append({
+                'category': category,
+                'amount': amount,
+                'date': date_str,
+                'description': description
+            })
+            self.save_legacy_data()
+            return True
+
         if not self.gym:
             return False
             
@@ -368,6 +394,13 @@ class GymManager:
 
     def get_expenses(self, month=None):
         """Get expenses history"""
+        if self.legacy:
+            expenses = self.data.get('expenses', [])
+            if month:
+                expenses = [e for e in expenses if e.get('date', '').startswith(month)]
+            # Sort by date desc
+            return sorted(expenses, key=lambda x: x.get('date', ''), reverse=True)
+
         if not self.gym:
             return []
             
@@ -386,6 +419,18 @@ class GymManager:
 
     def log_attendance(self, member_id, emotion=None, confidence=None):
         """Log member check-in"""
+        if self.legacy:
+            if str(member_id) not in self.data['attendance']:
+                self.data['attendance'][str(member_id)] = []
+            
+            self.data['attendance'][str(member_id)].append({
+                'timestamp': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+                'emotion': emotion,
+                'confidence': confidence
+            })
+            self.save_legacy_data()
+            return True
+
         attendance = Attendance(
             member_id=int(member_id),
             check_in_time=datetime.now(),
@@ -398,6 +443,10 @@ class GymManager:
 
     def get_attendance(self, member_id):
         """Get attendance history for a member"""
+        if self.legacy:
+            return sorted(self.data['attendance'].get(str(member_id), []), 
+                          key=lambda x: x.get('timestamp', ''), reverse=True)
+
         records = self.session.query(Attendance).filter_by(member_id=int(member_id)).order_by(Attendance.check_in_time.desc()).all()
         return [{
             'timestamp': r.check_in_time.strftime('%Y-%m-%d %H:%M:%S'),
