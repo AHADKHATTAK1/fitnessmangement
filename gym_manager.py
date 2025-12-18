@@ -10,6 +10,7 @@ from sqlalchemy import func, extract
 from sqlalchemy.exc import IntegrityError
 import pandas as pd
 import os
+import json
 
 class GymManager:
     def __init__(self, user_email):

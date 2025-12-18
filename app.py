@@ -521,9 +521,10 @@ def dashboard():
     # Generate range and format as (value, label) tuples (12 past + current + 24 future = 37)
     dates = pd.date_range(start=start_date, periods=37, freq='MS')
     # Check if month requested
-    selected_month = request.args.get('month')
-    if not selected_month:
-        current_month = request.args.get('month', datetime.now().strftime('%Y-%m'))
+    current_month = request.args.get('month')
+    if not current_month:
+        current_month = datetime.now().strftime('%Y-%m')
+        
     status = gym.get_payment_status(current_month)
     
     # Calculate revenue
