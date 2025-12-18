@@ -6,14 +6,26 @@ from datetime import datetime, timedelta
 class AuthManager:
     def __init__(self, users_file='users.json'):
         self.users_file = users_file
-        self.users = self.load_users()
+        try:
+            self.users = self.load_users()
+            print(f"Loaded {len(self.users)} users from {users_file}")
+        except Exception as e:
+            print(f"Error loading users: {str(e)}")
+            self.users = {}
 
     def load_users(self):
         if os.path.exists(self.users_file):
             try:
                 with open(self.users_file, 'r') as f:
-                    return json.load(f)
-            except json.JSONDecodeError:
+                    content = f.read().strip()
+                    if not content:
+                        return {}
+                    return json.loads(content)
+            except (json.JSONDecodeError, ValueError) as e:
+                print(f"JSON decode error: {str(e)}")
+                return {}
+            except Exception as e:
+                print(f"File read error: {str(e)}")
                 return {}
         return {}
 
