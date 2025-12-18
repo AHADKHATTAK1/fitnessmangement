@@ -36,6 +36,12 @@ app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max file size
 # Create upload folder if it doesn't exist
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 os.makedirs('gym_data', exist_ok=True)
+os.makedirs('static/uploads', exist_ok=True)
+
+# Ensure users.json exists
+if not os.path.exists('users.json'):
+    with open('users.json', 'w') as f:
+        json.dump({}, f)
 
 # Initialize Auth Manager
 auth_manager = AuthManager()
