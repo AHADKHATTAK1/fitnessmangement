@@ -27,5 +27,5 @@ RUN mkdir -p static/uploads gym_data
 # Expose port
 EXPOSE 8080
 
-# Run gunicorn
-CMD gunicorn app:app --bind 0.0.0.0:$PORT --timeout 120 --workers 2
+# Run gunicorn (shell form to expand $PORT)
+CMD gunicorn app:app --bind 0.0.0.0:${PORT:-8080} --timeout 120 --workers 2
