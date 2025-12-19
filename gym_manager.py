@@ -521,7 +521,8 @@ class GymManager:
                         membership_type=membership_type,
                         joined_date=joined_date,
                         photo_url=None,
-                        is_trial=False
+                        is_trial=False,
+                        is_active=True  # Force active status
                     )
                     new_members.append(member)
                     existing_phones.add(phone) # Prevent duplicates within same file

@@ -599,6 +599,11 @@ def dashboard():
                          unpaid=status['unpaid'],
                          revenue=revenue,
                          revenue_change=revenue_change,
+                         expiring_count=expiring_count,
+                         months=available_months,
+                         current_month=current_month,
+                         total_members=total_members)
+                         revenue_change=revenue_change,
                          total_members=total_members,
                          expiring_count=expiring_count,
                          current_month=current_month,
