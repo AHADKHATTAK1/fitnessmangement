@@ -457,26 +457,84 @@ class GymManager:
         } for r in records]
 
     def bulk_import_members(self, filepath):
-        """Import members from Excel/CSV"""
+        """Import members from Excel/CSV with batch processing"""
         try:
             if filepath.endswith('.csv'):
                 df = pd.read_csv(filepath)
             else:
                 df = pd.read_excel(filepath)
-                
+            
             success = 0
             errors = []
+            new_members = []
             
-            for _, row in df.iterrows():
+            # Legacy Mode: Fallback to single add
+            if self.legacy:
+                for _, row in df.iterrows():
+                    try:
+                        name = str(row['Name']).strip()
+                        phone = str(row['Phone']).strip()
+                        self.add_member(name, phone)
+                        success += 1
+                    except Exception as e:
+                        errors.append(f"Row {_}: {str(e)}")
+                return success, len(errors), errors
+
+            # Database Mode: Batch Processing
+            # 1. Get existing phones to avoid duplicates
+            existing_phones = {m.phone for m in self.session.query(Member).filter_by(gym_id=self.gym.id).all()}
+            
+            for index, row in df.iterrows():
                 try:
                     name = str(row['Name']).strip()
                     phone = str(row['Phone']).strip()
-                    self.add_member(name, phone)
+                    
+                    if phone in existing_phones:
+                        errors.append(f"Row {index}: Member with phone {phone} already exists")
+                        continue
+                        
+                    # Handle optional fields
+                    email = str(row['Email']).strip() if 'Email' in row and pd.notna(row['Email']) else None
+                    membership_type = str(row['Membership Type']).strip() if 'Membership Type' in row and pd.notna(row['Membership Type']) else 'Gym'
+                    
+                    joined_date = datetime.now().date()
+                    if 'Joined Date' in row and pd.notna(row['Joined Date']):
+                        try:
+                            jd = row['Joined Date']
+                            if isinstance(jd, str):
+                                joined_date = datetime.strptime(jd, '%Y-%m-%d').date()
+                            else:
+                                joined_date = jd.date()
+                        except:
+                            pass
+
+                    member = Member(
+                        gym_id=self.gym.id,
+                        name=name,
+                        phone=phone,
+                        email=email,
+                        membership_type=membership_type,
+                        joined_date=joined_date,
+                        photo_url=None,
+                        is_trial=False
+                    )
+                    new_members.append(member)
+                    existing_phones.add(phone) # Prevent duplicates within same file
                     success += 1
+                    
                 except Exception as e:
-                    errors.append(str(e))
+                    errors.append(f"Row {index}: {str(e)}")
+            
+            if new_members:
+                try:
+                    self.session.add_all(new_members)
+                    self.session.commit()
+                except Exception as e:
+                    self.session.rollback()
+                    return 0, 1, [f"Database Commit Error: {str(e)}"]
                     
             return success, len(errors), errors
+            
         except Exception as e:
             return 0, 1, [str(e)]
 
