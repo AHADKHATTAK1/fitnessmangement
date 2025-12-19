@@ -600,14 +600,9 @@ def dashboard():
                          revenue=revenue,
                          revenue_change=revenue_change,
                          expiring_count=expiring_count,
-                         months=available_months,
-                         current_month=current_month,
-                         total_members=total_members)
-                         revenue_change=revenue_change,
-                         total_members=total_members,
-                         expiring_count=expiring_count,
-                         current_month=current_month,
                          available_months=available_months,
+                         current_month=current_month,
+                         total_members=total_members,
                          gym_details=gym.get_gym_details())
 
 @app.route('/add_member', methods=['GET', 'POST'])
@@ -991,19 +986,24 @@ def edit_fee_record(member_id, month):
     else:
         # Database mode - get from Fee table
         try:
-            from models import get_session, Fee
-            session = get_session()
+            # Use the gym's existing session if available, or create new one properly
+            if hasattr(gym, 'session'):
+                session = gym.session
+            else:
+                from models import get_session
+                session = get_session()
+                
             if session:
-                fee = session.query(Fee).filter_by(member_id=member_id, month=month).first()
+                from models import Fee
+                fee = session.query(Fee).filter_by(member_id=int(member_id), month=month).first()
                 if fee:
                     fee_info = {
                         'amount': fee.amount,
                         'date': fee.paid_date.strftime('%Y-%m-%d %H:%M:%S') if fee.paid_date else '',
                         'timestamp': fee.paid_date.strftime('%Y-%m-%d %H:%M:%S') if fee.paid_date else ''
                     }
-                session.close()
-        except:
-            pass
+        except Exception as e:
+            flash(f"Error retrieving fee: {str(e)}", "error")
     
     if not fee_info:
         flash('Fee record not found', 'error')
