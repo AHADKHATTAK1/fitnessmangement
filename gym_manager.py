@@ -408,7 +408,12 @@ class GymManager:
             
         query = self.session.query(Expense).filter_by(gym_id=self.gym.id)
         if month:
-            query = query.filter(func.to_char(Expense.date, 'YYYY-MM') == month)
+            # Check database dialect
+            if self.session.bind.dialect.name == 'postgresql':
+                query = query.filter(func.to_char(Expense.date, 'YYYY-MM') == month)
+            else:
+                # SQLite fallback
+                query = query.filter(func.strftime('%Y-%m', Expense.date) == month)
             
         expenses = query.order_by(Expense.date.desc()).all()
         return [{
@@ -602,6 +607,112 @@ class GymManager:
                 
         self.session.commit()
         return merged_count
+
+    def import_json_data(self, data):
+        """Import legacy JSON data into database"""
+        if self.legacy:
+            return False, "Already in legacy mode"
+
+        try:
+            # Track ID mapping (Old String ID -> New DB ID)
+            id_map = {}
+            imported_members = 0
+            
+            # 1. Import Members
+            members = data.get('members', {})
+            for old_id, m_data in members.items():
+                # Check if already exists (by phone)
+                existing = self.session.query(Member).filter_by(
+                    gym_id=self.gym.id, 
+                    phone=m_data.get('phone')
+                ).first()
+                
+                if existing:
+                    id_map[old_id] = existing.id
+                    continue
+                    
+                # Create NEW member
+                joined = datetime.now().date()
+                if m_data.get('joined_date'):
+                    try:
+                        joined = datetime.strptime(m_data['joined_date'], '%Y-%m-%d').date()
+                    except: pass
+                    
+                member = Member(
+                    gym_id=self.gym.id,
+                    name=m_data.get('name'),
+                    phone=m_data.get('phone'),
+                    email=m_data.get('email'),
+                    photo_url=m_data.get('photo'),
+                    joined_date=joined,
+                    membership_type=m_data.get('membership_type', 'Gym'),
+                    is_trial=m_data.get('is_trial', False)
+                )
+                self.session.add(member)
+                self.session.flush() # Get new ID
+                id_map[old_id] = member.id
+                imported_members += 1
+                
+            # 2. Import Fees
+            fees_data = data.get('fees', {})
+            for old_id, member_fees in fees_data.items():
+                if old_id not in id_map: continue
+                new_id = id_map[old_id]
+                
+                for month, info in member_fees.items():
+                    # Check duplicate
+                    exists = self.session.query(Fee).filter_by(member_id=new_id, month=month).first()
+                    if exists: continue
+                    
+                    p_date = datetime.now()
+                    if info.get('date'):
+                        try:
+                            p_date = datetime.strptime(info['date'], '%Y-%m-%d %H:%M:%S')
+                        except: pass
+                        
+                    fee = Fee(
+                        member_id=new_id,
+                        month=month,
+                        amount=float(info.get('amount', 0)),
+                        paid_date=p_date
+                    )
+                    self.session.add(fee)
+            
+            # 3. Import Attendance
+            att_data = data.get('attendance', {})
+            for old_id, logs in att_data.items():
+                if old_id not in id_map: continue
+                new_id = id_map[old_id]
+                
+                for log in logs:
+                    ts = datetime.now()
+                    if log.get('timestamp'):
+                        try:
+                            ts = datetime.strptime(log['timestamp'], '%Y-%m-%d %H:%M:%S')
+                        except: pass
+                    
+                    # Check duplicate (approximate)
+                    exists = self.session.query(Attendance).filter(
+                        Attendance.member_id == new_id,
+                        Attendance.check_in_time == ts
+                    ).first()
+                    
+                    if exists: continue
+                    
+                    att = Attendance(
+                        member_id=new_id,
+                        check_in_time=ts,
+                        emotion=log.get('emotion'),
+                        confidence=log.get('confidence')
+                    )
+                    self.session.add(att)
+            
+            self.session.commit()
+            return True, f"Imported {imported_members} members successfully"
+            
+        except Exception as e:
+            self.session.rollback()
+            return False, str(e)
 
     def __del__(self):
         """Close session"""

@@ -1105,8 +1105,12 @@ def restore_backup():
                 flash('✅ Data restored successfully! Please log in again.', 'success')
                 return redirect(url_for('logout'))
             else:
-                # Database mode - not supported via file upload
-                flash('⚠️ Backup restore from JSON not supported in database mode. Please use database tools.', 'warning')
+                # Database mode: Import JSON data
+                success, message = gym.import_json_data(data)
+                if success:
+                    flash(f'✅ {message}', 'success')
+                else:
+                    flash(f'⚠️ Import Error: {message}', 'error')
                 return redirect(url_for('settings'))
             
         except Exception as e:
