@@ -484,3 +484,13 @@ class GymManager:
         """Close session"""
         if hasattr(self, 'session'):
             self.session.close()
+    
+    def get_classes(self):
+        """Get all scheduled classes - stub method"""
+        # TODO: Implement class scheduling feature
+        return []
+    
+    def add_class(self, name, day, time, instructor, capacity):
+        """Add a scheduled class - stub method"""
+        # TODO: Implement class scheduling feature
+        return True
