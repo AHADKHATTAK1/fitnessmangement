@@ -490,9 +490,19 @@ def reports():
     
     # Total check-ins
     total_checkins = 0
-    if 'attendance' in gym.data:
+    if gym.legacy and hasattr(gym, 'data') and 'attendance' in gym.data:
         for visits in gym.data['attendance'].values():
             total_checkins += len(visits)
+    elif not gym.legacy:
+        # Database mode - count attendance records
+        try:
+            from models import get_session, Attendance
+            session = get_session()
+            if session:
+                total_checkins = session.query(Attendance).count()
+                session.close()
+        except:
+            total_checkins = 0
     
     # Revenue trend (last 6 months)
     revenue_months = []
@@ -969,7 +979,31 @@ def edit_fee_record(member_id, month):
             flash('Invalid amount!', 'error')
             
     # Get current fee data
-    fee_info = gym.data['fees'][member_id][month]
+    fee_info = None
+    if gym.legacy and hasattr(gym, 'data'):
+        if member_id in gym.data.get('fees', {}) and month in gym.data['fees'][member_id]:
+            fee_info = gym.data['fees'][member_id][month]
+    else:
+        # Database mode - get from Fee table
+        try:
+            from models import get_session, Fee
+            session = get_session()
+            if session:
+                fee = session.query(Fee).filter_by(member_id=member_id, month=month).first()
+                if fee:
+                    fee_info = {
+                        'amount': fee.amount,
+                        'date': fee.paid_date.strftime('%Y-%m-%d %H:%M:%S') if fee.paid_date else '',
+                        'timestamp': fee.paid_date.strftime('%Y-%m-%d %H:%M:%S') if fee.paid_date else ''
+                    }
+                session.close()
+        except:
+            pass
+    
+    if not fee_info:
+        flash('Fee record not found', 'error')
+        return redirect(url_for('dashboard'))
+    
     return render_template('edit_fee.html', member=member, month=month, fee=fee_info)
 
 @app.route('/member/<member_id>/edit', methods=['GET', 'POST'])
@@ -1064,12 +1098,16 @@ def restore_backup():
                 flash('Invalid backup file! Missing member data.', 'error')
                 return redirect(url_for('settings'))
             
-            # Save to current gym's data file
-            with open(gym.data_file, 'w') as f:
-                json.dump(data, f, indent=2)
-                
-            flash('✅ Data restored successfully! Please log in again.', 'success')
-            return redirect(url_for('logout'))
+            # Save to current gym's data file (legacy mode only)
+            if gym.legacy and hasattr(gym, 'data_file'):
+                with open(gym.data_file, 'w') as f:
+                    json.dump(data, f, indent=2)
+                flash('✅ Data restored successfully! Please log in again.', 'success')
+                return redirect(url_for('logout'))
+            else:
+                # Database mode - not supported via file upload
+                flash('⚠️ Backup restore from JSON not supported in database mode. Please use database tools.', 'warning')
+                return redirect(url_for('settings'))
             
         except Exception as e:
             flash(f'Error restoring data: {str(e)}', 'error')
@@ -1089,11 +1127,29 @@ def generate_receipt(member_id, month):
         return redirect(url_for('member_details', member_id=member_id))
     
     # Get fee data
-    # We need to access fee details directly since get_member doesn't have it
-    # This is a bit of a hack, optimally we should have a get_fee method
-    if member_id in gym.data['fees'] and month in gym.data['fees'][member_id]:
-        fee_info = gym.data['fees'][member_id][month]
+    fee_info = None
+    if gym.legacy and hasattr(gym, 'data'):
+        if member_id in gym.data.get('fees', {}) and month in gym.data['fees'][member_id]:
+            fee_info = gym.data['fees'][member_id][month]
     else:
+        # Database mode
+        try:
+            from models import get_session, Fee
+            session = get_session()
+            if session:
+                fee = session.query(Fee).filter_by(member_id=member_id, month=month).first()
+                if fee:
+                    fee_info = {
+                        'amount': fee.amount,
+                        'date': fee.paid_date.strftime('%Y-%m-%d') if fee.paid_date else '',
+                        'timestamp': fee.paid_date.strftime('%Y-%m-%d %H:%M:%S') if fee.paid_date else ''
+                    }
+                session.close()
+        except:
+            pass
+    
+    if not fee_info:
+        flash('Fee record not found', 'error')
         return redirect(url_for('dashboard'))
 
     # Create PDF
@@ -1174,6 +1230,8 @@ def bulk_import():
         # Show results
         if success_count > 0:
             flash(f'✅ Successfully imported {success_count} members!', 'success')
+            # Redirect to dashboard to see imported members
+            return redirect(url_for('dashboard'))
         if error_count > 0:
             flash(f'⚠️ {error_count} errors occurred during import.', 'error')
             for error in errors[:10]:  # Show max 10 errors
