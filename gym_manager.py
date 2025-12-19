@@ -480,6 +480,71 @@ class GymManager:
         except Exception as e:
             return 0, 1, [str(e)]
 
+    def find_duplicates(self):
+        """Find duplicate members based on name and phone"""
+        if self.legacy:
+            return [] # Not supported in legacy mode
+            
+        # Group members by name and phone
+        from collections import defaultdict
+        groups = defaultdict(list)
+        
+        all_members = self.session.query(Member).filter_by(gym_id=self.gym.id).all()
+        for m in all_members:
+            # Normalize key: lower case name, numeric phone
+            key = (m.name.lower().strip(), "".join(filter(str.isdigit, m.phone)))
+            groups[key].append(m)
+            
+        # Filter for actual duplicates
+        duplicates = []
+        for key, members in groups.items():
+            if len(members) > 1:
+                # Sort by joined date (keep oldest)
+                members.sort(key=lambda x: x.joined_date)
+                duplicates.append({
+                    'primary': self._member_to_dict(members[0]),
+                    'duplicates': [self._member_to_dict(m) for m in members[1:]]
+                })
+        return duplicates
+        
+    def merge_members(self):
+        """Automatically merge all duplicate members"""
+        if self.legacy:
+            return 0
+            
+        duplicates = self.find_duplicates()
+        merged_count = 0
+        
+        for group in duplicates:
+            primary_id = int(group['primary']['id'])
+            
+            for dup in group['duplicates']:
+                dup_id = int(dup['id'])
+                
+                # Move Fees to Primary
+                fees = self.session.query(Fee).filter_by(member_id=dup_id).all()
+                for fee in fees:
+                    # Check if primary already has fee for this month
+                    existing = self.session.query(Fee).filter_by(member_id=primary_id, month=fee.month).first()
+                    if not existing:
+                        fee.member_id = primary_id
+                    else:
+                        # Conflict: Delete duplicate fee
+                        self.session.delete(fee)
+                
+                # Move Attendance to Primary
+                attendance = self.session.query(Attendance).filter_by(member_id=dup_id).all()
+                for att in attendance:
+                    att.member_id = primary_id
+                    
+                # Delete Duplicate Member
+                dup_member = self.session.query(Member).get(dup_id)
+                self.session.delete(dup_member)
+                merged_count += 1
+                
+        self.session.commit()
+        return merged_count
+
     def __del__(self):
         """Close session"""
         if hasattr(self, 'session'):

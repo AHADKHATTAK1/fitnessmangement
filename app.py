@@ -1116,6 +1116,23 @@ def restore_backup():
         
     return redirect(url_for('settings'))
 
+@app.route('/merge_duplicates', methods=['POST'])
+def merge_duplicates():
+    gym = get_gym()
+    if not gym: return redirect(url_for('auth'))
+    
+    try:
+        merged_count = gym.merge_members()
+        if merged_count > 0:
+            flash(f'✅ Successfully merged {merged_count} duplicate members!', 'success')
+        else:
+            flash('No duplicates found.', 'info')
+            
+    except Exception as e:
+        flash(f'Error merging duplicates: {str(e)}', 'error')
+        
+    return redirect(url_for('settings'))
+
 @app.route('/receipt/<member_id>/<month>')
 def generate_receipt(member_id, month):
     gym = get_gym()

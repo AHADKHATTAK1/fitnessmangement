@@ -308,6 +308,7 @@
         <table>
             <thead>
                 <tr>
+                    <th>S.No</th>
                     <th>Photo</th>
                     <th>ID</th>
                     <th>Name</th>
@@ -319,6 +320,7 @@
             <tbody>
                 {% for member in paid %}
                 <tr>
+                    <td>{{ loop.index }}</td>
                     <td>
                         {% if member.photo %}
                         <img src="{{ url_for('static', filename='uploads/' + member.photo) }}" class="member-photo"
@@ -366,6 +368,7 @@
         <table>
             <thead>
                 <tr>
+                    <th>S.No</th>
                     <th>Photo</th>
                     <th>ID</th>
                     <th>Name</th>
@@ -377,6 +380,7 @@
             <tbody>
                 {% for member in unpaid %}
                 <tr>
+                    <td>{{ loop.index }}</td>
                     <td>
                         {% if member.photo %}
                         <img src="{{ url_for('static', filename='uploads/' + member.photo) }}" class="member-photo"

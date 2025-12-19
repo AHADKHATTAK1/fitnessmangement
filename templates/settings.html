@@ -75,6 +75,22 @@
     </form>
 </div>
 
+
+<div class="card" style="max-width: 600px; margin: 2rem auto; border-left: 4px solid var(--primary);">
+    <h2 style="margin-bottom: 1rem;">🧹 Data Cleanup</h2>
+    <p style="color: var(--text-muted); margin-bottom: 1rem;">
+        Automatically find and merge duplicate members (same name & phone).
+        <br>It keeps the oldest member and moves all fees/attendance to them.
+    </p>
+
+    <form action="{{ url_for('merge_duplicates') }}" method="POST">
+        <button type="submit" class="btn btn-primary" style="width: 100%;"
+            onclick="return confirm('⚠️ confirm merge? This will combine duplicates and cannot be undone.')">
+            🔍 Scan & Merge Duplicates
+        </button>
+    </form>
+</div>
+
 <div class="card" style="max-width: 800px; margin: 2rem auto;">
     <h2 style="margin-bottom: 1.5rem; color: var(--primary);">🧾 Subscription / Billing History</h2>
     {% if payments %}
