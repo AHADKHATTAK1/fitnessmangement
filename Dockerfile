@@ -31,4 +31,5 @@ RUN chmod +x docker-entrypoint.sh
 EXPOSE 8080
 
 # Use entrypoint script
-ENTRYPOINT ["./docker-entrypoint.sh"]
+# Use entrypoint script with shell to ensure expansion
+CMD ["sh", "docker-entrypoint.sh"]
