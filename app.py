@@ -1237,7 +1237,7 @@ def bulk_import():
             return redirect(url_for('bulk_import'))
         
         # Validate file extension
-        if not (file.filename.endswith('.xlsx') or file.filename.endswith('.csv')):
+        if not (file.filename.lower().endswith('.xlsx') or file.filename.lower().endswith('.csv')):
             flash('Invalid file format! Use .xlsx or .csv files only.', 'error')
             return redirect(url_for('bulk_import'))
         
