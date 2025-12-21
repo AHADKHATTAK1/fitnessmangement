@@ -423,6 +423,28 @@ class GymManager:
             'date': e.date.strftime('%Y-%m-%d'),
             'description': e.description
         } for e in expenses]
+    
+    def calculate_profit_loss(self, month=None):
+        """Calculate profit/loss for a month"""
+        if not month:
+            month = datetime.now().strftime('%Y-%m')
+        
+        # Get revenue (fees collected)
+        revenue = self.get_revenue(month)
+        
+        # Get expenses
+        expenses_list = self.get_expenses(month)
+        total_expenses = sum(e.get('amount', 0) for e in expenses_list)
+        
+        # Calculate profit
+        profit = revenue - total_expenses
+        
+        return {
+            'revenue': revenue,
+            'expenses': total_expenses,
+            'profit': profit,
+            'month': month
+        }
 
     def log_attendance(self, member_id, emotion=None, confidence=None):
         """Log member check-in"""
