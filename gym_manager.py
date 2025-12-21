@@ -273,20 +273,26 @@ class GymManager:
             return [{
                 'month': m,
                 'amount': float(info.get('amount', 0)),
-                'date': info.get('date', info.get('timestamp', 'N/A'))
+                'paid_date': info.get('date', info.get('timestamp', 'N/A')),
+                'notes': info.get('notes', '')
             } for m, info in member_fees.items()]
 
         fees = self.session.query(Fee).filter_by(member_id=int(member_id)).order_by(Fee.month.desc()).all()
         return [{
             'month': f.month,
             'amount': float(f.amount),
-            'date': f.paid_date.strftime('%Y-%m-%d %H:%M:%S')
+            'paid_date': f.paid_date.strftime('%Y-%m-%d %H:%M:%S'),
+            'notes': ''  # Notes not supported yet in DB
         } for f in fees]
 
     def is_fee_paid(self, member_id, month):
         """Check if fee is paid for a specific month"""
         fee = self.session.query(Fee).filter_by(member_id=int(member_id), month=month).first()
         return fee is not None
+    
+    def pay_fee(self, member_id, month, amount, payment_date=None, notes=None):
+        """Alias for record_fee - notes parameter ignored for now"""
+        return self.record_fee(member_id, month, amount, payment_date)
 
     def get_payment_status(self, month=None):
         """Get paid/unpaid members for a month"""
