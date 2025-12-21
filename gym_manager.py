@@ -437,12 +437,16 @@ class GymManager:
         total_expenses = sum(e.get('amount', 0) for e in expenses_list)
         
         # Calculate profit
-        profit = revenue - total_expenses
+        net_profit = revenue - total_expenses
+        
+        # Calculate profit margin
+        profit_margin = round((net_profit / revenue * 100), 2) if revenue > 0 else 0
         
         return {
             'revenue': revenue,
             'expenses': total_expenses,
-            'profit': profit,
+            'net_profit': net_profit,
+            'profit_margin': profit_margin,
             'month': month
         }
 
