@@ -926,7 +926,6 @@ def member_details(member_id):
     
         return redirect(url_for('member_details', member_id=member_id))
     
-    history = gym.get_member_fee_history(member_id)
     
     # Generate months for payment dropdown (12 past + current + 24 future = 37)
     current_date = datetime.now()
@@ -937,7 +936,7 @@ def member_details(member_id):
     return render_template('member_details.html', 
                          member=member, 
                          gym_details=gym.get_gym_details(), 
-                         history=gym.get_payment_history(member_id),
+                         history=gym.get_member_fees(member_id),
                          attendance_history=attendance_history,
                          current_month=datetime.now().strftime('%Y-%m'),
                          today=datetime.now().strftime('%Y-%m-%d'),
