@@ -566,7 +566,9 @@ class GymManager:
             if new_members:
                 try:
                     self.session.add_all(new_members)
+                    self.session.flush()  # Flush to DB before commit
                     self.session.commit()
+                    self.session.flush()  # Final flush for Railway
                 except Exception as e:
                     self.session.rollback()
                     return 0, 1, [f"Database Commit Error: {str(e)}"]
