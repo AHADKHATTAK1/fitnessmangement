@@ -597,6 +597,7 @@ def dashboard():
     return render_template('dashboard.html', 
                          paid=status['paid'], 
                          unpaid=status['unpaid'],
+                         all_members=gym.get_all_members(),
                          revenue=revenue,
                          revenue_change=revenue_change,
                          expiring_count=expiring_count,

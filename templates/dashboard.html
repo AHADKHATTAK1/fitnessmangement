@@ -433,4 +433,56 @@
     <p style="color: var(--text-muted); text-align: center; padding: 2rem;">All members have paid!</p>
     {% endif %}
 </div>
+
+<!-- ALL MEMBERS SECTION -->
+<div class="card" style="margin-top: 2rem; border-left: 4px solid var(--primary);">
+    <h2 style="margin-bottom: 1rem;">👥 All Members ({{ all_members|length }})</h2>
+
+    {% if all_members %}
+    <div style="overflow-x: auto; max-height: 500px; overflow-y: auto;">
+        <table>
+            <thead style="position: sticky; top: 0; background: var(--bg-card);">
+                <tr>
+                    <th>S.No</th>
+                    <th>Name</th>
+                    <th>Phone</th>
+                    <th>Type</th>
+                    <th>Joined</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for member in all_members %}
+                <tr>
+                    <td>{{ loop.index }}</td>
+                    <td>
+                        <a href="{{ url_for('member_details', member_id=member.id) }}"
+                            style="color: var(--text); text-decoration: none; font-weight: 500;">
+                            {{ member.name }}
+                        </a>
+                    </td>
+                    <td>{{ member.phone }}</td>
+                    <td><span class="badge">{{ member.membership_type or 'Gym' }}</span></td>
+                    <td>{{ member.joined_date }}</td>
+                    <td>
+                        <div style="display: flex; gap: 0.5rem;">
+                            <a href="{{ url_for('member_details', member_id=member.id) }}" class="btn btn-success"
+                                style="padding: 0.5rem 1rem; font-size: 0.875rem;">
+                                💰 Pay
+                            </a>
+                            <a href="{{ url_for('generate_card', member_id=member.id) }}" class="btn"
+                                style="padding: 0.5rem 1rem; font-size: 0.875rem;">
+                                📄 Card
+                            </a>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <p style="color: var(--text-muted); text-align: center; padding: 2rem;">No members found. Add your first member!</p>
+    {% endif %}
+</div>
 {% endblock %}
