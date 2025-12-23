@@ -1240,17 +1240,30 @@ def bulk_import():
             flash('Invalid file format! Use .xlsx or .csv files only.', 'error')
             return redirect(url_for('bulk_import'))
         
-        # Save file temporarily
-        upload_folder = app.config['UPLOAD_FOLDER']
-        filename = secure_filename(f"import_{datetime.now().strftime('%Y%m%d%H%M%S')}_{file.filename}")
-        filepath = os.path.join(upload_folder, filename)
-        file.save(filepath)
-        
-        # Process import
-        success_count, error_count, errors = gym.bulk_import_members(filepath)
-        
-        # Delete temp file
-        os.remove(filepath)
+        try:
+            # Save file temporarily - use /tmp for Railway compatibility
+            upload_folder = app.config['UPLOAD_FOLDER']
+            
+            # Check if upload folder is writable, fallback to /tmp
+            if not os.access(upload_folder, os.W_OK):
+                upload_folder = '/tmp'
+            
+            filename = secure_filename(f"import_{datetime.now().strftime('%Y%m%d%H%M%S')}_{file.filename}")
+            filepath = os.path.join(upload_folder, filename)
+            file.save(filepath)
+            
+            # Process import
+            success_count, error_count, errors = gym.bulk_import_members(filepath)
+            
+            # Delete temp file
+            try:
+                os.remove(filepath)
+            except:
+                pass  # Ignore cleanup errors
+                
+        except Exception as e:
+            flash(f'❌ Upload failed: {str(e)}', 'error')
+            return redirect(url_for('bulk_import'))
         
         # Show results
         if success_count > 0:
