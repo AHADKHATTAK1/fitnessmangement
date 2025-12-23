@@ -568,7 +568,13 @@ class GymManager:
                     self.session.add_all(new_members)
                     self.session.flush()  # Flush to DB before commit
                     self.session.commit()
-                    self.session.flush()  # Final flush for Railway
+                    
+                    # Verify data actually saved (for Railway debugging)
+                    import time
+                    time.sleep(0.5)  # Small delay for Railway DB
+                    actual_count = self.session.query(Member).filter_by(gym_id=self.gym.id).count()
+                    print(f"✅ Import complete: {success} added, {actual_count} total in DB")
+                    
                 except Exception as e:
                     self.session.rollback()
                     return 0, 1, [f"Database Commit Error: {str(e)}"]

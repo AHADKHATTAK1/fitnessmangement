@@ -1267,7 +1267,10 @@ def bulk_import():
         
         # Show results
         if success_count > 0:
-            flash(f'✅ Successfully imported {success_count} members!', 'success')
+            # Get actual count from database for verification
+            total_members = len(gym.get_all_members())
+            flash(f'✅ Successfully imported {success_count} members! Total: {total_members}', 'success')
+            flash('🔄 Page will refresh to show new members...', 'info')
             # Redirect to dashboard to see imported members
             return redirect(url_for('dashboard'))
         if error_count > 0:
