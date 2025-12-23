@@ -699,6 +699,11 @@ class GymManager:
                 if (idx + 1) % 50 == 0:
                     self.session.commit()
                     print(f"✓ Committed {idx + 1} members")
+            
+            # CRITICAL: Commit remaining members
+            if imported_members % 50 != 0:
+                self.session.commit()
+                print(f"✓ Committed final {imported_members} members")
                 
             # 2. Import Fees
             fees_data = data.get('fees', {})
