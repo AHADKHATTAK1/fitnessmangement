@@ -661,7 +661,7 @@ class GymManager:
             
             # 1. Import Members
             members = data.get('members', {})
-            for old_id, m_data in members.items():
+            for idx, (old_id, m_data) in enumerate(members.items()):
                 # Check if already exists (by phone)
                 existing = self.session.query(Member).filter_by(
                     gym_id=self.gym.id, 
@@ -687,12 +687,18 @@ class GymManager:
                     photo_url=m_data.get('photo'),
                     joined_date=joined,
                     membership_type=m_data.get('membership_type', 'Gym'),
-                    is_trial=m_data.get('is_trial', False)
+                    is_trial=m_data.get('is_trial', False),
+                    is_active=True
                 )
                 self.session.add(member)
                 self.session.flush() # Get new ID
                 id_map[old_id] = member.id
                 imported_members += 1
+                
+                # Commit every 50 records for Railway
+                if (idx + 1) % 50 == 0:
+                    self.session.commit()
+                    print(f"✓ Committed {idx + 1} members")
                 
             # 2. Import Fees
             fees_data = data.get('fees', {})
