@@ -595,9 +595,25 @@ class GymManager:
             
             if new_members:
                 try:
-                    self.session.add_all(new_members)
-                    self.session.flush()  # Flush to DB before commit
-                    self.session.commit()
+                    # Batch processing to prevent timeout
+                    total_to_add = len(new_members)
+                    batch_size = 100
+                    
+                    for i in range(0, total_to_add, batch_size):
+                        batch = new_members[i:i + batch_size]
+                        self.session.add_all(batch)
+                        self.session.flush()
+                        self.session.commit()
+                        print(f"✓ Bulk Import: Committed batch {i}-{min(i+batch_size, total_to_add)}")
+                        
+                    # Final flush
+                    self.session.flush()
+                    
+                except Exception as e:
+                    self.session.rollback()
+                    # Return partial success if some batches committed? 
+                    # For now just reporting error but some data might be saved from previous batches
+                    return success, len(errors) + 1, errors + [f"Database Commit Error: {str(e)}"]
                     
                     # Verify data actually saved (for Railway debugging)
                     import time
