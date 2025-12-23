@@ -597,7 +597,7 @@ class GymManager:
                 try:
                     # Batch processing to prevent timeout
                     total_to_add = len(new_members)
-                    batch_size = 100
+                    batch_size = 10
                     
                     for i in range(0, total_to_add, batch_size):
                         batch = new_members[i:i + batch_size]
