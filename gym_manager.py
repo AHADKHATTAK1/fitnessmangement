@@ -207,6 +207,36 @@ class GymManager:
             with open(self.data_file, 'w') as f:
                 json.dump(self.data, f, indent=2)
 
+    def reset_data(self):
+        """Reset all data for this gym"""
+        if self.legacy:
+            self.data = {'members': {}, 'fees': {}, 'attendance': {}, 'expenses': []}
+            self.save_legacy_data()
+            return True
+        
+        if not self.gym:
+            return False
+            
+        try:
+            # Delete all attendance records for this gym's members
+            member_ids = [m.id for m in self.session.query(Member).filter_by(gym_id=self.gym.id).all()]
+            if member_ids:
+                self.session.query(Attendance).filter(Attendance.member_id.in_(member_ids)).delete(synchronize_session=False)
+                self.session.query(Fee).filter(Fee.member_id.in_(member_ids)).delete(synchronize_session=False)
+            
+            # Delete all members for this gym
+            self.session.query(Member).filter_by(gym_id=self.gym.id).delete()
+            
+            # Delete all expenses for this gym
+            self.session.query(Expense).filter_by(gym_id=self.gym.id).delete()
+            
+            self.session.commit()
+            return True
+        except Exception as e:
+            self.session.rollback()
+            print(f"Reset error: {e}")
+            return False
+
     def _member_to_dict(self, member):
         """Convert SQLAlchemy member object to dictionary"""
         return {
