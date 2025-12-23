@@ -115,9 +115,24 @@ def get_database_url():
 
 def init_db():
     """Initialize database and create all tables"""
-    engine = create_engine(get_database_url())
-    Base.metadata.create_all(engine)
-    return engine
+    url = get_database_url()
+    try:
+        engine = create_engine(url)
+        Base.metadata.create_all(engine)
+        return engine
+    except Exception as e:
+        # Safe debug print (mask password)
+        safe_url = url
+        if '@' in safe_url:
+            part1 = safe_url.split('@')[0]
+            part2 = safe_url.split('@')[1]
+            # Mask password
+            if ':' in part1:
+                safe_url = part1.split(':')[0] + ':****@' + part2
+        
+        print(f"❌ DB CONNECTION ERROR: {str(e)}")
+        print(f"❌ URL Structure causing error: {safe_url}")
+        raise e
 
 def get_session():
     """Get database session with error handling"""
