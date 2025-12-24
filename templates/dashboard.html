@@ -360,6 +360,10 @@
             style="font-size: 2.5rem; font-weight: 700; background: linear-gradient(135deg, #fff, var(--primary)); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
             Members</h1>
         <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
+            <a href="{{ url_for('analytics') }}" class="btn"
+                style="background: linear-gradient(135deg, var(--primary), var(--secondary)); border: none;">
+                📊 Analytics
+            </a>
             <input type="text" id="memberSearch" onkeyup="filterMembers()" placeholder="🔍 Search members..."
                 style="padding: 0.75rem 1rem; border-radius: 24px; border: 1px solid var(--border); background: var(--bg-card); color: var(--text); width: 250px; transition: all 0.3s;"
                 onfocus="this.style.width='300px'" onblur="this.style.width='250px'">
