@@ -926,8 +926,18 @@ def member_details(member_id):
         flash('Member not found!', 'error')
         return redirect(url_for('dashboard'))
         
-    attendance_history = gym.get_attendance(member_id)
-        
+    # Safe data fetching to prevent 500 errors if DB schema is mismatched
+    attendance_history = []
+    fees_history = []
+    try:
+        attendance_history = gym.get_attendance(member_id)
+        fees_history = gym.get_member_fees(member_id)
+    except Exception as e:
+        print(f"⚠️ DB Error fetching details: {str(e)}")
+        flash(f'Database Schema Error: {str(e)}', 'error')
+        flash('⚠️ Please run the Database Fix Tool to repair this!', 'warning')
+        # We don't return here, we let the page load with empty history so user can see the "Fix DB" button
+    
     if request.method == 'POST':
         month = request.form.get('month')
         amount = float(request.form.get('amount') or 0)
@@ -938,8 +948,6 @@ def member_details(member_id):
             flash(f'Payment recorded successfully for {month}!', 'success')
         else:
             flash('Payment failed!', 'error')
-        return redirect(url_for('member_details', member_id=member_id))
-    
         return redirect(url_for('member_details', member_id=member_id))
     
     
@@ -962,7 +970,7 @@ def member_details(member_id):
     return render_template('member_details.html', 
                          member=member, 
                          gym_details=gym.get_gym_details(), 
-                         history=gym.get_member_fees(member_id),
+                         history=fees_history,
                          attendance_history=attendance_history,
                          current_month=datetime.now().strftime('%Y-%m'),
                          today=datetime.now().strftime('%Y-%m-%d'),

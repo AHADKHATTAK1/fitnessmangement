@@ -10,6 +10,22 @@
     </div>
 
     <!-- Member Profile Card -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+    {% for category, message in messages %}
+    {% if "Database Schema Error" in message %}
+    <div class="card"
+        style="background: rgba(239, 68, 68, 0.2); border: 1px solid var(--error); margin-bottom: 2rem; text-align: center;">
+        <h3 style="color: var(--error);">⚠️ Database Issue Detected</h3>
+        <p style="color: white; margin-bottom: 1rem;">The system found a database mismatch (likely missing columns).</p>
+        <a href="{{ url_for('fix_database_schema') }}" class="btn btn-warning"
+            style="font-weight: bold; background: #f59e0b; color: black; border: none; padding: 0.75rem 2rem;">
+            🛠️ CLICK HERE TO FIX DATABASE
+        </a>
+    </div>
+    {% endif %}
+    {% endfor %}
+    {% endwith %}
+
     <div class="card" style="margin-bottom: 2rem;">
         <div style="display: flex; gap: 2rem; align-items: start; flex-wrap: wrap;">
             <!-- Photo -->
