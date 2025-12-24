@@ -1421,37 +1421,53 @@ def generate_wallet_pass(member_id):
 
 @app.route('/fix_db')
 def fix_database_schema():
-    """Helper route to fix database schema mismatches on Render"""
+    """Helper route to fix ALL database schema mismatches on Render"""
     from sqlalchemy import text
+    results = []
+    
     try:
         from models import get_session
         session = get_session()
         
-        # Check if we need to rename check_in_time to created_at
+        # Fix 1: Ensure 'created_at' column exists
         try:
-            # Try to rename if it exists
-            session.execute(text('ALTER TABLE attendance RENAME COLUMN check_in_time TO created_at;'))
+            session.execute(text('ALTER TABLE attendance ADD COLUMN IF NOT EXISTS created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP;'))
             session.commit()
-            msg = "✅ Success: Renamed 'check_in_time' to 'created_at'"
+            results.append("✅ Added 'created_at' column")
         except Exception as e:
             session.rollback()
-            # If rename failed, maybe column doesn't exist or target already exists.
-            # Try adding created_at if it's missing entirely
-            try:
-                session.execute(text('ALTER TABLE attendance ADD COLUMN IF NOT EXISTS created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP;'))
-                session.commit()
-                msg = f"⚠️ Rename failed, so added 'created_at' column instead. Error was: {str(e)}"
-            except Exception as e2:
-                msg = f"❌ Failed to fix DB: {str(e)} | {str(e2)}"
+            results.append(f"⚠️ created_at: {str(e)[:100]}")
         
-        return f"""
-        <h1>Database Fix Status</h1>
-        <p>{msg}</p>
-        <br>
-        <a href="{url_for('dashboard')}">Go to Dashboard</a>
-        """
+        # Fix 2: Ensure 'emotion' column exists
+        try:
+            session.execute(text('ALTER TABLE attendance ADD COLUMN IF NOT EXISTS emotion VARCHAR(50);'))
+            session.commit()
+            results.append("✅ Added 'emotion' column")
+        except Exception as e:
+            session.rollback()
+            results.append(f"⚠️ emotion: {str(e)[:100]}")
+        
+        # Fix 3: Ensure 'confidence' column exists
+        try:
+            session.execute(text('ALTER TABLE attendance ADD COLUMN IF NOT EXISTS confidence DECIMAL(5, 2);'))
+            session.commit()
+            results.append("✅ Added 'confidence' column")
+        except Exception as e:
+            session.rollback()
+            results.append(f"⚠️ confidence: {str(e)[:100]}")
+        
+        # Success message
+        html = "<h1>🛠️ Database Schema Fix Complete</h1>"
+        html += "<ul>"
+        for r in results:
+            html += f"<li>{r}</li>"
+        html += "</ul>"
+        html += f"<br><a href='{url_for('dashboard')}' style='padding: 10px 20px; background: #10b981; color: white; text-decoration: none; border-radius: 8px;'>Go to Dashboard</a>"
+        
+        return html
+        
     except Exception as e:
-        return f"Mega Error: {str(e)}"
+        return f"<h1>Error</h1><p>{str(e)}</p>"
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
