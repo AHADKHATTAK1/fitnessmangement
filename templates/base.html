@@ -23,26 +23,38 @@
         }
 
         :root {
-            --primary: hsl(260, 80%, 60%);
-            --primary-dark: hsl(260, 80%, 45%);
-            --secondary: hsl(200, 90%, 55%);
-            --bg-dark: hsl(230, 20%, 10%);
-            --bg-card: hsla(230, 20%, 15%, 0.6);
-            --text: hsl(0, 0%, 95%);
-            --text-muted: hsl(0, 0%, 70%);
-            --success: hsl(140, 70%, 50%);
-            --error: hsl(0, 80%, 60%);
-            --border: hsla(0, 0%, 100%, 0.1);
+            /* VIP Future Theme */
+            --primary: #8b5cf6;
+            /* Violet Neon */
+            --primary-glow: rgba(139, 92, 246, 0.6);
+            --primary-dark: #6d28d9;
+            --secondary: #06b6d4;
+            /* Cyan Neon */
+            --secondary-glow: rgba(6, 182, 212, 0.6);
+            --bg-dark: #020617;
+            /* Slate 950 (Deep Black/Blue) */
+            --bg-card: rgba(15, 23, 42, 0.6);
+            /* Glassy Slate */
+            --text: #f8fafc;
+            --text-muted: #94a3b8;
+            --success: #10b981;
+            --error: #ef4444;
+            --border: rgba(255, 255, 255, 0.08);
+            --glass-border: rgba(255, 255, 255, 0.1);
+            --card-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5);
+            --neon-shadow: 0 0 15px rgba(139, 92, 246, 0.3);
         }
 
         body {
             font-family: 'Inter', sans-serif;
-            background: var(--bg-dark);
+            background-color: var(--bg-dark);
             color: var(--text);
             min-height: 100vh;
             background-image:
-                radial-gradient(at 10% 20%, hsla(260, 80%, 30%, 0.3) 0px, transparent 50%),
-                radial-gradient(at 90% 80%, hsla(200, 90%, 30%, 0.3) 0px, transparent 50%);
+                radial-gradient(circle at 15% 25%, rgba(139, 92, 246, 0.15) 0%, transparent 40%),
+                radial-gradient(circle at 85% 75%, rgba(6, 182, 212, 0.15) 0%, transparent 40%);
+            background-attachment: fixed;
+            /* Parallax feel */
         }
 
         .container {
@@ -98,61 +110,62 @@
             color: var(--primary);
         }
 
-        /* Cards */
+        /* Glassmorphism Cards */
         .card {
             background: var(--bg-card);
-            backdrop-filter: blur(10px);
-            border: 1px solid var(--border);
-            border-radius: 16px;
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid var(--glass-border);
+            border-radius: 20px;
             padding: 2rem;
             margin-bottom: 2rem;
-            transition: transform 0.3s, box-shadow 0.3s;
+            box-shadow: var(--card-shadow);
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
         }
 
         .card:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 30px hsla(260, 80%, 60%, 0.2);
+            transform: translateY(-5px) scale(1.01);
+            border-color: rgba(139, 92, 246, 0.3);
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.6), 0 0 20px rgba(139, 92, 246, 0.1);
         }
 
-        /* Buttons */
+        /* Neon Buttons */
         .btn {
             background: linear-gradient(135deg, var(--primary), var(--primary-dark));
             color: white;
             padding: 0.875rem 1.75rem;
             border: none;
-            border-radius: 10px;
+            border-radius: 12px;
             font-weight: 600;
             font-size: 0.95rem;
             cursor: pointer;
             transition: all 0.3s ease;
             text-decoration: none;
             display: inline-block;
-            box-shadow: 0 4px 15px hsla(260, 80%, 60%, 0.3);
+            box-shadow: 0 4px 15px rgba(139, 92, 246, 0.4);
             position: relative;
             overflow: hidden;
+            letter-spacing: 0.5px;
         }
 
         .btn::before {
             content: '';
             position: absolute;
-            top: 50%;
-            left: 50%;
-            width: 0;
-            height: 0;
-            border-radius: 50%;
-            background: rgba(255, 255, 255, 0.2);
-            transform: translate(-50%, -50%);
-            transition: width 0.6s, height 0.6s;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+            transition: 0.5s;
         }
 
         .btn:hover::before {
-            width: 300px;
-            height: 300px;
+            left: 100%;
         }
 
         .btn:hover {
             transform: translateY(-3px);
-            box-shadow: 0 8px 25px hsla(260, 80%, 60%, 0.5);
+            box-shadow: 0 8px 25px rgba(139, 92, 246, 0.6);
         }
 
         .btn:active {
@@ -160,12 +173,12 @@
         }
 
         .btn-secondary {
-            background: linear-gradient(135deg, var(--secondary), hsl(200, 90%, 40%));
-            box-shadow: 0 4px 15px hsla(200, 90%, 55%, 0.3);
+            background: linear-gradient(135deg, var(--secondary), #0891b2);
+            box-shadow: 0 4px 15px rgba(6, 182, 212, 0.3);
         }
 
         .btn-secondary:hover {
-            box-shadow: 0 8px 25px hsla(200, 90%, 55%, 0.5);
+            box-shadow: 0 8px 25px rgba(6, 182, 212, 0.5);
         }
 
         .btn-success {

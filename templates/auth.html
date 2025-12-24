@@ -5,35 +5,55 @@
 {% block content %}
 <style>
     .auth-container {
-        max-width: 450px;
-        margin: 4rem auto;
+        max-width: 480px;
+        margin: 6vh auto;
+        perspective: 1000px;
     }
 
     .auth-card {
-        background: var(--bg-card);
-        backdrop-filter: blur(10px);
-        border: 1px solid var(--border);
-        border-radius: 20px;
-        padding: 3rem;
-        box-shadow: 0 20px 60px hsla(260, 80%, 20%, 0.5);
+        background: rgba(15, 23, 42, 0.6);
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 24px;
+        padding: 3.5rem;
+        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5), 0 0 40px rgba(139, 92, 246, 0.15);
+        transform-style: preserve-3d;
+        animation: cardFloat 6s ease-in-out infinite;
+    }
+
+    @keyframes cardFloat {
+
+        0%,
+        100% {
+            transform: translateY(0);
+        }
+
+        50% {
+            transform: translateY(-10px);
+        }
     }
 
     .auth-header {
         text-align: center;
-        margin-bottom: 2rem;
+        margin-bottom: 2.5rem;
     }
 
     .auth-header h1 {
-        font-size: 2rem;
+        font-size: 2.5rem;
+        font-weight: 800;
         margin-bottom: 0.5rem;
-        background: linear-gradient(135deg, var(--primary), var(--secondary));
+        background: linear-gradient(135deg, #fff 0%, var(--primary) 50%, var(--secondary) 100%);
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
         background-clip: text;
+        filter: drop-shadow(0 0 2px rgba(139, 92, 246, 0.5));
     }
 
     .auth-header p {
         color: var(--text-muted);
+        font-size: 1.1rem;
+        letter-spacing: 0.5px;
     }
 </style>
 
@@ -56,17 +76,26 @@
         <form method="POST" id="form-login">
             <input type="hidden" name="action" value="login">
             <div class="form-group">
-                <label for="login_username">Email / Username</label>
-                <input type="text" id="login_username" name="username" required>
+                <label for="login_username"
+                    style="color: var(--primary); font-weight: 600; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 1px;">Email
+                    / Username</label>
+                <input type="text" id="login_username" name="username" required
+                    style="background: rgba(0,0,0,0.2); border: 1px solid var(--glass-border); border-radius: 12px; padding: 1rem; color: #fff; font-size: 1rem; transition: 0.3s;">
             </div>
             <div class="form-group">
-                <label for="login_password">Password</label>
-                <input type="password" id="login_password" name="password" required>
+                <label for="login_password"
+                    style="color: var(--primary); font-weight: 600; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 1px;">Password</label>
+                <input type="password" id="login_password" name="password" required
+                    style="background: rgba(0,0,0,0.2); border: 1px solid var(--glass-border); border-radius: 12px; padding: 1rem; color: #fff; font-size: 1rem; transition: 0.3s;">
             </div>
-            <button type="submit" class="btn" style="width: 100%;">Login</button>
-            <div style="text-align: center; margin-top: 1rem;">
+            <button type="submit" class="btn" style="width: 100%; padding: 1rem; font-size: 1.1rem; margin-top: 1rem;">
+                🚀 Enter Gym Manager
+            </button>
+            <div style="text-align: center; margin-top: 1.5rem;">
                 <a href="{{ url_for('forgot_password') }}"
-                    style="color: var(--primary); text-decoration: none; font-size: 0.9rem;">
+                    style="color: var(--text-muted); text-decoration: none; font-size: 0.9rem; transition: 0.3s;"
+                    onmouseover="this.style.color='#fff'; this.style.textShadow='0 0 10px #fff'"
+                    onmouseout="this.style.color='var(--text-muted)'; this.style.textShadow='none'">
                     Forgot Password?
                 </a>
             </div>
