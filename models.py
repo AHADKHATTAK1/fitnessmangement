@@ -52,12 +52,16 @@ class Member(Base):
     is_active = Column(Boolean, default=True)
     is_trial = Column(Boolean, default=False)
     trial_end_date = Column(Date)
+    birthday = Column(Date)  # NEW: For birthday alerts
+    last_check_in = Column(DateTime)  # NEW: For inactive member tracking
     created_at = Column(DateTime, default=datetime.utcnow)
     
     # Relationships
     gym = relationship('Gym', back_populates='members')
     fees = relationship('Fee', back_populates='member', cascade='all, delete-orphan')
     attendance = relationship('Attendance', back_populates='member', cascade='all, delete-orphan')
+    notes = relationship('MemberNote', back_populates='member', cascade='all, delete-orphan')
+    measurements = relationship('BodyMeasurement', back_populates='member', cascade='all, delete-orphan')
 
 class Fee(Base):
     __tablename__ = 'fees'
@@ -98,6 +102,33 @@ class Expense(Base):
     
     # Relationships
     gym = relationship('Gym', back_populates='expenses')
+
+class MemberNote(Base):
+    __tablename__ = 'member_notes'
+    
+    id = Column(Integer, primary_key=True)
+    member_id = Column(Integer, ForeignKey('members.id'), nullable=False)
+    note = Column(Text, nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    
+    # Relationships
+    member = relationship('Member', back_populates='notes')
+
+class BodyMeasurement(Base):
+    __tablename__ = 'body_measurements'
+    
+    id = Column(Integer, primary_key=True)
+    member_id = Column(Integer, ForeignKey('members.id'), nullable=False)
+    weight = Column(DECIMAL(5, 2))  # kg
+    body_fat = Column(DECIMAL(5, 2))  # percentage
+    chest = Column(DECIMAL(5, 2))  # cm
+    waist = Column(DECIMAL(5, 2))  # cm
+    arms = Column(DECIMAL(5, 2))  # cm
+    notes = Column(Text)
+    recorded_at = Column(DateTime, default=datetime.utcnow)
+    
+    # Relationships
+    member = relationship('Member', back_populates='measurements')
 
 # Database connection helper
 def get_database_url():

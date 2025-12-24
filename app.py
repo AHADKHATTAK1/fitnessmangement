@@ -1448,53 +1448,78 @@ def generate_wallet_pass(member_id):
 
 @app.route('/fix_db')
 def fix_database_schema():
-    """Helper route to fix ALL database schema mismatches on Render"""
+    """Helper route to fix ALL database schema mismatches and add new columns"""
     from sqlalchemy import text
     results = []
     
     try:
-        from models import get_session
+        from models import get_session, init_db
+        
+        # First, create all missing tables
+        try:
+            init_db()
+            results.append("✅ Created/verified all tables")
+        except Exception as e:
+            results.append(f"⚠️ Table creation: {str(e)[:100]}")
+        
         session = get_session()
         
-        # Fix 1: Ensure 'created_at' column exists
+        # Fix 1: Attendance table columns
         try:
             session.execute(text('ALTER TABLE attendance ADD COLUMN IF NOT EXISTS created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP;'))
             session.commit()
-            results.append("✅ Added 'created_at' column")
+            results.append("✅ Added 'created_at' to attendance")
         except Exception as e:
             session.rollback()
-            results.append(f"⚠️ created_at: {str(e)[:100]}")
+            results.append(f"⚠️ attendance.created_at: Already exists")
         
-        # Fix 2: Ensure 'emotion' column exists
         try:
             session.execute(text('ALTER TABLE attendance ADD COLUMN IF NOT EXISTS emotion VARCHAR(50);'))
             session.commit()
-            results.append("✅ Added 'emotion' column")
+            results.append("✅ Added 'emotion' to attendance")
         except Exception as e:
             session.rollback()
-            results.append(f"⚠️ emotion: {str(e)[:100]}")
+            results.append(f"⚠️ attendance.emotion: Already exists")
         
-        # Fix 3: Ensure 'confidence' column exists
         try:
             session.execute(text('ALTER TABLE attendance ADD COLUMN IF NOT EXISTS confidence DECIMAL(5, 2);'))
             session.commit()
-            results.append("✅ Added 'confidence' column")
+            results.append("✅ Added 'confidence' to attendance")
         except Exception as e:
             session.rollback()
-            results.append(f"⚠️ confidence: {str(e)[:100]}")
+            results.append(f"⚠️ attendance.confidence: Already exists")
+        
+        # Fix 2: Member table new columns for advanced features
+        try:
+            session.execute(text('ALTER TABLE members ADD COLUMN IF NOT EXISTS birthday DATE;'))
+            session.commit()
+            results.append("✅ Added 'birthday' to members")
+        except Exception as e:
+            session.rollback()
+            results.append(f"⚠️ members.birthday: Already exists")
+        
+        try:
+            session.execute(text('ALTER TABLE members ADD COLUMN IF NOT EXISTS last_check_in TIMESTAMP;'))
+            session.commit()
+            results.append("✅ Added 'last_check_in' to members")
+        except Exception as e:
+            session.rollback()
+            results.append(f"⚠️ members.last_check_in: Already exists")
         
         # Success message
-        html = "<h1>🛠️ Database Schema Fix Complete</h1>"
-        html += "<ul>"
+        html = "<h1 style='color: #10b981;'>🛠️ Database Schema Fix Complete</h1>"
+        html += "<p style='margin: 20px 0;'>All database updates applied successfully!</p>"
+        html += "<ul style='list-style: none; padding: 0;'>"
         for r in results:
-            html += f"<li>{r}</li>"
+            color = '#10b981' if '✅' in r else '#f59e0b'
+            html += f"<li style='color: {color}; margin: 8px 0;'>{r}</li>"
         html += "</ul>"
-        html += f"<br><a href='{url_for('dashboard')}' style='padding: 10px 20px; background: #10b981; color: white; text-decoration: none; border-radius: 8px;'>Go to Dashboard</a>"
+        html += f"<br><a href='{url_for('dashboard')}' style='display: inline-block; padding: 12px 24px; background: #10b981; color: white; text-decoration: none; border-radius: 8px; font-weight: bold;'>Go to Dashboard</a>"
         
         return html
         
     except Exception as e:
-        return f"<h1>Error</h1><p>{str(e)}</p>"
+        return f"<h1 style='color: #ef4444;'>Error</h1><p>{str(e)}</p>"
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
