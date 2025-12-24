@@ -515,9 +515,9 @@ class GymManager:
             return sorted(self.data['attendance'].get(str(member_id), []), 
                           key=lambda x: x.get('timestamp', ''), reverse=True)
 
-        records = self.session.query(Attendance).filter_by(member_id=int(member_id)).order_by(Attendance.check_in_time.desc()).all()
+        records = self.session.query(Attendance).filter_by(member_id=int(member_id)).order_by(Attendance.created_at.desc()).all()
         return [{
-            'timestamp': r.check_in_time.strftime('%Y-%m-%d %H:%M:%S'),
+            'timestamp': r.created_at.strftime('%Y-%m-%d %H:%M:%S'),
             'emotion': r.emotion,
             'confidence': float(r.confidence) if r.confidence else None
         } for r in records]
