@@ -6,7 +6,6 @@ from auth_manager import AuthManager
 import os
 import json
 from datetime import datetime, timedelta
-import pandas as pd
 from reportlab.lib.pagesizes import letter
 from reportlab.pdfgen import canvas
 from reportlab.lib.utils import ImageReader

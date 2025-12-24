@@ -9,7 +9,6 @@ from datetime import datetime, timedelta
 from typing import Dict, List, Optional, Tuple
 from sqlalchemy import func, extract
 from sqlalchemy.exc import IntegrityError
-import pandas as pd
 import os
 import json
 
