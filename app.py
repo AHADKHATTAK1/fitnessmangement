@@ -851,12 +851,28 @@ def add_member():
     
     # Generate months for dropdown
     current_date = datetime.now()
-    # Snap to first of current month, then go back 12 months
-    start_date = current_date.replace(day=1) - pd.DateOffset(months=12)
+    available_months = []
+    # Generate 12 past months, current month, and 24 future months (total 37)
+    # Start from 12 months ago and go forward
+    start_month_calc = current_date.replace(day=1) - timedelta(days=365) # Roughly 12 months ago
     
-    # Generate range and format as (value, label) tuples (12 past + current + 24 future = 37)
-    dates = pd.date_range(start=start_date, periods=37, freq='MS')
-    available_months = [{'value': d.strftime('%Y-%m'), 'label': d.strftime('%B %Y')} for d in dates][::-1]
+    for i in range(37):
+        # Calculate month by adding i months to the start_month_calc
+        year = start_month_calc.year
+        month = start_month_calc.month + i
+        
+        while month > 12:
+            month -= 12
+            year += 1
+        
+        date_obj = datetime(year, month, 1)
+        available_months.append({
+            'value': date_obj.strftime('%Y-%m'),
+            'label': date_obj.strftime('%B %Y')
+        })
+    
+    # Reverse to show future months first, then current, then past
+    available_months.reverse()
     
     if request.method == 'POST':
         name = request.form.get('name')
