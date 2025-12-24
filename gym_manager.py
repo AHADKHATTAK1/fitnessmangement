@@ -523,54 +523,77 @@ class GymManager:
         } for r in records]
 
     def bulk_import_members(self, filepath):
-        """Import members from Excel/CSV with batch processing"""
+        """Import members from Excel/CSV with batch processing - NO PANDAS"""
+        import csv
+        from openpyxl import load_workbook
+        
         try:
+            # Read file based on extension
+            rows_data = []
+            headers = []
+            
             if filepath.endswith('.csv'):
-                df = pd.read_csv(filepath)
+                with open(filepath, 'r', encoding='utf-8') as f:
+                    reader = csv.DictReader(f)
+                    headers = reader.fieldnames
+                    rows_data = list(reader)
             else:
-                df = pd.read_excel(filepath)
+                # Excel file - use openpyxl instead of pandas
+                wb = load_workbook(filepath, read_only=True, data_only=True)
+                ws = wb.active
+                headers = [cell.value for cell in next(ws.iter_rows(min_row=1, max_row=1))]
+                
+                for row in ws.iter_rows(min_row=2, values_only=True):
+                    row_dict = {headers[i]: row[i] for i in range(len(headers)) if i < len(row)}
+                    rows_data.append(row_dict)
+                wb.close()
             
             success = 0
             errors = []
             new_members = []
+            fee_records = []  # NEW: Store fee records for paid months
             
             # Legacy Mode: Fallback to single add
             if self.legacy:
-                for _, row in df.iterrows():
+                for idx, row in enumerate(rows_data):
                     try:
-                        name = str(row['Name']).strip()
-                        phone = str(row['Phone']).strip()
+                        name = str(row['Name']).strip() if row.get('Name') else ''
+                        phone = str(row['Phone']).strip() if row.get('Phone') else ''
                         self.add_member(name, phone)
                         success += 1
                     except Exception as e:
-                        errors.append(f"Row {_}: {str(e)}")
+                        errors.append(f"Row {idx}: {str(e)}")
                 return success, len(errors), errors
 
             # Database Mode: Batch Processing
             # 1. Get existing phones to avoid duplicates
             existing_phones = {m.phone for m in self.session.query(Member).filter_by(gym_id=self.gym.id).all()}
             
-            for index, row in df.iterrows():
+            for index, row in enumerate(rows_data):
                 try:
-                    name = str(row['Name']).strip()
-                    phone = str(row['Phone']).strip()
+                    name = str(row['Name']).strip() if row.get('Name') else ''
+                    phone = str(row['Phone']).strip() if row.get('Phone') else ''
+                    
+                    if not name or not phone:
+                        errors.append(f"Row {index}: Missing name or phone")
+                        continue
                     
                     if phone in existing_phones:
                         errors.append(f"Row {index}: Member with phone {phone} already exists")
                         continue
                         
                     # Handle optional fields
-                    email = str(row['Email']).strip() if 'Email' in row and pd.notna(row['Email']) else None
-                    membership_type = str(row['Membership Type']).strip() if 'Membership Type' in row and pd.notna(row['Membership Type']) else 'Gym'
+                    email = str(row['Email']).strip() if row.get('Email') and row['Email'] else None
+                    membership_type = str(row['Membership Type']).strip() if row.get('Membership Type') and row['Membership Type'] else 'Gym'
                     
                     joined_date = datetime.now().date()
-                    if 'Joined Date' in row and pd.notna(row['Joined Date']):
+                    if row.get('Joined Date') and row['Joined Date']:
                         try:
                             jd = row['Joined Date']
                             if isinstance(jd, str):
                                 joined_date = datetime.strptime(jd, '%Y-%m-%d').date()
-                            else:
-                                joined_date = jd.date()
+                            elif hasattr(jd, 'date'):
+                                joined_date = jd.date() if callable(jd.date) else jd
                         except:
                             pass
 
@@ -587,6 +610,19 @@ class GymManager:
                     )
                     new_members.append(member)
                     existing_phones.add(phone) # Prevent duplicates within same file
+                    
+                    # NEW: Check for Paid Month column to auto-create fee record
+                    paid_month = row.get('Paid Month') or row.get('paid_month')
+                    amount = row.get('Amount') or row.get('amount')
+                    
+                    if paid_month and str(paid_month).strip():
+                        # Store for later processing after member is added
+                        fee_records.append({
+                            'phone': phone,
+                            'month': str(paid_month).strip(),
+                            'amount': float(amount) if amount else 0.0
+                        })
+                    
                     success += 1
                     
                 except Exception as e:
@@ -604,25 +640,39 @@ class GymManager:
                         self.session.flush()
                         self.session.commit()
                         print(f"✓ Bulk Import: Committed batch {i}-{min(i+batch_size, total_to_add)}")
+                    
+                    # NEW: Process fee records for paid months
+                    if fee_records:
+                        print(f"💰 Processing {len(fee_records)} fee records...")
+                        for fee_data in fee_records:
+                            try:
+                                # Find member by phone
+                                member = self.session.query(Member).filter_by(
+                                    gym_id=self.gym.id,
+                                    phone=fee_data['phone']
+                                ).first()
+                                
+                                if member:
+                                    # Create fee record
+                                    fee = Fee(
+                                        member_id=member.id,
+                                        month=fee_data['month'],
+                                        amount=fee_data['amount'],
+                                        paid_date=datetime.now().date()
+                                    )
+                                    self.session.add(fee)
+                            except Exception as e:
+                                print(f"⚠️ Fee record error: {str(e)}")
                         
+                        self.session.commit()
+                        print(f"✅ Fee records processed successfully")
+                    
                     # Final flush
                     self.session.flush()
                     
                 except Exception as e:
                     self.session.rollback()
-                    # Return partial success if some batches committed? 
-                    # For now just reporting error but some data might be saved from previous batches
                     return success, len(errors) + 1, errors + [f"Database Commit Error: {str(e)}"]
-                    
-                    # Verify data actually saved (for Railway debugging)
-                    import time
-                    time.sleep(0.5)  # Small delay for Railway DB
-                    actual_count = self.session.query(Member).filter_by(gym_id=self.gym.id).count()
-                    print(f"✅ Import complete: {success} added, {actual_count} total in DB")
-                    
-                except Exception as e:
-                    self.session.rollback()
-                    return 0, 1, [f"Database Commit Error: {str(e)}"]
                     
             return success, len(errors), errors
             
