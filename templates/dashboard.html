@@ -312,6 +312,131 @@
         </div>
     </div>
 
+    <!-- SMART ALERTS SECTION -->
+    {% if unpaid_members_alert or expiring_trials_alert or birthdays_today_alert or inactive_members_alert %}
+    <div style="margin-bottom: 2rem;">
+        <h2 style="margin-bottom: 1.5rem; color: var(--primary); font-weight: 800;">🔔 Smart Alerts</h2>
+
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.5rem;">
+
+            <!-- Unpaid Members Alert -->
+            {% if unpaid_members_alert %}
+            <div class="card member-card-3d"
+                style="background: rgba(239, 68, 68, 0.1); border-left: 4px solid var(--error);">
+                <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1rem;">
+                    <div style="font-size: 2rem;">💸</div>
+                    <div>
+                        <h3
+                            style="margin: 0; color: var(--error); font-size: 0.9rem; text-transform: uppercase; letter-spacing: 1px;">
+                            Payment Due</h3>
+                        <p style="margin: 0.25rem 0 0 0; color: var(--text-muted); font-size: 0.85rem;">{{
+                            unpaid_members_alert|length }} members</p>
+                    </div>
+                </div>
+                <div style="max-height: 150px; overflow-y: auto;">
+                    {% for member in unpaid_members_alert %}
+                    <div
+                        style="padding: 0.5rem; background: rgba(0,0,0,0.2); border-radius: 8px; margin-bottom: 0.5rem; display: flex; justify-content: space-between; align-items: center;">
+                        <span style="font-size: 0.85rem;">{{ member.name }}</span>
+                        <a href="https://wa.me/{{ member.phone.replace(' ', '') }}?text=Hi%20{{ member.name }},%20your%20gym%20fee%20for%20{{ current_month }}%20is%20pending!"
+                            target="_blank" style="color: #25D366; text-decoration: none; font-size: 1.2rem;">💬</a>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Trials Expiring Soon -->
+            {% if expiring_trials_alert %}
+            <div class="card member-card-3d"
+                style="background: rgba(251, 191, 36, 0.1); border-left: 4px solid #fbbf24;">
+                <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1rem;">
+                    <div style="font-size: 2rem;">⏰</div>
+                    <div>
+                        <h3
+                            style="margin: 0; color: #fbbf24; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 1px;">
+                            Trials Expiring</h3>
+                        <p style="margin: 0.25rem 0 0 0; color: var(--text-muted); font-size: 0.85rem;">Next 3 days</p>
+                    </div>
+                </div>
+                <div style="max-height: 150px; overflow-y: auto;">
+                    {% for member in expiring_trials_alert %}
+                    <div
+                        style="padding: 0.5rem; background: rgba(0,0,0,0.2); border-radius: 8px; margin-bottom: 0.5rem; display: flex; justify-content: space-between; align-items: center;">
+                        <div>
+                            <div style="font-size: 0.85rem;">{{ member.name }}</div>
+                            <div style="font-size: 0.7rem; color: var(--text-muted);">{{ member.days_left }} days left
+                            </div>
+                        </div>
+                        <a href="https://wa.me/{{ member.phone.replace(' ', '') }}?text=Hi%20{{ member.name }},%20your%20trial%20ends%20soon!%20Convert%20to%20full%20membership?"
+                            target="_blank" style="color: #25D366; text-decoration: none; font-size: 1.2rem;">💬</a>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Birthdays Today -->
+            {% if birthdays_today_alert %}
+            <div class="card member-card-3d"
+                style="background: rgba(236, 72, 153, 0.1); border-left: 4px solid #ec4899;">
+                <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1rem;">
+                    <div style="font-size: 2rem;">🎂</div>
+                    <div>
+                        <h3
+                            style="margin: 0; color: #ec4899; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 1px;">
+                            Birthdays Today</h3>
+                        <p style="margin: 0.25rem 0 0 0; color: var(--text-muted); font-size: 0.85rem;">Celebrate!</p>
+                    </div>
+                </div>
+                <div style="max-height: 150px; overflow-y: auto;">
+                    {% for member in birthdays_today_alert %}
+                    <div
+                        style="padding: 0.5rem; background: rgba(0,0,0,0.2); border-radius: 8px; margin-bottom: 0.5rem; display: flex; justify-content: space-between; align-items: center;">
+                        <span style="font-size: 0.85rem;">{{ member.name }}</span>
+                        <a href="https://wa.me/{{ member.phone.replace(' ', '') }}?text=Happy%20Birthday%20{{ member.name }}!%20🎉%20Wishing%20you%20health%20and%20happiness!"
+                            target="_blank" style="color: #25D366; text-decoration: none; font-size: 1.2rem;">🎉</a>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Inactive Members -->
+            {% if inactive_members_alert %}
+            <div class="card member-card-3d"
+                style="background: rgba(148, 163, 184, 0.1); border-left: 4px solid #94a3b8;">
+                <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1rem;">
+                    <div style="font-size: 2rem;">😴</div>
+                    <div>
+                        <h3
+                            style="margin: 0; color: #94a3b8; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 1px;">
+                            Inactive Members</h3>
+                        <p style="margin: 0.25rem 0 0 0; color: var(--text-muted); font-size: 0.85rem;">No check-in 14+
+                            days</p>
+                    </div>
+                </div>
+                <div style="max-height: 150px; overflow-y: auto;">
+                    {% for member in inactive_members_alert %}
+                    <div
+                        style="padding: 0.5rem; background: rgba(0,0,0,0.2); border-radius: 8px; margin-bottom: 0.5rem; display: flex; justify-content: space-between; align-items: center;">
+                        <div>
+                            <div style="font-size: 0.85rem;">{{ member.name }}</div>
+                            <div style="font-size: 0.7rem; color: var(--text-muted);">{{ member.days_inactive }} days
+                            </div>
+                        </div>
+                        <a href="https://wa.me/{{ member.phone.replace(' ', '') }}?text=Hi%20{{ member.name }},%20we%20miss%20you!%20Everything%20okay?"
+                            target="_blank" style="color: #25D366; text-decoration: none; font-size: 1.2rem;">💬</a>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+
+        </div>
+    </div>
+    {% endif %}
+
     <!-- Revenue Chart Section -->
     <div class="card member-card-3d"
         style="margin-bottom: 2rem; background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.1);">

@@ -624,6 +624,56 @@ def dashboard():
     # Calculate max revenue for chart scaling
     max_revenue = max([r['revenue'] for r in revenue_trend]) if revenue_trend else 1
     
+    # ==================== SMART ALERTS ====================
+    
+    # Alert 1: Unpaid Members (current month)
+    unpaid_members = [m for m in all_members if not gym.is_fee_paid(m['id'], current_month)]
+    
+    # Alert 2: Trials Expiring Soon (next 3 days)
+    expiring_trials = []
+    today = datetime.now().date()
+    for member in all_members:
+        if member.get('is_trial') and member.get('trial_end_date'):
+            try:
+                trial_end = datetime.strptime(str(member['trial_end_date']), '%Y-%m-%d').date()
+                days_left = (trial_end - today).days
+                if 0 <= days_left <= 3:
+                    expiring_trials.append({**member, 'days_left': days_left})
+            except:
+                pass
+    
+    # Alert 3: Birthdays Today
+    birthdays_today = []
+    if not gym.legacy:
+        for member in all_members:
+            if member.get('birthday'):
+                try:
+                    bday = datetime.strptime(str(member['birthday']), '%Y-%m-%d').date()
+                    if bday.month == today.month and bday.day == today.day:
+                        birthdays_today.append(member)
+                except:
+                    pass
+    
+    # Alert 4: Inactive Members (no check-in for 14+ days)
+    inactive_members = []
+    cutoff_date = datetime.now() - timedelta(days=14)
+    for member in all_members:
+        attendance = gym.get_attendance(member['id'])
+        if attendance:
+            try:
+                last_checkin = datetime.strptime(attendance[0]['timestamp'], '%Y-%m-%d %H:%M:%S')
+                if last_checkin < cutoff_date:
+                    days_inactive = (datetime.now() - last_checkin).days
+                    inactive_members.append({**member, 'days_inactive': days_inactive})
+            except:
+                pass
+        else:
+            # Never checked in
+            inactive_members.append({**member, 'days_inactive': 999})
+    
+    # Sort and limit
+    inactive_members = sorted(inactive_members, key=lambda x: x['days_inactive'], reverse=True)[:5]
+    
     return render_template('dashboard.html',
                          total_members=len(all_members),
                          paid=status['paid'],
@@ -636,7 +686,12 @@ def dashboard():
                          revenue_trend=revenue_trend,
                          max_revenue=max_revenue,
                          revenue_change=revenue_change,
-                         gym_details=gym.get_gym_details())
+                         gym_details=gym.get_gym_details(),
+                         # Smart Alerts
+                         unpaid_members_alert=unpaid_members[:5],
+                         expiring_trials_alert=expiring_trials,
+                         birthdays_today_alert=birthdays_today,
+                         inactive_members_alert=inactive_members)
 
 @app.route('/analytics')
 def analytics():
