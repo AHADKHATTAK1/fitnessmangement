@@ -796,6 +796,53 @@ def analytics():
                          max_attendance=max_attendance if max_attendance > 0 else 1,
                          top_performers=top_performers)
 
+@app.route('/bulk-operations')
+def bulk_operations():
+    gym = get_gym()
+    if not gym: return redirect(url_for('auth'))
+    
+    all_members = gym.get_all_members()
+    current_month = datetime.now().strftime('%Y-%m')
+    
+    # Add is_paid status to members
+    for member in all_members:
+        member['is_paid'] = gym.is_fee_paid(member['id'], current_month)
+    
+    # Generate months
+    current_date = datetime.now()
+    available_months = []
+    for i in range(12):
+        year = current_date.year
+        month = current_date.month - i
+        while month <= 0:
+            month += 12
+            year -= 1
+        available_months.append(f"{year}-{month:02d}")
+    
+    return render_template('bulk_operations.html',
+                         members=all_members,
+                         current_month=current_month,
+                         available_months=available_months)
+
+@app.route('/bulk-payment', methods=['POST'])
+def bulk_payment():
+    gym = get_gym()
+    if not gym: return redirect(url_for('auth'))
+    
+    member_ids = request.form.get('member_ids', '').split(',')
+    month = request.form.get('month')
+    amount = float(request.form.get('amount', 0))
+    
+    success_count = 0
+    for member_id in member_ids:
+        if member_id.strip():
+            if gym.pay_fee(member_id.strip(), month, amount, datetime.now().strftime('%Y-%m-%d')):
+                success_count += 1
+    
+    flash(f'✅ Successfully recorded {success_count} payments!', 'success')
+    return redirect(url_for('bulk_operations'))
+
+
 
 @app.route('/add_member', methods=['GET', 'POST'])
 def add_member():

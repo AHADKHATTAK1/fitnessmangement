@@ -489,6 +489,10 @@
                 style="background: linear-gradient(135deg, var(--primary), var(--secondary)); border: none;">
                 📊 Analytics
             </a>
+            <a href="{{ url_for('bulk_operations') }}" class="btn"
+                style="background: linear-gradient(135deg, var(--secondary), var(--primary)); border: none;">
+                ⚡ Bulk Operations
+            </a>
             <input type="text" id="memberSearch" onkeyup="filterMembers()" placeholder="🔍 Search members..."
                 style="padding: 0.75rem 1rem; border-radius: 24px; border: 1px solid var(--border); background: var(--bg-card); color: var(--text); width: 250px; transition: all 0.3s;"
                 onfocus="this.style.width='300px'" onblur="this.style.width='250px'">
