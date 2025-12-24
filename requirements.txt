@@ -28,5 +28,5 @@ psycopg2-binary==2.9.9
 SQLAlchemy==2.0.23
 
 # Data processing  
-pandas==2.2.3
+# pandas removed - using openpyxl/csv instead
 openpyxl==3.1.2

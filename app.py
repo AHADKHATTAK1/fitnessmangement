@@ -1310,41 +1310,56 @@ def bulk_import():
 
 @app.route('/download_template')
 def download_template():
-    """Download sample Excel template for bulk import"""
+    """Download sample Excel template for bulk import - USING OPENPYXL (NO PANDAS)"""
     gym = get_gym()
     if not gym: return redirect(url_for('auth'))
     
-    # Create sample data
-    sample_data = {
-        'Name': ['John Doe', 'Jane Smith', 'Ahmed Ali'],
-        'Phone': ['03001234567', '03117654321', '03009876543'],
-        'Email': ['john@example.com', 'jane@example.com', 'ahmed@example.com'],
-        'Membership Type': ['Gym', 'Gym + Cardio', 'Gym'],
-        'Joined Date': ['2025-01-01', '2025-01-05', '2025-01-10']
-    }
+    from openpyxl import Workbook
+    from openpyxl.styles import Font, PatternFill, Alignment
+    from io import BytesIO
     
-    df = pd.DataFrame(sample_data)
+    # Create workbook
+    wb = Workbook()
+    ws = wb.active
+    ws.title = "Members"
     
-    # Create Excel file
+    # Headers
+    headers = ['Name', 'Phone', 'Email', 'Membership Type', 'Joined Date']
+    
+    # Style for headers
+    header_font = Font(bold=True, color="FFFFFF")
+    header_fill = PatternFill(start_color="333333", end_color="333333", fill_type="solid")
+    center_align = Alignment(horizontal='center')
+    
+    for col_num, header in enumerate(headers, 1):
+        cell = ws.cell(row=1, column=col_num)
+        cell.value = header
+        cell.font = header_font
+        cell.fill = header_fill
+        cell.alignment = center_align
+    
+    # Sample Data
+    sample_data = [
+        ['John Doe', '03001234567', 'john@example.com', 'Gym', '2025-01-01'],
+        ['Jane Smith', '03117654321', 'jane@example.com', 'Gym + Cardio', '2025-01-05'],
+        ['Ahmed Ali', '03009876543', 'ahmed@example.com', 'Gym', '2025-01-10']
+    ]
+    
+    for row_num, row_data in enumerate(sample_data, 2):
+        for col_num, cell_value in enumerate(row_data, 1):
+            ws.cell(row=row_num, column=col_num).value = cell_value
+    
+    # Adjust column widths
+    column_widths = [20, 15, 25, 20, 15]
+    for i, width in enumerate(column_widths, 1):
+        ws.column_dimensions[chr(64 + i)].width = width
+    
+    # Save to buffer
     output = BytesIO()
-    with pd.ExcelWriter(output, engine='openpyxl') as writer:
-        df.to_excel(writer, index=False, sheet_name='Members')
-        
-        # Get workbook and worksheet
-        workbook = writer.book
-        worksheet = writer.sheets['Members']
-        
-        # Set column widths
-        worksheet.column_dimensions['A'].width = 20
-        worksheet.column_dimensions['B'].width = 15
-        worksheet.column_dimensions['C'].width = 25
-        worksheet.column_dimensions['D'].width = 20
-        worksheet.column_dimensions['E'].width = 15
-    
+    wb.save(output)
     output.seek(0)
     
-    filename = 'member_import_template.xlsx'
-    return send_file(output, download_name=filename, as_attachment=True)
+    return send_file(output, download_name='member_import_template.xlsx', as_attachment=True)
 
 @app.route('/member/<member_id>/wallet_pass')
 def generate_wallet_pass(member_id):
