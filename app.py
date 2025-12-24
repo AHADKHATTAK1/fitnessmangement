@@ -1332,7 +1332,7 @@ def download_template():
     ws.title = "Members"
     
     # Headers
-    headers = ['Name', 'Phone', 'Email', 'Membership Type', 'Joined Date']
+    headers = ['Name', 'Phone', 'Email', 'Membership Type', 'Joined Date', 'Paid Month', 'Amount']
     
     # Style for headers
     header_font = Font(bold=True, color="FFFFFF")
@@ -1346,11 +1346,12 @@ def download_template():
         cell.fill = header_fill
         cell.alignment = center_align
     
-    # Sample Data
+    # Sample Data (with Payment Example)
+    current_month = datetime.now().strftime('%Y-%m')
     sample_data = [
-        ['John Doe', '03001234567', 'john@example.com', 'Gym', '2025-01-01'],
-        ['Jane Smith', '03117654321', 'jane@example.com', 'Gym + Cardio', '2025-01-05'],
-        ['Ahmed Ali', '03009876543', 'ahmed@example.com', 'Gym', '2025-01-10']
+        ['John Doe', '03001234567', 'john@example.com', 'Gym', '2025-01-01', current_month, 2500],
+        ['Jane Smith', '03117654321', 'jane@example.com', 'Gym + Cardio', '2025-01-05', '', ''], # Unpaid example
+        ['Ahmed Ali', '03009876543', 'ahmed@example.com', 'Gym', '2025-01-10', current_month, 3000]
     ]
     
     for row_num, row_data in enumerate(sample_data, 2):
