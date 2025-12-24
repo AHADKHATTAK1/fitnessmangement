@@ -1105,7 +1105,36 @@ def member_details(member_id):
                          attendance_history=attendance_history,
                          current_month=datetime.now().strftime('%Y-%m'),
                          today=datetime.now().strftime('%Y-%m-%d'),
-                         available_months=available_months)
+                         available_months=available_months,
+                         notes=gym.get_member_notes(member_id),
+                         timeline=gym.get_member_timeline(member_id))
+
+@app.route('/member/<member_id>/add_note', methods=['POST'])
+def add_member_note(member_id):
+    gym = get_gym()
+    if not gym: return redirect(url_for('auth'))
+    
+    note_text = request.form.get('note')
+    if note_text and note_text.strip():
+        if gym.add_member_note(member_id, note_text.strip()):
+            flash('📝 Note added successfully!', 'success')
+        else:
+            flash('Failed to add note', 'error')
+    
+    return redirect(url_for('member_details', member_id=member_id))
+
+@app.route('/member/<member_id>/delete_note/<note_id>')
+def delete_member_note(member_id, note_id):
+    gym = get_gym()
+    if not gym: return redirect(url_for('auth'))
+    
+    if gym.delete_member_note(note_id):
+        flash('🗑️ Note deleted!', 'success')
+    else:
+        flash('Failed to delete note', 'error')
+    
+    return redirect(url_for('member_details', member_id=member_id))
+
 
 @app.route('/member/<member_id>/delete_fee/<month>', methods=['POST'])
 def delete_fee_record(member_id, month):
