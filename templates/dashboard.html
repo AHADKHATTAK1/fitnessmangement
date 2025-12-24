@@ -315,30 +315,43 @@
     <!-- Revenue Chart Section -->
     <div class="card member-card-3d"
         style="margin-bottom: 2rem; background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.1);">
-        <h2 style="margin-bottom: 1.5rem; color: var(--primary); font-weight: 800;">📊 Revenue Trend</h2>
-        <div class="revenue-chart">
-            <div class="revenue-bar" style="height: 60%;">
-                <div class="revenue-bar-label">Jan</div>
-            </div>
-            <div class="revenue-bar" style="height: 75%;">
-                <div class="revenue-bar-label">Feb</div>
-            </div>
-            <div class="revenue-bar" style="height: 85%;">
-                <div class="revenue-bar-label">Mar</div>
-            </div>
-            <div class="revenue-bar" style="height: 70%;">
-                <div class="revenue-bar-label">Apr</div>
-            </div>
-            <div class="revenue-bar" style="height: 95%;">
-                <div class="revenue-bar-label">May</div>
-            </div>
-            <div class="revenue-bar" style="height: 100%;">
-                <div class="revenue-bar-label">Jun</div>
-            </div>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+            <h2 style="color: var(--primary); font-weight: 800; margin: 0;">📊 Revenue Trend</h2>
+            <button onclick="toggleChart()"
+                style="background: none; border: none; cursor: pointer; color: white; font-size: 1.5rem; opacity: 0.8; transition: opacity 0.3s;"
+                onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.8'">
+                👁️
+            </button>
         </div>
-        <p style="text-align: center; margin-top: 2rem; color: var(--text-muted); font-size: 0.9rem;">Monthly revenue
-            comparison (Sample Data)</p>
+        <div id="revenue-chart-container">
+            <div class="revenue-chart">
+                {% for trend in revenue_trend %}
+                <div class="revenue-bar"
+                    style="height: {{ (trend.revenue / max_revenue * 100) if max_revenue > 0 else 0 }}%;"
+                    title="{{ gym_details.currency }}{{ trend.revenue }}">
+                    <div class="revenue-bar-label">{{ trend.month }}</div>
+                </div>
+                {% endfor %}
+            </div>
+            <p style="text-align: center; margin-top: 2rem; color: var(--text-muted); font-size: 0.9rem;">Last 6 Months
+                Revenue</p>
+        </div>
     </div>
+
+    <script>
+        let isChartHidden = false;
+
+        function toggleChart() {
+            const container = document.getElementById('revenue-chart-container');
+            isChartHidden = !isChartHidden;
+
+            if (isChartHidden) {
+                container.style.display = 'none';
+            } else {
+                container.style.display = 'block';
+            }
+        }
+    </script>
 
     <!-- Search and Actions -->
     <div

@@ -579,36 +579,63 @@ def dashboard():
     else:
         members_to_check = all_members
     
-    for member in members_to_check:
-        # Check if trial is expiring
-        if member.get('trial_end'):
-            trial_end = datetime.strptime(member['trial_end'], '%Y-%m-%d').date()
-            days_until_expiry = (trial_end - today).days
-            if 0 <= days_until_expiry <= 3:
-                expiring_count += 1
+    # Calculate expiring members (next 3 days)
+    expiring_count = 0
+    today = datetime.now().date()
+    for member in all_members:
+        if member.get('is_trial') and member.get('trial_end_date'):
+            try:
+                trial_end = datetime.strptime(str(member['trial_end_date']), '%Y-%m-%d').date()
+                days_left = (trial_end - today).days
+                if 0 <= days_left <= 3:
+                    expiring_count += 1
+            except:
+                pass
     
-    # Total members
-    total_members = len(gym.get_all_members())
+    # Calculate Revenue Trend (Last 6 Months) for Chart
+    revenue_trend = []
+    current_date = datetime.now()
     
-    # Available months for selector
-    available_months = []
-    for i in range(12):
-        month_date = datetime.now() - timedelta(days=30*i)
-        available_months.append({
-            'value': month_date.strftime('%Y-%m'),
-            'label': month_date.strftime('%B %Y')
+    for i in range(5, -1, -1):  # Go back 6 months
+        year = current_date.year
+        month = current_date.month - i
+        while month <= 0:
+            month += 12
+            year -= 1
+        
+        month_str = f"{year}-{month:02d}"
+        month_label = datetime(year, month, 1).strftime('%b')
+        
+        # Get revenue for this month
+        month_revenue = 0
+        for member in all_members:
+            if gym.is_fee_paid(member['id'], month_str):
+                payment_history = gym.get_payment_history(member['id'])
+                for payment in payment_history:
+                    if payment.get('month') == month_str:
+                        month_revenue += float(payment.get('amount', 0))
+                        break
+        
+        revenue_trend.append({
+            'month': month_label,
+            'revenue': month_revenue
         })
     
-    return render_template('dashboard.html', 
-                         paid=status['paid'], 
+    # Calculate max revenue for chart scaling
+    max_revenue = max([r['revenue'] for r in revenue_trend]) if revenue_trend else 1
+    
+    return render_template('dashboard.html',
+                         total_members=len(all_members),
+                         paid=status['paid'],
                          unpaid=status['unpaid'],
-                         all_members=gym.get_all_members(),
                          revenue=revenue,
-                         revenue_change=revenue_change,
-                         expiring_count=expiring_count,
-                         available_months=available_months,
                          current_month=current_month,
-                         total_members=total_members,
+                         all_members=all_members,
+                         available_months=available_months,
+                         expiring_count=expiring_count,
+                         revenue_trend=revenue_trend,
+                         max_revenue=max_revenue,
+                         revenue_change=revenue_change,
                          gym_details=gym.get_gym_details())
 
 @app.route('/add_member', methods=['GET', 'POST'])
