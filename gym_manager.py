@@ -1,10 +1,12 @@
+```
 """
 Database-backed Gym Manager
 Uses PostgreSQL via SQLAlchemy instead of JSON files
 Build Tag: 20251218-2135
 """
 
-from models import User, Gym, Member, Fee, Attendance, Expense, get_session
+from models import (Base, Member, Fee, Attendance, Expense, Gym, User, 
+                    get_database_url, get_session, MemberNote, BodyMeasurement)
 from datetime import datetime, timedelta
 from typing import Dict, List, Optional, Tuple
 from sqlalchemy import func, extract
@@ -673,12 +675,115 @@ class GymManager:
                 except Exception as e:
                     self.session.rollback()
                     return success, len(errors) + 1, errors + [f"Database Commit Error: {str(e)}"]
-                    
+                pass
+        
             return success, len(errors), errors
             
         except Exception as e:
             return 0, 1, [str(e)]
 
+    # ==================== MEMBER NOTES METHODS ====================
+    
+    def add_member_note(self, member_id, note_text):
+        """Add a note to a member's profile"""
+        if self.legacy:
+            return False  # Notes only work in SQL mode
+        
+        try:
+            note = MemberNote(
+                member_id=int(member_id),
+                note=note_text
+            )
+            self.session.add(note)
+            self.session.commit()
+            return True
+        except Exception as e:
+            print(f"Error adding note: {str(e)}")
+            self.session.rollback()
+            return False
+    
+    def get_member_notes(self, member_id):
+        """Get all notes for a member"""
+        if self.legacy:
+            return []
+        
+        try:
+            notes = self.session.query(MemberNote).filter_by(
+                member_id=int(member_id)
+            ).order_by(MemberNote.created_at.desc()).all()
+            
+            return [{
+                'id': note.id,
+                'note': note.note,
+                'created_at': note.created_at.strftime('%Y-%m-%d %H:%M:%S')
+            } for note in notes]
+        except:
+            return []
+    
+    def delete_member_note(self, note_id):
+        """Delete a specific note"""
+        if self.legacy:
+            return False
+        
+        try:
+            note = self.session.query(MemberNote).filter_by(id=int(note_id)).first()
+            if note:
+                self.session.delete(note)
+                self.session.commit()
+                return True
+            return False
+        except:
+            self.session.rollback()
+            return False
+    
+    def get_member_timeline(self, member_id):
+        """Get comprehensive activity timeline for a member"""
+        if self.legacy:
+            return []
+        
+        timeline = []
+        
+        # Get payments
+        fees = self.get_member_fees(member_id)
+        for fee in fees:
+            timeline.append({
+                'type': 'payment',
+                'icon': '💰',
+                'title': f"Payment Received - {fee.get('month')}",
+                'description': f"Amount: Rs {fee.get('amount')}",
+                'timestamp': fee.get('paid_date'),
+                'data': fee
+            })
+        
+        # Get attendance
+        attendance = self.get_attendance(member_id)
+        for record in attendance:
+            timeline.append({
+                'type': 'checkin',
+                'icon': '✅',
+                'title': 'Gym Check-in',
+                'description': f"Emotion: {record.get('emotion', 'N/A')}",
+                'timestamp': record.get('timestamp'),
+                'data': record
+            })
+        
+        # Get notes
+        notes = self.get_member_notes(member_id)
+        for note in notes:
+            timeline.append({
+                'type': 'note',
+                'icon': '📝',
+                'title': 'Admin Note Added',
+                'description': note.get('note')[:100] + ('...' if len(note.get('note', '')) > 100 else ''),
+                'timestamp': note.get('created_at'),
+                'data': note
+            })
+        
+        # Sort by timestamp (newest first)
+        timeline.sort(key=lambda x: x['timestamp'], reverse=True)
+        
+        return timeline
+            
     def find_duplicates(self):
         """Find duplicate members based on name and phone"""
         if self.legacy:
