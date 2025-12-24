@@ -501,7 +501,7 @@ class GymManager:
 
         attendance = Attendance(
             member_id=int(member_id),
-            check_in_time=datetime.now(),
+            # check_in_time removed - using default created_at
             emotion=emotion,
             confidence=confidence
         )

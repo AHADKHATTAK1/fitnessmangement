@@ -1395,5 +1395,40 @@ def generate_wallet_pass(member_id):
 
 
 
+@app.route('/fix_db')
+def fix_database_schema():
+    """Helper route to fix database schema mismatches on Render"""
+    from sqlalchemy import text
+    try:
+        from models import get_session
+        session = get_session()
+        
+        # Check if we need to rename check_in_time to created_at
+        try:
+            # Try to rename if it exists
+            session.execute(text('ALTER TABLE attendance RENAME COLUMN check_in_time TO created_at;'))
+            session.commit()
+            msg = "✅ Success: Renamed 'check_in_time' to 'created_at'"
+        except Exception as e:
+            session.rollback()
+            # If rename failed, maybe column doesn't exist or target already exists.
+            # Try adding created_at if it's missing entirely
+            try:
+                session.execute(text('ALTER TABLE attendance ADD COLUMN IF NOT EXISTS created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP;'))
+                session.commit()
+                msg = f"⚠️ Rename failed, so added 'created_at' column instead. Error was: {str(e)}"
+            except Exception as e2:
+                msg = f"❌ Failed to fix DB: {str(e)} | {str(e2)}"
+        
+        return f"""
+        <h1>Database Fix Status</h1>
+        <p>{msg}</p>
+        <br>
+        <a href="{url_for('dashboard')}">Go to Dashboard</a>
+        """
+    except Exception as e:
+        return f"Mega Error: {str(e)}"
+
 if __name__ == '__main__':
-    app.run(debug=True, port=5000)
+    port = int(os.environ.get('PORT', 5000))
+    app.run(host='0.0.0.0', port=port)
