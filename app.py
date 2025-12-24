@@ -735,11 +735,21 @@ def fees():
     current_month_records = [r for r in fee_records if r['month'] == current_month]
     current_month_total = sum(r['amount'] for r in current_month_records)
     
-    # Generate months for dropdown
+    # Generate months for dropdown (using standard datetime instead of pandas for compatibility)
     current_date = datetime.now()
-    start_date = current_date.replace(day=1) - pd.DateOffset(months=12)
-    dates = pd.date_range(start=start_date, periods=37, freq='MS')
-    available_months = [{'value': d.strftime('%Y-%m'), 'label': d.strftime('%B %Y')} for d in dates][::-1]
+    available_months = []
+    for i in range(37):
+        # Go back i months from current month
+        year = current_date.year
+        month = current_date.month - i
+        while month <= 0:
+            month += 12
+            year -= 1
+        date_obj = datetime(year, month, 1)
+        available_months.append({
+            'value': date_obj.strftime('%Y-%m'),
+            'label': date_obj.strftime('%B %Y')
+        })
     
     return render_template('fees.html', 
                          members=all_members,
