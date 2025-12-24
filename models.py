@@ -77,7 +77,7 @@ class Attendance(Base):
     
     id = Column(Integer, primary_key=True)
     member_id = Column(Integer, ForeignKey('members.id'), nullable=False)
-    check_in_time = Column(DateTime, nullable=False)
+    # check_in_time column removed - database doesn't have it, using created_at instead
     emotion = Column(String(50))
     confidence = Column(DECIMAL(5, 2))
     created_at = Column(DateTime, default=datetime.utcnow)
