@@ -638,6 +638,110 @@ def dashboard():
                          revenue_change=revenue_change,
                          gym_details=gym.get_gym_details())
 
+@app.route('/analytics')
+def analytics():
+    gym = get_gym()
+    if not gym: return redirect(url_for('auth'))
+    
+    all_members = gym.get_all_members()
+    total_members = len(all_members)
+    
+    # Calculate Member Growth (last 6 months)
+    member_growth = []
+    max_growth = 0
+    current_date = datetime.now()
+    
+    for i in range(5, -1, -1):
+        year = current_date.year
+        month = current_date.month - i
+        while month <= 0:
+            month += 12
+            year -= 1
+        
+        month_start = datetime(year, month, 1).date()
+        if month == 12:
+            month_end = datetime(year + 1, 1, 1).date()
+        else:
+            month_end = datetime(year, month + 1, 1).date()
+        
+        # Count members who joined in this month
+        count = sum(1 for m in all_members 
+                   if m.get('joined_date') and 
+                   month_start <= datetime.strptime(str(m['joined_date']), '%Y-%m-%d').date() < month_end)
+        
+        member_growth.append({
+            'month': datetime(year, month, 1).strftime('%b'),
+            'count': count
+        })
+        max_growth = max(max_growth, count)
+    
+    # Calculate Retention Rate (members who renewed this month)
+    current_month = datetime.now().strftime('%Y-%m')
+    last_month = (datetime.now().replace(day=1) - timedelta(days=1)).strftime('%Y-%m')
+    
+    paid_this_month = sum(1 for m in all_members if gym.is_fee_paid(m['id'], current_month))
+    paid_last_month = sum(1 for m in all_members if gym.is_fee_paid(m['id'], last_month))
+    
+    retention_rate = round((paid_this_month / paid_last_month * 100), 1) if paid_last_month > 0 else 100
+    
+    # Total Check-ins (this month)
+    total_checkins = 0
+    month_start = datetime.now().replace(day=1)
+    
+    for member in all_members:
+        attendance = gym.get_attendance(member['id'])
+        for record in attendance:
+            try:
+                checkin_date = datetime.strptime(record['timestamp'], '%Y-%m-%d %H:%M:%S')
+                if checkin_date >= month_start:
+                    total_checkins += 1
+            except:
+                pass
+    
+    # Attendance Heatmap (Day of week vs Hour)
+    heatmap_data = {}
+    max_attendance = 0
+    
+    for member in all_members:
+        attendance = gym.get_attendance(member['id'])
+        for record in attendance:
+            try:
+                checkin_time = datetime.strptime(record['timestamp'], '%Y-%m-%d %H:%M:%S')
+                day_of_week = checkin_time.weekday()  # 0=Monday, 6=Sunday
+                hour = checkin_time.hour
+                
+                key = (day_of_week, hour)
+                heatmap_data[key] = heatmap_data.get(key, 0) + 1
+                max_attendance = max(max_attendance, heatmap_data[key])
+            except:
+                pass
+    
+    # Top Performers (Most active members)
+    member_checkins = []
+    for member in all_members:
+        attendance = gym.get_attendance(member['id'])
+        checkin_count = len(attendance)
+        if checkin_count > 0:
+            member_checkins.append({
+                'name': member['name'],
+                'phone': member['phone'],
+                'checkins': checkin_count
+            })
+    
+    # Sort and get top 5
+    top_performers = sorted(member_checkins, key=lambda x: x['checkins'], reverse=True)[:5]
+    
+    return render_template('analytics.html',
+                         total_members=total_members,
+                         retention_rate=retention_rate,
+                         total_checkins=total_checkins,
+                         member_growth=member_growth,
+                         max_growth=max_growth if max_growth > 0 else 1,
+                         heatmap_data=heatmap_data,
+                         max_attendance=max_attendance if max_attendance > 0 else 1,
+                         top_performers=top_performers)
+
+
 @app.route('/add_member', methods=['GET', 'POST'])
 def add_member():
     gym = get_gym()

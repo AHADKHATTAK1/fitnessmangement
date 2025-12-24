@@ -1,0 +1,256 @@
+{% extends "base.html" %}
+
+{% block title %}Analytics - Gym Manager{% endblock %}
+
+{% block content %}
+<style>
+    /* Analytics-specific styles */
+    .analytics-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 1.5rem;
+        margin-bottom: 2rem;
+    }
+
+    .heatmap-grid {
+        display: grid;
+        grid-template-columns: repeat(8, 1fr);
+        gap: 4px;
+        margin-top: 1rem;
+    }
+
+    .heatmap-cell {
+        aspect-ratio: 1;
+        border-radius: 4px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.7rem;
+        font-weight: 600;
+        transition: all 0.3s;
+        cursor: pointer;
+    }
+
+    .heatmap-cell:hover {
+        transform: scale(1.1);
+        z-index: 10;
+    }
+
+    .heatmap-label {
+        font-size: 0.75rem;
+        font-weight: 600;
+        color: var(--text-muted);
+        padding: 0.5rem 0;
+    }
+
+    .leaderboard-item {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        padding: 1rem;
+        background: rgba(139, 92, 246, 0.05);
+        border-radius: 12px;
+        margin-bottom: 0.75rem;
+        transition: all 0.3s;
+        border-left: 3px solid transparent;
+    }
+
+    .leaderboard-item:hover {
+        background: rgba(139, 92, 246, 0.1);
+        border-left-color: var(--primary);
+        transform: translateX(5px);
+    }
+
+    .rank-badge {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 900;
+        font-size: 1.2rem;
+    }
+
+    .rank-1 {
+        background: linear-gradient(135deg, #ffd700, #ffed4e);
+        color: #000;
+    }
+
+    .rank-2 {
+        background: linear-gradient(135deg, #c0c0c0, #e8e8e8);
+        color: #000;
+    }
+
+    .rank-3 {
+        background: linear-gradient(135deg, #cd7f32, #e6a664);
+        color: #fff;
+    }
+
+    .rank-other {
+        background: rgba(139, 92, 246, 0.2);
+        color: var(--primary);
+    }
+
+    .growth-chart {
+        display: flex;
+        align-items: flex-end;
+        justify-content: space-around;
+        height: 200px;
+        gap: 0.5rem;
+        padding: 1rem;
+        background: rgba(15, 23, 42, 0.4);
+        border-radius: 16px;
+    }
+
+    .growth-bar {
+        flex: 1;
+        background: linear-gradient(180deg, var(--secondary), var(--primary));
+        border-radius: 8px 8px 0 0;
+        position: relative;
+        transition: all 0.3s ease;
+        animation: barGrowth 1s ease-out forwards;
+    }
+
+    .growth-bar:hover {
+        filter: brightness(1.2);
+    }
+
+    .growth-bar-value {
+        position: absolute;
+        top: -25px;
+        left: 50%;
+        transform: translateX(-50%);
+        font-weight: 700;
+        color: var(--primary);
+        font-size: 0.9rem;
+    }
+
+    .growth-bar-label {
+        position: absolute;
+        bottom: -25px;
+        width: 100%;
+        text-align: center;
+        font-size: 0.75rem;
+        color: var(--text-muted);
+    }
+</style>
+
+<div class="page-wrapper">
+    <!-- Header -->
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+        <h1
+            style="font-size: 2.5rem; font-weight: 700; background: linear-gradient(135deg, #fff, var(--primary)); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
+            📊 Analytics Dashboard</h1>
+        <a href="{{ url_for('dashboard') }}" class="btn btn-secondary">← Back to Dashboard</a>
+    </div>
+
+    <!-- Key Metrics Grid -->
+    <div class="analytics-grid">
+        <!-- Total Members -->
+        <div class="card member-card-3d" style="text-align: center; background: rgba(139, 92, 246, 0.1);">
+            <div style="font-size: 2.5rem; margin-bottom: 0.5rem;">👥</div>
+            <h3
+                style="font-size: 0.85rem; text-transform: uppercase; letter-spacing: 2px; color: var(--primary); margin-bottom: 0.5rem;">
+                Total Members</h3>
+            <div
+                style="font-size: 3rem; font-weight: 900; background: linear-gradient(135deg, #fff, var(--primary)); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
+                {{ total_members }}</div>
+        </div>
+
+        <!-- Retention Rate -->
+        <div class="card member-card-3d" style="text-align: center; background: rgba(6, 182, 212, 0.1);">
+            <div style="font-size: 2.5rem; margin-bottom: 0.5rem;">🔄</div>
+            <h3
+                style="font-size: 0.85rem; text-transform: uppercase; letter-spacing: 2px; color: var(--secondary); margin-bottom: 0.5rem;">
+                Retention Rate</h3>
+            <div
+                style="font-size: 3rem; font-weight: 900; background: linear-gradient(135deg, #fff, var(--secondary)); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
+                {{ retention_rate }}%</div>
+            <div style="font-size: 0.8rem; color: var(--text-muted); margin-top: 0.5rem;">Members staying active</div>
+        </div>
+
+        <!-- Total Check-ins -->
+        <div class="card member-card-3d" style="text-align: center; background: rgba(16, 185, 129, 0.1);">
+            <div style="font-size: 2.5rem; margin-bottom: 0.5rem;">✅</div>
+            <h3
+                style="font-size: 0.85rem; text-transform: uppercase; letter-spacing: 2px; color: var(--success); margin-bottom: 0.5rem;">
+                Total Check-ins</h3>
+            <div
+                style="font-size: 3rem; font-weight: 900; background: linear-gradient(135deg, #fff, var(--success)); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
+                {{ total_checkins }}</div>
+            <div style="font-size: 0.8rem; color: var(--text-muted); margin-top: 0.5rem;">This month</div>
+        </div>
+    </div>
+
+    <!-- Member Growth Chart -->
+    <div class="card member-card-3d" style="margin-bottom: 2rem;">
+        <h2 style="margin-bottom: 1.5rem; color: var(--primary); font-weight: 800;">📈 Member Growth (Last 6 Months)
+        </h2>
+        <div class="growth-chart">
+            {% for data in member_growth %}
+            <div class="growth-bar" style="height: {{ (data.count / max_growth * 100) if max_growth > 0 else 10 }}%;">
+                <div class="growth-bar-value">{{ data.count }}</div>
+                <div class="growth-bar-label">{{ data.month }}</div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Attendance Heatmap -->
+    <div class="card member-card-3d" style="margin-bottom: 2rem;">
+        <h2 style="margin-bottom: 1.5rem; color: var(--primary); font-weight: 800;">🔥 Attendance Heatmap</h2>
+        <p style="color: var(--text-muted); margin-bottom: 1rem;">Peak gym hours by day of week</p>
+
+        <div class="heatmap-grid">
+            <!-- Header Row -->
+            <div class="heatmap-label"></div>
+            <div class="heatmap-label">Mon</div>
+            <div class="heatmap-label">Tue</div>
+            <div class="heatmap-label">Wed</div>
+            <div class="heatmap-label">Thu</div>
+            <div class="heatmap-label">Fri</div>
+            <div class="heatmap-label">Sat</div>
+            <div class="heatmap-label">Sun</div>
+
+            {% for hour in range(6, 22) %}
+            <div class="heatmap-label">{{ hour }}:00</div>
+            {% for day in range(7) %}
+            {% set intensity = heatmap_data.get((day, hour), 0) %}
+            {% set color_intensity = (intensity / max_attendance * 100) if max_attendance > 0 else 0 %}
+            <div class="heatmap-cell"
+                style="background: rgba(139, 92, 246, {{ color_intensity / 100 }}); color: {{ 'white' if color_intensity > 50 else 'var(--text)' }};"
+                title="{{ intensity }} check-ins">
+                {{ intensity if intensity > 0 else '' }}
+            </div>
+            {% endfor %}
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Top Performers -->
+    <div class="card member-card-3d">
+        <h2 style="margin-bottom: 1.5rem; color: var(--primary); font-weight: 800;">🏆 Top Performers (Most Active)</h2>
+
+        {% if top_performers %}
+        {% for performer in top_performers %}
+        <div class="leaderboard-item">
+            <div class="rank-badge rank-{{ loop.index if loop.index <= 3 else 'other' }}">
+                #{{ loop.index }}
+            </div>
+            <div style="flex: 1;">
+                <div style="font-weight: 700; font-size: 1.1rem;">{{ performer.name }}</div>
+                <div style="color: var(--text-muted); font-size: 0.85rem;">{{ performer.phone }}</div>
+            </div>
+            <div style="text-align: right;">
+                <div style="font-weight: 700; font-size: 1.3rem; color: var(--primary);">{{ performer.checkins }}</div>
+                <div style="color: var(--text-muted); font-size: 0.75rem;">check-ins</div>
+            </div>
+        </div>
+        {% endfor %}
+        {% else %}
+        <p style="text-align: center; color: var(--text-muted); padding: 2rem;">No attendance data yet</p>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
