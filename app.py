@@ -536,13 +536,19 @@ def dashboard():
     gym = get_gym()
     if not gym: return redirect(url_for('auth'))
 
-    # Generate months for dropdown
+    # Generate months for dropdown (using standard datetime instead of pandas for compatibility)
     current_date = datetime.now()
-    # Snap to first of current month, then go back 12 months
-    start_date = current_date.replace(day=1) - pd.DateOffset(months=12)
+    available_months = []
+    for i in range(37):
+        # Go back i months from current month
+        year = current_date.year
+        month = current_date.month - i
+        while month <= 0:
+            month += 12
+            year -= 1
+        date_obj = datetime(year, month, 1)
+        available_months.append(date_obj.strftime('%Y-%m'))
     
-    # Generate range and format as (value, label) tuples (12 past + current + 24 future = 37)
-    dates = pd.date_range(start=start_date, periods=37, freq='MS')
     # Check if month requested
     current_month = request.args.get('month')
     if not current_month:
