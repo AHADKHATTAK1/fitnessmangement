@@ -316,28 +316,89 @@
     <div class="card member-card-3d"
         style="margin-bottom: 2rem; background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.1);">
         <h2 style="margin-bottom: 1.5rem; color: var(--primary); font-weight: 800;">📊 Revenue Trend</h2>
-        <div class="revenue-chart">
-            <div class="revenue-bar" style="height: 60%;">
-                <div class="revenue-bar-label">Jan</div>
-            </div>
-            <div class="revenue-bar" style="height: 75%;">
-                <div class="revenue-bar-label">Feb</div>
-            </div>
-            <div class="revenue-bar" style="height: 85%;">
-                <div class="revenue-bar-label">Mar</div>
-            </div>
-            <div class="revenue-bar" style="height: 70%;">
-                <div class="revenue-bar-label">Apr</div>
-            </div>
-            <div class="revenue-bar" style="height: 95%;">
-                <div class="revenue-bar-label">May</div>
-            </div>
-            <div class="revenue-bar" style="height: 100%;">
-                <div class="revenue-bar-label">Jun</div>
-            </div>
+        <video autoplay loop muted playsinline
+            style="width: 100%; border-radius: 12px; margin-bottom: 2rem; box-shadow: 0 10px 30px rgba(0,0,0,0.3);">
+            <source src="https://assets.mixkit.co/videos/preview/mixkit-man-working-out-at-the-gym-228-large.mp4"
+                type="video/mp4">
+        </video>
+        <div style="height: 300px; position: relative;">
+            <canvas id="revenueChart"></canvas>
         </div>
-        <p style="text-align: center; margin-top: 2rem; color: var(--text-muted); font-size: 0.9rem;">Monthly revenue
-            comparison (Sample Data)</p>
+        <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+        <script>
+            document.addEventListener('DOMContentLoaded', function () {
+                const ctx = document.getElementById('revenueChart').getContext('2d');
+
+                // Parse the data passed from Flask
+                // We need to adhere to the format [{'month': 'Jan', 'revenue': 1000}, ...]
+                const revenueData = {{ revenue_trend | tojson | safe
+            }};
+
+            const labels = revenueData.map(d => d.month);
+            const data = revenueData.map(d => d.revenue);
+
+            new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Monthly Revenue',
+                        data: data,
+                        borderColor: '#8b5cf6',
+                        backgroundColor: 'rgba(139, 92, 246, 0.1)',
+                        borderWidth: 3,
+                        fill: true,
+                        tension: 0.4,
+                        pointBackgroundColor: '#06b6d4',
+                        pointBorderColor: '#fff',
+                        pointRadius: 6,
+                        pointHoverRadius: 8
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            backgroundColor: 'rgba(15, 23, 42, 0.9)',
+                            titleColor: '#fff',
+                            bodyColor: '#ccc',
+                            padding: 10,
+                            cornerRadius: 8,
+                            displayColors: false,
+                            callbacks: {
+                                label: function (context) {
+                                    return 'Revenue: {{ gym_details.currency or "$" }}' + context.parsed.y;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            grid: {
+                                color: 'rgba(255, 255, 255, 0.05)'
+                            },
+                            ticks: {
+                                color: '#94a3b8'
+                            }
+                        },
+                        x: {
+                            grid: {
+                                display: false
+                            },
+                            ticks: {
+                                color: '#94a3b8'
+                            }
+                        }
+                    }
+                }
+            });
+            });
+        </script>
     </div>
 
     <!-- Search and Actions -->

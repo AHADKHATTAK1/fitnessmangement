@@ -141,7 +141,7 @@ def subscription():
     if user.get('subscription_status') == 'pending':
         return render_template('payment_pending.html')
         
-    return render_template('payment_select.html', key=app.config['STRIPE_PUBLIC_KEY'])
+    return render_template('subscription.html', key=app.config['STRIPE_PUBLIC_KEY'])
 
 @app.route('/create_checkout_session', methods=['POST'])
 def create_checkout_session():
@@ -675,6 +675,7 @@ def dashboard():
     inactive_members = sorted(inactive_members, key=lambda x: x['days_inactive'], reverse=True)[:5]
     
     return render_template('dashboard.html',
+                         revenue_trend=revenue_trend,
                          total_members=len(all_members),
                          paid=status['paid'],
                          unpaid=status['unpaid'],
