@@ -253,6 +253,15 @@ body>nav:first-of-type {
     body {
         padding-bottom: 0;
     }
+
+    /* Show top nav on desktop */
+    body>nav:first-of-type {
+        display: block !important;
+    }
+
+    .nav-content {
+        display: flex !important;
+    }
 }
 
 /* ============================================
