@@ -165,6 +165,15 @@ table td {
     margin-top: 0.5rem;
 }
 
+/* Hide top nav on mobile */
+body>nav:first-of-type {
+    display: none !important;
+}
+
+.nav-content {
+    display: none !important;
+}
+
 /* ============================================
    BOTTOM NAVIGATION BAR
    ============================================ */
