@@ -1035,6 +1035,34 @@ class GymManager:
         if hasattr(self, 'session'):
             self.session.close()
     
+    # ==================== PAYMENT METHODS ====================
+
+    def get_member_fees(self, member_id):
+        """Get all fee records for a member (Alias for compatibility)"""
+        return self.get_payment_history(member_id)
+
+    def get_payment_history(self, member_id):
+        """Get payment history for a specific member"""
+        if self.legacy:
+            return []
+            
+        try:
+            fees = self.session.query(Fee).filter_by(
+                member_id=int(member_id)
+            ).order_by(Fee.paid_date.desc()).all()
+            
+            return [{
+                'id': f.id,
+                'member_id': f.member_id,
+                'month': f.month,
+                'amount': float(f.amount) if f.amount else 0.0,
+                'paid_date': f.paid_date.strftime('%Y-%m-%d') if f.paid_date else None,
+                'notes': f.notes or ''
+            } for f in fees]
+        except Exception as e:
+            print(f"Error getting payment history: {str(e)}")
+            return []
+
     def get_classes(self):
         """Get all scheduled classes - stub method"""
         # TODO: Implement class scheduling feature
