@@ -18,8 +18,9 @@ class User(Base):
     email = Column(String(255), unique=True, nullable=False)
     password_hash = Column(String(255), nullable=False)
     role = Column(String(50), default='admin')
-    market = Column(String(50), default='US', nullable=True) # NEW: 'US' or 'PK'
-    subscription_expiry = Column(DateTime, nullable=True) # NEW: Lockout date
+    # TEMPORARILY DISABLED - Run /fix_db first, then uncomment these:
+    # market = Column(String(50), default='US', nullable=True) # NEW: 'US' or 'PK'
+    # subscription_expiry = Column(DateTime, nullable=True) # NEW: Lockout date
     created_at = Column(DateTime, default=datetime.utcnow)
     
     # Relationships
