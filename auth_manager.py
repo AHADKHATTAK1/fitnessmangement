@@ -73,7 +73,9 @@ class AuthManager:
         user = User(
             email=username,
             password_hash=self.hash_password(password),
-            role='admin'
+            role='admin',
+            market='US', # Default
+            subscription_expiry=datetime.utcnow() + timedelta(days=30) # 30 Days Trial
         )
         
         self.session.add(user)
@@ -115,8 +117,46 @@ class AuthManager:
     
     def is_subscription_active(self, username):
         """Check if user's subscription is active"""
-        # For now, all users are active. Can add logic later.
-        return True
+        if self.legacy:
+            return True # Legacy JSON users always active for now
+        
+        user = self.session.query(User).filter_by(email=username).first()
+        if not user:
+            return False
+        
+        # If no expiry set, grant 30 days trial automatically (Migration Logic)
+        if not user.subscription_expiry:
+            user.subscription_expiry = datetime.utcnow() + timedelta(days=30)
+            self.session.commit()
+            return True
+            
+        return user.subscription_expiry > datetime.utcnow()
+
+    def extend_subscription(self, username, days=30):
+        """Extend user subscription"""
+        user = self.session.query(User).filter_by(email=username).first()
+        if user:
+            if not user.subscription_expiry or user.subscription_expiry < datetime.utcnow():
+                user.subscription_expiry = datetime.utcnow() + timedelta(days=days)
+            else:
+                user.subscription_expiry += timedelta(days=days)
+            self.session.commit()
+            return True
+        return False
+    
+    def set_market(self, username, market):
+        """Set user market (US/PK)"""
+        user = self.session.query(User).filter_by(email=username).first()
+        if user:
+            user.market = market
+            self.session.commit()
+            return True
+        return False
+    
+    def get_market(self, username):
+        """Get user market"""
+        user = self.session.query(User).filter_by(email=username).first()
+        return user.market if user else 'US'
 
     # Password Reset Methods
     def generate_reset_code(self, username):

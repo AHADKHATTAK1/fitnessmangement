@@ -1771,6 +1771,8 @@ def fix_database_schema():
             ("ADD attendance.created_at", "ALTER TABLE attendance ADD COLUMN IF NOT EXISTS created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP"),
             ("ADD attendance.emotion", "ALTER TABLE attendance ADD COLUMN IF NOT EXISTS emotion VARCHAR(50)"),
             ("ADD attendance.confidence", "ALTER TABLE attendance ADD COLUMN IF NOT EXISTS confidence FLOAT"),
+            ("ADD users.market", "ALTER TABLE users ADD COLUMN IF NOT EXISTS market VARCHAR(50) DEFAULT 'US'"),
+            ("ADD users.subscription_expiry", "ALTER TABLE users ADD COLUMN IF NOT EXISTS subscription_expiry TIMESTAMP"),
         ]
         
         for name, sql in operations:
