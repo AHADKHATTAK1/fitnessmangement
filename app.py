@@ -1733,6 +1733,148 @@ def generate_wallet_pass(member_id):
 
 @app.route('/fix_db')
 def fix_database_schema():
+    """Bulletproof database migration - CANNOT FAIL"""
+    from sqlalchemy import text
+    import traceback
+    
+    results = []
+    
+    try:
+        from models import get_session
+        session = get_session()
+        
+        # Wrap EVERYTHING in try-catch
+        operations = [
+            ("CREATE TABLE body_measurements", """
+                CREATE TABLE IF NOT EXISTS body_measurements (
+                    id SERIAL PRIMARY KEY,
+                    member_id INTEGER REFERENCES members(id),
+                    weight FLOAT,
+                    body_fat FLOAT,
+                    chest FLOAT,
+                    waist FLOAT,
+                    arms FLOAT,
+                    notes TEXT,
+                    recorded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+            """),
+            ("CREATE TABLE member_notes", """
+                CREATE TABLE IF NOT EXISTS member_notes (
+                    id SERIAL PRIMARY KEY,
+                    member_id INTEGER REFERENCES members(id),
+                    note TEXT,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+            """),
+            ("ADD members.birthday", "ALTER TABLE members ADD COLUMN IF NOT EXISTS birthday DATE"),
+            ("ADD members.last_check_in", "ALTER TABLE members ADD COLUMN IF NOT EXISTS last_check_in TIMESTAMP"),
+            ("ADD attendance.created_at", "ALTER TABLE attendance ADD COLUMN IF NOT EXISTS created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP"),
+            ("ADD attendance.emotion", "ALTER TABLE attendance ADD COLUMN IF NOT EXISTS emotion VARCHAR(50)"),
+            ("ADD attendance.confidence", "ALTER TABLE attendance ADD COLUMN IF NOT EXISTS confidence FLOAT"),
+        ]
+        
+        for name, sql in operations:
+            try:
+                session.execute(text(sql))
+                session.commit()
+                results.append(f"✅ {name}")
+            except Exception as e:
+                session.rollback()
+                error_msg = str(e)
+                if "already exists" in error_msg or "duplicate" in error_msg.lower():
+                    results.append(f"ℹ️ {name} (already exists)")
+                else:
+                    results.append(f"⚠️ {name}: {error_msg[:100]}")
+        
+        session.close()
+        
+        # Build success HTML
+        html = """
+        <html>
+        <head>
+            <title>Database Fixed</title>
+            <style>
+                body {
+                    font-family: 'Inter', Arial, sans-serif;
+                    background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+                    color: white;
+                    padding: 2rem;
+                    margin: 0;
+                }
+                .container {
+                    max-width: 800px;
+                    margin: 0 auto;
+                    background: rgba(30, 41, 59, 0.8);
+                    padding: 2.5rem;
+                    border-radius: 16px;
+                    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+                }
+                h1 {
+                    color: #8b5cf6;
+                    margin-bottom: 2rem;
+                    font-size: 2rem;
+                }
+                .result {
+                    padding: 0.75rem 1rem;
+                    margin: 0.5rem 0;
+                    border-radius: 8px;
+                    background: rgba(139, 92, 246, 0.1);
+                    border-left: 4px solid #8b5cf6;
+                }
+                .success { border-left-color: #10b981; background: rgba(16, 185, 129, 0.1); }
+                .info { border-left-color: #06b6d4; background: rgba(6, 182, 212, 0.1); }
+                .warning { border-left-color: #f59e0b; background: rgba(245, 158, 11, 0.1); }
+                .btn {
+                    display: inline-block;
+                    padding: 1rem 2rem;
+                    background: linear-gradient(135deg, #8b5cf6, #06b6d4);
+                    color: white;
+                    text-decoration: none;
+                    border-radius: 12px;
+                    font-weight: 600;
+                    margin-top: 2rem;
+                    transition: transform 0.2s;
+                }
+                .btn:hover { transform: translateY(-2px); }
+            </style>
+        </head>
+        <body>
+            <div class="container">
+                <h1>🔧 Database Migration Complete!</h1>
+        """
+        
+        for result in results:
+            css_class = "success" if "✅" in result else ("info" if "ℹ️" in result else "warning")
+            html += f'<div class="result {css_class}">{result}</div>'
+        
+        html += """
+                <a href="/" class="btn">→ Go to Dashboard</a>
+            </div>
+        </body>
+        </html>
+        """
+        
+        return html
+        
+    except Exception as e:
+        # Even if EVERYTHING fails, show helpful error
+        return f"""
+        <html>
+        <head><title>Migration Error</title></head>
+        <body style='font-family: Arial; padding: 2rem; background: #1e293b; color: white;'>
+            <h1 style='color: #ef4444;'>❌ Database Migration Error</h1>
+            <div style='background: rgba(239, 68, 68, 0.1); padding: 1.5rem; border-radius: 12px; border-left: 4px solid #ef4444;'>
+                <strong>Error:</strong><br>
+                <pre style='color: #fca5a5; margin-top: 1rem;'>{str(e)}</pre>
+                <hr style='border-color: rgba(239, 68, 68, 0.3); margin: 1rem 0;'>
+                <strong>Traceback:</strong><br>
+                <pre style='color: #fca5a5; font-size: 0.85rem;'>{traceback.format_exc()}</pre>
+            </div>
+            <a href='/' style='display: inline-block; margin-top: 2rem; padding: 1rem 2rem; background: #06b6d4; color: white; text-decoration: none; border-radius: 8px;'>Try Dashboard Anyway</a>
+        </body>
+        </html>
+        """
+
     """Helper route to fix ALL database schema mismatches and add new columns"""
     from sqlalchemy import text
     results = []
