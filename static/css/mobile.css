@@ -28,6 +28,8 @@ body {
     font-size: 16px;
     line-height: 1.6;
     color: var(--text);
+    padding-bottom: 70px;
+    /* Space for bottom nav on mobile */
 }
 
 /* Mobile Navigation - Always visible, no toggle needed */
@@ -164,6 +166,54 @@ table td {
 }
 
 /* ============================================
+   BOTTOM NAVIGATION BAR
+   ============================================ */
+.bottom-nav {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: white;
+    box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.1);
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    padding: 0.5rem 0;
+    z-index: 1000;
+    border-top: 1px solid #e2e8f0;
+}
+
+.nav-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-decoration: none;
+    color: #64748b;
+    padding: 0.5rem 0.75rem;
+    transition: all 0.2s;
+    flex: 1;
+    max-width: 80px;
+}
+
+.nav-item:hover,
+.nav-item.active {
+    color: var(--primary);
+    background: rgba(139, 92, 246, 0.05);
+    border-radius: 12px;
+}
+
+.nav-icon {
+    font-size: 1.5rem;
+    margin-bottom: 0.25rem;
+}
+
+.nav-label {
+    font-size: 0.7rem;
+    font-weight: 500;
+    white-space: nowrap;
+}
+
+/* ============================================
    TABLET BREAKPOINT (768px+)
    ============================================ */
 @media (min-width: 768px) {
@@ -184,6 +234,15 @@ table td {
 
     .stats-grid {
         grid-template-columns: repeat(2, 1fr);
+    }
+
+    /* Hide bottom nav on desktop */
+    .bottom-nav {
+        display: none;
+    }
+
+    body {
+        padding-bottom: 0;
     }
 }
 

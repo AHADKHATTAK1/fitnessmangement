@@ -532,10 +532,38 @@
             });
         });
 
-        // Offline/Online detection removed - no banner popup
+        //Offline/Online detection removed - no banner popup
         // App works offline silently via Service Worker
     </script>
     <script src="{{ url_for('static', filename='js/mobile.js') }}" defer></script>
+
+    <!-- Bottom Navigation Bar (Mobile Only) -->
+    {% if session.logged_in %}
+    <nav class="bottom-nav">
+        <a href="{{ url_for('dashboard') }}" class="nav-item {{ 'active' if request.endpoint == 'dashboard' else '' }}">
+            <div class="nav-icon">🏠</div>
+            <div class="nav-label">Home</div>
+        </a>
+        <a href="{{ url_for('add_member') }}"
+            class="nav-item {{ 'active' if request.endpoint == 'add_member' else '' }}">
+            <div class="nav-icon">➕</div>
+            <div class="nav-label">Add</div>
+        </a>
+        <a href="{{ url_for('fees') }}" class="nav-item {{ 'active' if request.endpoint == 'fees' else '' }}">
+            <div class="nav-icon">💰</div>
+            <div class="nav-label">Fees</div>
+        </a>
+        <a href="{{ url_for('advanced_analytics') }}"
+            class="nav-item {{ 'active' if request.endpoint == 'advanced_analytics' else '' }}">
+            <div class="nav-icon">📊</div>
+            <div class="nav-label">Stats</div>
+        </a>
+        <a href="{{ url_for('settings') }}" class="nav-item {{ 'active' if request.endpoint == 'settings' else '' }}">
+            <div class="nav-icon">⚙️</div>
+            <div class="nav-label">More</div>
+        </a>
+    </nav>
+    {% endif %}
 </body>
 
 </html>
