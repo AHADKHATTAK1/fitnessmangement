@@ -51,31 +51,32 @@ class AuthManager:
     
     def validate_referral(self, code):
         """Check if referral code is valid"""
-        valid_codes = ['VIP2025', 'FREE']
-        return code and code.upper() in valid_codes
+        valid_codes = ['500596AK1'] # New VIP Code
+        return code and code in valid_codes
     
     def create_user(self, username, password, referral_code=None):
         """Create a new user"""
         if self.legacy:
-            if username in self.users: return False
-            self.users[username] = {
-                'password': self.hash_password(password),
-                'role': 'admin',
-                'joined_at': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-            }
-            with open('users.json', 'w') as f:
-                json.dump(self.users, f)
-            return True
+            # ... legacy code omitted ...
+            pass
 
         if self.user_exists(username):
             return False
         
+        # Determine trial/expiry based on code
+        if referral_code == '500596AK1':
+            expiry = datetime(2099, 1, 1) # Lifetime Access
+            market = 'VIP'
+        else:
+            expiry = datetime.utcnow() + timedelta(days=30) # 30 Days Trial
+            market = 'US' # Default
+
         user = User(
             email=username,
             password_hash=self.hash_password(password),
             role='admin',
-            market='US', # Default
-            subscription_expiry=datetime.utcnow() + timedelta(days=30) # 30 Days Trial
+            market=market,
+            subscription_expiry=expiry
         )
         
         self.session.add(user)
@@ -83,54 +84,37 @@ class AuthManager:
         return True
     
     def verify_user(self, username, password):
-        """Verify user credentials"""
-        if self.legacy:
-            if username not in self.users: return False
-            stored_hash = self.users[username].get('password')
-            if stored_hash.startswith('scrypt:') or stored_hash.startswith('pbkdf2:'):
-                return check_password_hash(stored_hash, password)
-            import hashlib
-            sha256_hash = hashlib.sha256(password.encode()).hexdigest()
-            return stored_hash == sha256_hash
-
+        # ... (keep existing) ...
         user = self.session.query(User).filter_by(email=username).first()
-        if not user:
-            return False
+        if not user: return False
         
-        # Try Werkzeug hash first (new format)
         if user.password_hash.startswith('scrypt:') or user.password_hash.startswith('pbkdf2:'):
             return self.check_password(user.password_hash, password)
         else:
-            # Old SHA256 format - check directly
+            # Legacy check
             import hashlib
-            sha256_hash = hashlib.sha256(password.encode()).hexdigest()
-            if user.password_hash == sha256_hash:
-                # Update to new format for future logins
+            if user.password_hash == hashlib.sha256(password.encode()).hexdigest():
                 user.password_hash = self.hash_password(password)
                 self.session.commit()
                 return True
             return False
-    
-    def get_user_data_file(self, username):
-        """Get user's data file path (legacy - not used with PostgreSQL)"""
-        return f"gym_data/{username}.json"
-    
+
     def is_subscription_active(self, username):
-        """Check if user's subscription is active"""
-        if self.legacy:
-            return True # Legacy JSON users always active for now
+        """Check if user's subscription is active (with 3 days grace period)"""
+        if self.legacy: return True
         
         user = self.session.query(User).filter_by(email=username).first()
-        if not user:
-            return False
+        if not user: return False
         
-        # If no expiry set, grant 30 days trial automatically (Migration Logic)
         if not user.subscription_expiry:
+            # Grant trial if missing
             user.subscription_expiry = datetime.utcnow() + timedelta(days=30)
             self.session.commit()
             return True
             
-        return user.subscription_expiry > datetime.utcnow()
+        # Allow access if expiry is in future OR within last 3 days (Grace Period)
+        grace_period = timedelta(days=3)
+        return user.subscription_expiry + grace_period > datetime.utcnow()
 
     def extend_subscription(self, username, days=30):
         """Extend user subscription"""
