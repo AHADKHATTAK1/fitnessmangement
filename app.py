@@ -674,7 +674,7 @@ def dashboard():
     # Sort and limit
     inactive_members = sorted(inactive_members, key=lambda x: x['days_inactive'], reverse=True)[:5]
     
-    return render_template('dashboard.html',
+    return render_template('dashboard_enhanced.html',
                          revenue_trend=revenue_trend,
                          total_members=len(all_members),
                          paid=status['paid'],
