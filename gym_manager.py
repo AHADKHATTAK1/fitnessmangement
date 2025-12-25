@@ -783,6 +783,71 @@ class GymManager:
         timeline.sort(key=lambda x: x['timestamp'], reverse=True)
         
         return timeline
+    
+    # ==================== BODY MEASUREMENTS METHODS ====================
+    
+    def add_body_measurement(self, member_id, weight, body_fat=None, chest=None, waist=None, arms=None, notes=None):
+        """Add body measurement record for a member"""
+        if self.legacy:
+            return False
+        
+        try:
+            measurement = BodyMeasurement(
+                member_id=int(member_id),
+                weight=float(weight) if weight else None,
+                body_fat=float(body_fat) if body_fat else None,
+                chest=float(chest) if chest else None,
+                waist=float(waist) if waist else None,
+                arms=float(arms) if arms else None,
+                notes=notes
+            )
+            self.session.add(measurement)
+            self.session.commit()
+            return True
+        except Exception as e:
+            print(f"Error adding measurement: {str(e)}")
+            self.session.rollback()
+            return False
+    
+    def get_body_measurements(self, member_id):
+        """Get all body measurements for a member"""
+        if self.legacy:
+            return []
+        
+        try:
+            measurements = self.session.query(BodyMeasurement).filter_by(
+                member_id=int(member_id)
+            ).order_by(BodyMeasurement.recorded_at.desc()).all()
+            
+            return [{
+                'id': m.id,
+                'weight': float(m.weight) if m.weight else None,
+                'body_fat': float(m.body_fat) if m.body_fat else None,
+                'chest': float(m.chest) if m.chest else None,
+                'waist': float(m.waist) if m.waist else None,
+                'arms': float(m.arms) if m.arms else None,
+                'notes': m.notes,
+                'recorded_at': m.recorded_at.strftime('%Y-%m-%d')
+            } for m in measurements]
+        except:
+            return []
+    
+    def delete_body_measurement(self, measurement_id):
+        """Delete a body measurement record"""
+        if self.legacy:
+            return False
+        
+        try:
+            measurement = self.session.query(BodyMeasurement).filter_by(id=int(measurement_id)).first()
+            if measurement:
+                self.session.delete(measurement)
+                self.session.commit()
+                return True
+            return False
+        except:
+            self.session.rollback()
+            return False
+            
             
     def find_duplicates(self):
         """Find duplicate members based on name and phone"""

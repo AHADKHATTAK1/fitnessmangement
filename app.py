@@ -1225,7 +1225,8 @@ def member_details(member_id):
                          today=datetime.now().strftime('%Y-%m-%d'),
                          available_months=available_months,
                          notes=gym.get_member_notes(member_id),
-                         timeline=gym.get_member_timeline(member_id))
+                         timeline=gym.get_member_timeline(member_id),
+                         measurements=gym.get_body_measurements(member_id))
 
 @app.route('/member/<member_id>/add_note', methods=['POST'])
 def add_member_note(member_id):
