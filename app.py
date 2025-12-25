@@ -1900,7 +1900,7 @@ def chatbot_api():
                 pass
         
         # Smart response logic
-        response = generate_smart_response(message, gym_name)
+        response = generate_smart_response(message, gym_name, username)
         
         return jsonify({
             'response': response['text'],
@@ -1910,7 +1910,7 @@ def chatbot_api():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
-def generate_smart_response(message, gym_name):
+def generate_smart_response(message, gym_name, username=None):
     """Generate intelligent responses based on message content"""
     
     # Greeting
