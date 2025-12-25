@@ -125,10 +125,11 @@ def check_subscription():
     if request.endpoint in public_endpoints or not session.get('logged_in'):
         return
 
-    username = session.get('username')
-    if not auth_manager.is_subscription_active(username):
-        session['needs_payment'] = True
-        return redirect(url_for('subscription'))
+    # TEMPORARILY DISABLED - Run /fix_db first, then uncomment:
+    # username = session.get('username')
+    # if not auth_manager.is_subscription_active(username):
+    #     session['needs_payment'] = True
+    #     return redirect(url_for('subscription'))
 
 @app.route('/subscription')
 def subscription():
