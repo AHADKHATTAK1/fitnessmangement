@@ -1877,6 +1877,198 @@ def fix_database_schema():
         </html>
         """
 
-if __name__ == '__main__':
+@app.route('/api/chatbot', methods=['POST'])
+def chatbot_api():
+    """AI Chatbot API - Smart responses for gym queries"""
+    try:
+        data = request.get_json()
+        message = data.get('message', '').lower().strip()
+        
+        if not message:
+            return jsonify({'error': 'No message provided'}), 400
+        
+        # Get gym details for personalized responses
+        username = session.get('username')
+        gym_name = "Gym Manager"
+        
+        if username:
+            try:
+                gym_manager = GymManager(username)
+                gym_details = gym_manager.get_gym_details()
+                gym_name = gym_details.get('name', 'Gym Manager')
+            except:
+                pass
+        
+        # Smart response logic
+        response = generate_smart_response(message, gym_name)
+        
+        return jsonify({
+            'response': response['text'],
+            'quick_replies': response.get('quick_replies', [])
+        })
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+def generate_smart_response(message, gym_name):
+    """Generate intelligent responses based on message content"""
+    
+    # Greeting
+    if any(word in message for word in ['hi', 'hello', 'hey', 'start']):
+        return {
+            'text': f"👋 Hello! Welcome to {gym_name}! I'm your AI assistant. How can I help you today?",
+            'quick_replies': ['View hours', 'Check pricing', 'Payment info', 'Contact us']
+        }
+    
+    # Hours/Timing
+    elif any(word in message for word in ['hour', 'time', 'open', 'close', 'timing']):
+        return {
+            'text': f"🕐 **{gym_name} Hours:**\n\n"
+                   "📅 Monday - Friday: 6:00 AM - 10:00 PM\n"
+                   "📅 Saturday - Sunday: 7:00 AM - 9:00 PM\n\n"
+                   "We're open 7 days a week! 💪",
+            'quick_replies': ['Check pricing', 'View classes', 'Contact']
+        }
+    
+    # Pricing
+    elif any(word in message for word in ['price', 'cost', 'fee', 'membership', 'plan']):
+        return {
+            'text': "💰 **Membership Plans:**\n\n"
+                   "🏋️ **Basic Plan** - Rs 2,000/month\n"
+                   "   • Gym access\n"
+                   "   • Basic equipment\n\n"
+                   "💪 **Premium Plan** - Rs 3,500/month\n"
+                   "   • Everything in Basic\n"
+                   "   • Group classes\n"
+                   "   • Steam room\n\n"
+                   "⭐ **VIP Plan** - Rs 5,000/month\n"
+                   "   • Everything in Premium\n"
+                   "   • Personal trainer sessions\n"
+                   "   • Nutrition guidance\n\n"
+                   "💡 First month - 20% OFF!",
+            'quick_replies': ['View hours', 'Payment options', 'Contact']
+        }
+    
+    # Payment
+    elif any(word in message for word in ['payment', 'pay', 'due', 'balance', 'late fee']):
+        return {
+            'text': "💳 **Payment Information:**\n\n"
+                   "**Accepted Methods:**\n"
+                   "✅ Cash (at reception)\n"
+                   "✅ Card (Debit/Credit)\n"
+                   "✅ Online Transfer\n"
+                   "✅ UPI / Mobile Wallet\n\n"
+                   "**Payment Terms:**\n"
+                   "• Due date: 1st of every month\n"
+                   "• Grace period: 5 days\n"
+                   "• Late fee: Rs 100 (after 5 days)\n\n"
+                   "💡 Set up auto-pay to never miss a payment!",
+            'quick_replies': ['Check pricing', 'View account', 'Contact']
+        }
+    
+    # Classes
+    elif any(word in message for word in ['class', 'yoga', 'zumba', 'spin', 'group', 'workout']):
+        return {
+            'text': "🧘 **Group Classes Schedule:**\n\n"
+                   "📅 **Monday:** Yoga (7:00 PM)\n"
+                   "📅 **Tuesday:** Zumba (6:00 PM)\n"
+                   "📅 **Wednesday:** Spinning (7:00 PM)\n"
+                   "📅 **Thursday:** CrossFit (6:00 PM)\n"
+                   "📅 **Friday:** HIIT (7:00 PM)\n"
+                   "📅 **Saturday:** Mixed Martial Arts (10:00 AM)\n"
+                   "📅 **Sunday:** Pilates (9:00 AM)\n\n"
+                   "✨ All classes FREE for Premium & VIP members!",
+            'quick_replies': ['Check pricing', 'View hours', 'Contact']
+        }
+    
+    # Trainer/PT
+    elif any(word in message for word in ['trainer', 'pt', 'personal', 'coach']):
+        return {
+            'text': "👨‍🏫 **Personal Training:**\n\n"
+                   "Our certified trainers can help you:\n"
+                   "✅ Create custom workout plans\n"
+                   "✅ Achieve your fitness goals\n"
+                   "✅ Learn proper techniques\n"
+                   "✅ Track your progress\n\n"
+                   "**Rates:**\n"
+                   "• 1 session: Rs 1,500\n"
+                   "• 5 sessions: Rs 6,500\n"
+                   "• 10 sessions: Rs 12,000\n\n"
+                   "💡 VIP members get 2 FREE PT sessions/month!",
+            'quick_replies': ['Book session', 'View pricing', 'Contact']
+        }
+    
+    # Contact/Support
+    elif any(word in message for word in ['contact', 'phone', 'email', 'support', 'help', 'location']):
+        return {
+            'text': f"📞 **Contact {gym_name}:**\n\n"
+                   "📱 Phone: +92 300 1234567\n"
+                   "✉️ Email: support@gymmanager.com\n"
+                   "📍 Location: [Your Gym Address]\n"
+                   "💬 WhatsApp: +92 300 1234567\n\n"
+                   "**Office Hours:**\n"
+                   "Monday - Friday: 9 AM - 6 PM\n\n"
+                   "We typically respond within 1 hour! 😊",
+            'quick_replies': ['View hours', 'Check pricing']
+        }
+    
+    # Account/Login
+    elif any(word in message for word in ['account', 'login', 'profile', 'membership']):
+        if username:
+            return {
+                'text': "👤 **Your Account:**\n\n"
+                       f"You're logged in as: {username}\n\n"
+                       "You can:\n"
+                       "✅ View your dashboard\n"
+                       "✅ Check payment history\n"
+                       "✅ Update profile\n"
+                       "✅ Track attendance\n\n"
+                       "Need help with your account?",
+                'quick_replies': ['View dashboard', 'Payment history', 'Contact']
+            }
+        else:
+            return {
+                'text': "🔐 **Account Access:**\n\n"
+                       "To view your account details, please log in first!\n\n"
+                       "✅ Manage your membership\n"
+                       "✅ Track your progress\n"
+                       "✅ View payment history\n"
+                       "✅ Book classes & PT sessions",
+                'quick_replies': ['Login now', 'Sign up', 'Contact']
+            }
+    
+    # Facilities
+    elif any(word in message for word in ['facility', 'equipment', 'amenity', 'feature']):
+        return {
+            'text': "🏋️ **Our Facilities:**\n\n"
+                   "**Cardio Zone:**\n"
+                   "• Treadmills, Ellipticals, Bikes\n\n"
+                   "**Strength Training:**\n"
+                   "• Free weights, Machines, Racks\n\n"
+                   "**Amenities:**\n"
+                   "• Locker rooms & showers\n"
+                   "• Steam room & sauna\n"
+                   "• Juice bar\n"
+                   "• Parking\n"
+                   "• WiFi\n\n"
+                   "All equipment is regularly sanitized! 🧼",
+            'quick_replies': ['View classes', 'Check pricing', 'Contact']
+        }
+    
+    # Default response
+    else:
+        return {
+            'text': "🤖 I'm here to help! You can ask me about:\n\n"
+                   "⏰ Gym hours & schedule\n"
+                   "💰 Membership pricing\n"
+                   "💳 Payment options\n"
+                   "🏋️ Classes & trainers\n"
+                   "🏢 Facilities & equipment\n"
+                   "📞 Contact information\n"
+                   "👤 Account management\n\n"
+                   "What would you like to know?",
+            'quick_replies': ['View hours', 'Check pricing', 'Contact us', 'View classes']
+        }
+
     port = int(os.environ.get('PORT', 5000))
     app.run(host='0.0.0.0', port=port)
