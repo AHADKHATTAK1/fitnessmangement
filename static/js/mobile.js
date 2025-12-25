@@ -1,3 +1,7 @@
+// MOBILE NAVIGATION DISABLED - User requested removal of hamburger menu
+// All code below is commented out
+
+/*
 // Mobile Navigation Toggle
 document.addEventListener('DOMContentLoaded', function () {
     // Create mobile nav toggle button if it doesn't exist
@@ -72,3 +76,4 @@ document.addEventListener('DOMContentLoaded', function () {
 
 // Prevent zoom on input focus (iOS)
 document.addEventListener('touchstart', function () { }, { passive: true });
+*/
