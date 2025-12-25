@@ -1,4 +1,3 @@
-```
 """
 Database-backed Gym Manager
 Uses PostgreSQL via SQLAlchemy instead of JSON files
