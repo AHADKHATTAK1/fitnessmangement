@@ -331,8 +331,7 @@
 
                 // Parse the data passed from Flask
                 // We need to adhere to the format [{'month': 'Jan', 'revenue': 1000}, ...]
-                const revenueData = {{ revenue_trend | tojson | safe
-            }};
+                const revenueData = {{ revenue_trend | tojson | safe }};
 
             const labels = revenueData.map(d => d.month);
             const data = revenueData.map(d => d.revenue);
