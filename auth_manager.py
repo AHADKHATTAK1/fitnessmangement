@@ -57,8 +57,15 @@ class AuthManager:
     def create_user(self, username, password, referral_code=None):
         """Create a new user"""
         if self.legacy:
-            # ... legacy code omitted ...
-            pass
+            if username in self.users: return False
+            self.users[username] = {
+                'password': self.hash_password(password),
+                'role': 'admin',
+                'joined_at': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+            }
+            with open('users.json', 'w') as f:
+                json.dump(self.users, f)
+            return True
 
         if self.user_exists(username):
             return False
@@ -84,14 +91,23 @@ class AuthManager:
         return True
     
     def verify_user(self, username, password):
-        # ... (keep existing) ...
+        """Verify user credentials"""
+        if self.legacy:
+            if username not in self.users: return False
+            stored_hash = self.users[username].get('password')
+            if stored_hash.startswith('scrypt:') or stored_hash.startswith('pbkdf2:'):
+                return check_password_hash(stored_hash, password)
+            import hashlib
+            sha256_hash = hashlib.sha256(password.encode()).hexdigest()
+            return stored_hash == sha256_hash
+
         user = self.session.query(User).filter_by(email=username).first()
         if not user: return False
         
         if user.password_hash.startswith('scrypt:') or user.password_hash.startswith('pbkdf2:'):
             return self.check_password(user.password_hash, password)
         else:
-            # Legacy check
+            # Legacy SHA256 check
             import hashlib
             if user.password_hash == hashlib.sha256(password.encode()).hexdigest():
                 user.password_hash = self.hash_password(password)
