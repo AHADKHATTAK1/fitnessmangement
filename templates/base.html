@@ -9,6 +9,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/loading.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/mobile.css') }}">
     <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
     <meta name="theme-color" content="#7928ca">
 
@@ -534,6 +535,7 @@
         // Offline/Online detection removed - no banner popup
         // App works offline silently via Service Worker
     </script>
+    <script src="{{ url_for('static', filename='js/mobile.js') }}" defer></script>
 </body>
 
 </html>
