@@ -1783,6 +1783,44 @@ def fix_database_schema():
             session.rollback()
             results.append(f"⚠️ members.birthday: Already exists")
         
+        # Create body_measurements table
+        try:
+            session.execute(text('''
+                CREATE TABLE IF NOT EXISTS body_measurements (
+                    id SERIAL PRIMARY KEY,
+                    member_id INTEGER REFERENCES members(id),
+                    weight FLOAT,
+                    body_fat FLOAT,
+                    chest FLOAT,
+                    waist FLOAT,
+                    arms FLOAT,
+                    notes TEXT,
+                    recorded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+            '''))
+            session.commit()
+            results.append("✅ Created/verified body_measurements table")
+        except Exception as e:
+            session.rollback()
+            results.append(f"⚠️ body_measurements table: {str(e)[:100]}")
+        
+        # Create member_notes table
+        try:
+            session.execute(text('''
+                CREATE TABLE IF NOT EXISTS member_notes (
+                    id SERIAL PRIMARY KEY,
+                    member_id INTEGER REFERENCES members(id),
+                    note TEXT,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+            '''))
+            session.commit()
+            results.append("✅ Created/verified member_notes table")
+        except Exception as e:
+            session.rollback()
+            results.append(f"⚠️ member_notes table: {str(e)[:100]}")
+
+        
         try:
             session.execute(text('ALTER TABLE members ADD COLUMN IF NOT EXISTS last_check_in TIMESTAMP;'))
             session.commit()
