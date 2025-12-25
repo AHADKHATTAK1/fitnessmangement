@@ -684,7 +684,6 @@ def dashboard():
                          all_members=all_members,
                          available_months=available_months,
                          expiring_count=expiring_count,
-                         revenue_trend=revenue_trend,
                          max_revenue=max_revenue,
                          revenue_change=revenue_change,
                          gym_details=gym.get_gym_details(),
