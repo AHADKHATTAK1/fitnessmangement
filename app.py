@@ -1254,6 +1254,39 @@ def delete_member_note(member_id, note_id):
     
     return redirect(url_for('member_details', member_id=member_id))
 
+@app.route('/member/<member_id>/add-measurement', methods=['POST'])
+def add_measurement(member_id):
+    gym = get_gym()
+    if not gym: return redirect(url_for('auth'))
+    
+    weight = request.form.get('weight')
+    body_fat = request.form.get('body_fat')
+    chest = request.form.get('chest')
+    waist = request.form.get('waist')
+    arms = request.form.get('arms')
+    notes = request.form.get('notes')
+    
+    if weight:
+        if gym.add_body_measurement(member_id, weight, body_fat, chest, waist, arms, notes):
+            flash('📊 Measurement recorded successfully!', 'success')
+        else:
+            flash('Failed to add measurement', 'error')
+    
+    return redirect(url_for('member_details', member_id=member_id))
+
+@app.route('/member/<member_id>/delete-measurement/<measurement_id>')
+def delete_measurement(member_id, measurement_id):
+    gym = get_gym()
+    if not gym: return redirect(url_for('auth'))
+    
+    if gym.delete_body_measurement(measurement_id):
+        flash('🗑️ Measurement deleted!', 'success')
+    else:
+        flash('Failed to delete measurement', 'error')
+    
+    return redirect(url_for('member_details', member_id=member_id))
+
+
 
 @app.route('/member/<member_id>/delete_fee/<month>', methods=['POST'])
 def delete_fee_record(member_id, month):
