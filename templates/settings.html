@@ -7,6 +7,51 @@
     style="font-size: 3rem; font-weight: 800; margin-bottom: 2.5rem; text-align: center; background: linear-gradient(135deg, #fff 0%, var(--primary) 50%, var(--secondary) 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; filter: drop-shadow(0 0 20px rgba(139, 92, 246, 0.5));">
     ⚙️ Gym Settings</h1>
 
+<!-- NEW: Subscription Status Card -->
+<div class="card"
+    style="max-width: 600px; margin: 0 auto 2rem auto; border: 1px solid var(--border); background: linear-gradient(145deg, rgba(15, 23, 42, 0.8), rgba(15, 23, 42, 0.4));">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+        <h2 style="margin: 0; font-size: 1.25rem; display: flex; align-items: center; gap: 0.5rem;">
+            💎 My Subscription
+        </h2>
+        {% if subscription.status == 'Active' %}
+        <span class="badge"
+            style="background: rgba(16, 185, 129, 0.2); color: var(--success); border: 1px solid var(--success);">
+            ✅ Active
+        </span>
+        {% else %}
+        <span class="badge"
+            style="background: rgba(239, 68, 68, 0.2); color: var(--error); border: 1px solid var(--error);">
+            ❌ Expired
+        </span>
+        {% endif %}
+    </div>
+
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+        <div style="background: rgba(255,255,255,0.05); padding: 1rem; border-radius: 8px;">
+            <div style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.2rem;">Current Plan</div>
+            <div style="font-size: 1.1rem; font-weight: 600;">Standard {{ subscription.market }}</div>
+        </div>
+        <div style="background: rgba(255,255,255,0.05); padding: 1rem; border-radius: 8px;">
+            <div style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.2rem;">Valid Until</div>
+            <div style="font-size: 1.1rem; font-weight: 600;">
+                {{ subscription.expiry }}
+                {% if subscription.days_left < 5 and subscription.days_left> 0 %}
+                    <span style="font-size: 0.7rem; color: var(--warning);">({{ subscription.days_left }} days
+                        left)</span>
+                    {% endif %}
+            </div>
+        </div>
+    </div>
+
+    {% if subscription.status != 'Active' or subscription.days_left < 5 %} <div style="margin-top: 1.5rem;">
+        <a href="{{ url_for('subscription') }}" class="btn btn-primary" style="width: 100%; justify-content: center;">
+            🔄 Renew / Upgrade Plan
+        </a>
+</div>
+{% endif %}
+</div>
+
 <div class="card" style="max-width: 600px; margin: 0 auto;">
     <form method="POST" enctype="multipart/form-data">
         <div class="form-group">

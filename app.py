@@ -1589,11 +1589,34 @@ def settings():
         return redirect(url_for('settings'))
 
     payments = []
+    subscription = {}
+    
     if 'logged_in' in session:
-        user = auth_manager.users.get(session['username'], {})
-        payments = user.get('payments', [])
+        username = session['username']
+        user = auth_manager.session.query(User).filter_by(email=username).first()
         
-    return render_template('settings.html', details=gym.get_gym_details(), payments=payments)
+        if user:
+            # Get payments from JSON (Legacy) or DB (Future)
+            # Currently payments are stored in JSON in legacy mode
+            if auth_manager.legacy:
+                legacy_user = auth_manager.users.get(username, {})
+                payments = legacy_user.get('payments', [])
+            
+            # Prepare Subscription Data
+            is_active = auth_manager.is_subscription_active(username)
+            days_left = 0
+            if user.subscription_expiry:
+                days_left = (user.subscription_expiry - datetime.utcnow()).days
+            
+            subscription = {
+                'market': user.market or 'US',
+                'status': 'Active' if is_active else 'Expired',
+                'expiry': user.subscription_expiry.strftime('%Y-%m-%d') if user.subscription_expiry else 'Lifetime',
+                'days_left': days_left,
+                'is_trial': False # Simplify for now
+            }
+        
+    return render_template('settings.html', details=gym.get_gym_details(), payments=payments, subscription=subscription)
 
 @app.route('/restore_backup', methods=['POST'])
 def restore_backup():
