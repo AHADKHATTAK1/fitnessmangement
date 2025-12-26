@@ -1091,7 +1091,7 @@ class GymManager:
         # Get all active members
         members_query = self.session.query(Member).filter(
             Member.gym_id == self.gym.id,
-            Member.active == True
+            Member.is_active == True
         ).all()
         
         total_members = len(members_query)
@@ -1161,7 +1161,7 @@ class GymManager:
         # Join
         inactive_query = self.session.query(Member, subquery.c.last_checkin)\
             .outerjoin(subquery, Member.id == subquery.c.member_id)\
-            .filter(Member.gym_id == self.gym.id, Member.active == True)
+            .filter(Member.gym_id == self.gym.id, Member.is_active == True)
             
         inactive_list = []
         for member, last_checkin in inactive_query.all():
