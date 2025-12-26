@@ -140,6 +140,7 @@ def check_subscription():
     username = session.get('username')
     if not auth_manager.is_subscription_active(username):
         session['needs_payment'] = True
+        flash('Please renew your subscription to continue using all features. (Select US or PK plan)', 'error')
         return redirect(url_for('subscription'))
 
 @app.route('/subscription')
