@@ -1097,8 +1097,8 @@ class GymManager:
         total_members = len(members_query)
         
         # Get payments for current and last month
-        payments_query = self.session.query(Fee).filter(
-            Fee.gym_id == self.gym.id,
+        payments_query = self.session.query(Fee).join(Member).filter(
+            Member.gym_id == self.gym.id,
             Fee.month.in_([current_month_str, last_month_str])
         ).all()
         
@@ -1199,7 +1199,8 @@ class GymManager:
         # 4. REVENUE TREND CHART (Optimized Query)
         start_date = (datetime.now().replace(day=1) - timedelta(days=30*months)).strftime('%Y-%m')
         revenue_hist = self.session.query(Fee.month, func.sum(Fee.amount))\
-            .filter(Fee.gym_id == self.gym.id, Fee.month >= start_date)\
+            .join(Member)\
+            .filter(Member.gym_id == self.gym.id, Fee.month >= start_date)\
             .group_by(Fee.month).all()
             
         revenue_map = {r[0]: float(r[1]) for r in revenue_hist}
