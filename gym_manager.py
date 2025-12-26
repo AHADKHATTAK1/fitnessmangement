@@ -1122,15 +1122,33 @@ class GymManager:
         if last_month_revenue > 0:
             revenue_change = round(((current_revenue - last_month_revenue) / last_month_revenue) * 100, 1)
 
-        # 2. ALERTS LOGIC (In Memory processing of the fetched members list)
-        unpaid_alert = []
+        # 2. LISTS & ALERTS
+        # We need full lists for the dashboard tables, not just counts
+        paid_list = []
+        unpaid_list = []
+        
+        # Alerts (subsets)
         expiring_trials = []
         birthdays_today = []
         
         for m in members_query:
-            # Unpaid Alert
-            if m.id not in paid_member_ids:
-                unpaid_alert.append({'id': m.id, 'name': m.name, 'photo_url': m.photo_url, 'phone': m.phone})
+            # Create member dict for UI
+            m_dict = {
+                'id': m.id, 
+                'name': m.name, 
+                'photo_url': m.photo_url, 
+                'phone': m.phone,
+                'email': m.email,
+                'photo': m.photo_url # Template uses 'photo' sometimes
+            }
+            
+            # Categorize Paid/Unpaid
+            if m.id in paid_member_ids:
+                m_dict['status'] = 'paid'
+                paid_list.append(m_dict)
+            else:
+                m_dict['status'] = 'unpaid'
+                unpaid_list.append(m_dict)
             
             # Expiring Trials
             if m.is_trial and m.trial_end_date:
@@ -1146,8 +1164,8 @@ class GymManager:
                 if m.birthday.month == today.month and m.birthday.day == today.day:
                     birthdays_today.append({'id': m.id, 'name': m.name, 'photo_url': m.photo_url})
         
-        # Limit alerts size
-        unpaid_alert = unpaid_alert[:5]
+        # Limit alerts size for specific alert widgets (top 5)
+        unpaid_alert = unpaid_list[:5]
 
         # 3. INACTIVE MEMBERS (Optimized Query)
         cutoff_date = datetime.now() - timedelta(days=14)
@@ -1203,7 +1221,9 @@ class GymManager:
             'unpaid_count': unpaid_count,
             'revenue': current_revenue,
             'revenue_change': revenue_change,
-            'expiring_count': len(expiring_trials)
+            'expiring_count': len(expiring_trials),
+            'paid_list': paid_list,
+            'unpaid_list': unpaid_list
         }, {
             'unpaid': unpaid_alert,
             'expiring': expiring_trials,

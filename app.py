@@ -567,13 +567,8 @@ def dashboard():
         return render_template('dashboard_enhanced.html',
                             # Stats
                             total_members=stats.get('total_members', 0),
-                            paid=stats.get('paid_count', 0), # Template expects count or list? Check logic.
-                            # Template seemingly uses 'paid' as list in some places?
-                            # Wait, original code passed `status['paid']` which is LIST.
-                            # But dashboard_enhanced just shows counts usually.
-                            # Let's check template usage. If it needs list, we might have issues.
-                            # Assuming it needs count for top cards.
-                            unpaid=stats.get('unpaid_count', 0),
+                            paid=stats.get('paid_list', []), # Fixed: Pass LIST not COUNT
+                            unpaid=stats.get('unpaid_list', []), # Fixed: Pass LIST not COUNT
                             revenue=stats.get('revenue', 0),
                             revenue_change=stats.get('revenue_change', 0),
                             expiring_count=stats.get('expiring_count', 0),
