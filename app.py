@@ -1224,34 +1224,48 @@ def download_excel():
     if not gym: return redirect(url_for('auth'))
     
     current_month = datetime.now().strftime('%Y-%m')
-    status = gym.get_payment_status(current_month)
+    all_members = gym.get_all_members()
     
-    # Prepare data for Excel
+    # Prepare comprehensive data for Excel
     data = []
-    for member in status['paid']:
+    for member in all_members:
+        # Check payment status
+        is_paid = gym.is_fee_paid(member['id'], current_month)
+        
         data.append({
             'ID': member['id'],
             'Name': member['name'],
             'Phone': member['phone'],
-            'Status': 'PAID',
-            'Last Payment': member.get('last_paid', 'N/A')
-        })
-    
-    for member in status['unpaid']:
-        data.append({
-            'ID': member['id'],
-            'Name': member['name'],
-            'Phone': member['phone'],
-            'Status': 'UNPAID',
-            'Last Payment': 'N/A'
+            'Email': member.get('email', 'N/A'),
+            'Membership Type': member.get('membership_type', 'Gym'),
+            'Join Date': member.get('joined_date', 'N/A'),
+            'Status': 'PAID' if is_paid else 'UNPAID',
+            'Active': 'Yes' if member.get('active', True) else 'No'
         })
     
     df = pd.DataFrame(data)
     
-    # Create Excel file
+    # Create Excel file with formatting
     output = BytesIO()
     with pd.ExcelWriter(output, engine='openpyxl') as writer:
         df.to_excel(writer, index=False, sheet_name='Members')
+        
+        # Get workbook and worksheet
+        worksheet = writer.sheets['Members']
+        
+        # Auto-adjust column widths
+        for column in worksheet.columns:
+            max_length = 0
+            column = [cell for cell in column]
+            for cell in column:
+                try:
+                    if len(str(cell.value)) > max_length:
+                        max_length = len(str(cell.value))
+                except:
+                    pass
+            adjusted_width = (max_length + 2)
+            worksheet.column_dimensions[column[0].column_letter].width = adjusted_width
+    
     output.seek(0)
     
     filename = f'gym_members_{current_month}.xlsx'
