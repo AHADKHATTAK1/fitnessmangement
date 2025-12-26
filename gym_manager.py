@@ -1072,3 +1072,103 @@ class GymManager:
         """Add a scheduled class - stub method"""
         # TODO: Implement class scheduling feature
         return True
+    def get_dashboard_stats(self, months=6):
+        """
+        Get all dashboard stats in optimized queries to avoid N+1 problem.
+        Returns:
+            - inactive_members: List of dicts with days_inactive
+            - revenue_trend: List of dicts with month label and revenue
+            - birthdays_today: List of members with birthday today
+        """
+        if self.legacy:
+            return [], [], []
+
+        # 1. OPTIMIZED INACTIVE MEMBERS (One Query)
+        # Find max check-in for each member, filter those > 14 days ago
+        cutoff_date = datetime.now() - timedelta(days=14)
+        
+        # Subquery to get last check-in per member
+        subquery = self.session.query(
+            Attendance.member_id,
+            func.max(Attendance.created_at).label('last_checkin')
+        ).group_by(Attendance.member_id).subquery()
+        
+        # Join with members and filter
+        inactive_query = self.session.query(Member, subquery.c.last_checkin)\
+            .outerjoin(subquery, Member.id == subquery.c.member_id)\
+            .filter(Member.gym_id == self.gym.id)\
+            .filter(Member.active == True)
+            
+        all_inactive = []
+        for member, last_checkin in inactive_query.all():
+            days_inactive = 999
+            if last_checkin:
+                days_inactive = (datetime.now() - last_checkin).days
+            
+            if days_inactive > 14:
+                m_dict = {
+                    'id': member.id,
+                    'name': member.name,
+                    'photo_url': member.photo_url,
+                    'days_inactive': days_inactive
+                }
+                all_inactive.append(m_dict)
+                
+        # Sort by inactivity
+        all_inactive.sort(key=lambda x: x['days_inactive'], reverse=True)
+        inactive_members = all_inactive[:5]
+
+        # 2. OPTIMIZED REVENUE TREND (One Query)
+        # Get sum of payments grouped by month for last X months
+        start_date = (datetime.now().replace(day=1) - timedelta(days=30*months)).strftime('%Y-%m')
+        
+        revenue_query = self.session.query(
+            Fee.month,
+            func.sum(Fee.amount)
+        ).filter(
+            Fee.gym_id == self.gym.id,
+            Fee.month >= start_date
+        ).group_by(Fee.month).all()
+        
+        revenue_map = {r[0]: float(r[1]) for r in revenue_query}
+        
+        # Format for chart
+        revenue_trend = []
+        current_date = datetime.now()
+        for i in range(months-1, -1, -1):
+            year = current_date.year
+            month = current_date.month - i
+            while month <= 0:
+                month += 12
+                year -= 1
+            
+            month_str = f"{year}-{month:02d}"
+            month_label = datetime(year, month, 1).strftime('%b')
+            
+            revenue_trend.append({
+                'month': month_label,
+                'revenue': revenue_map.get(month_str, 0)
+            })
+
+        # 3. OPTIMIZED BIRTHDAYS (One Query)
+        # Filter DB directly for today's birthday
+        today = datetime.now().date()
+        birthdays_today = []
+        
+        # Extract month/day from date column
+        birthday_query = self.session.query(Member).filter(
+            Member.gym_id == self.gym.id,
+            Member.active == True,
+            extract('month', Member.birthday) == today.month,
+            extract('day', Member.birthday) == today.day
+        ).all()
+        
+        for m in birthday_query:
+            birthdays_today.append({
+                'id': m.id,
+                'name': m.name,
+                'photo_url': m.photo_url,
+                'phone': m.phone
+            })
+            
+        return inactive_members, revenue_trend, birthdays_today

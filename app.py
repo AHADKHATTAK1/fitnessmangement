@@ -582,108 +582,68 @@ def dashboard():
             members_to_check = all_members
         
         # Calculate expiring members (next 3 days)
+        # Optimized loop - check dates directly without parsing every time if possible, 
+        # or just rely on the fact that we're iterating memory objects now which is fast enough compared to DB
         expiring_count = 0
         today = datetime.now().date()
-        for member in all_members:
+        
+        # Check if it's a dict or list (handle both legacy and DB modes)
+        if isinstance(all_members, dict):
+            members_list = list(all_members.values())
+        else:
+            members_list = all_members
+            
+        for member in members_list:
             if member.get('is_trial') and member.get('trial_end_date'):
                 try:
-                    trial_end = datetime.strptime(str(member['trial_end_date']), '%Y-%m-%d').date()
+                    # Parse date if string
+                    trial_end = member['trial_end_date']
+                    if isinstance(trial_end, str):
+                        trial_end = datetime.strptime(trial_end, '%Y-%m-%d').date()
+                    elif isinstance(trial_end, datetime):
+                        trial_end = trial_end.date()
+                        
                     days_left = (trial_end - today).days
                     if 0 <= days_left <= 3:
                         expiring_count += 1
                 except:
                     pass
         
-        # Calculate Revenue Trend (Last 6 Months) for Chart
-        revenue_trend = []
-        current_date = datetime.now()
+        # ==================== OPTIMIZED DASHBOARD STATS ====================
+        # Fetch heavy stats using optimized SQL queries via GymManager
+        inactive_members, revenue_trend, birthdays_today = gym.get_dashboard_stats()
         
-        for i in range(5, -1, -1):  # Go back 6 months
-            year = current_date.year
-            month = current_date.month - i
-            while month <= 0:
-                month += 12
-                year -= 1
-            
-            month_str = f"{year}-{month:02d}"
-            month_label = datetime(year, month, 1).strftime('%b')
-            
-            # Get revenue for this month
-            month_revenue = 0
-            for member in all_members:
-                if gym.is_fee_paid(member['id'], month_str):
-                    payment_history = gym.get_payment_history(member['id'])
-                    for payment in payment_history:
-                        if payment.get('month') == month_str:
-                            month_revenue += float(payment.get('amount', 0))
-                            break
-            
-            revenue_trend.append({
-                'month': month_label,
-                'revenue': month_revenue
-            })
-        
-        # Calculate max revenue for chart scaling
+        # Fallback for max_revenue calculation
         max_revenue = max([r['revenue'] for r in revenue_trend]) if revenue_trend else 1
         
-        # ==================== SMART ALERTS ====================
+        # Additional Alerts optimized
+        unpaid_members = [m for m in members_list if not gym.is_fee_paid(m['id'], current_month)]
         
-        # Alert 1: Unpaid Members (current month)
-        unpaid_members = [m for m in all_members if not gym.is_fee_paid(m['id'], current_month)]
-        
-        # Alert 2: Trials Expiring Soon (next 3 days)
+        # Expiring trials (reuse loop logic or filter list)
         expiring_trials = []
-        today = datetime.now().date()
-        for member in all_members:
+        for member in members_list:
             if member.get('is_trial') and member.get('trial_end_date'):
                 try:
-                    trial_end = datetime.strptime(str(member['trial_end_date']), '%Y-%m-%d').date()
+                    trial_end = member['trial_end_date']
+                    if isinstance(trial_end, str):
+                        trial_end = datetime.strptime(trial_end, '%Y-%m-%d').date()
+                    elif isinstance(trial_end, datetime):
+                        trial_end = trial_end.date()
+                        
                     days_left = (trial_end - today).days
                     if 0 <= days_left <= 3:
                         expiring_trials.append({**member, 'days_left': days_left})
                 except:
                     pass
         
-        # Alert 3: Birthdays Today
-        birthdays_today = []
-        if not gym.legacy:
-            for member in all_members:
-                if member.get('birthday'):
-                    try:
-                        bday = datetime.strptime(str(member['birthday']), '%Y-%m-%d').date()
-                        if bday.month == today.month and bday.day == today.day:
-                            birthdays_today.append(member)
-                    except:
-                        pass
-        
-        # Alert 4: Inactive Members (no check-in for 14+ days)
-        inactive_members = []
-        cutoff_date = datetime.now() - timedelta(days=14)
-        for member in all_members:
-            attendance = gym.get_attendance(member['id'])
-            if attendance:
-                try:
-                    last_checkin = datetime.strptime(attendance[0]['timestamp'], '%Y-%m-%d %H:%M:%S')
-                    if last_checkin < cutoff_date:
-                        days_inactive = (datetime.now() - last_checkin).days
-                        inactive_members.append({**member, 'days_inactive': days_inactive})
-                except:
-                    pass
-            else:
-                # Never checked in
-                inactive_members.append({**member, 'days_inactive': 999})
-        
-        # Sort and limit
-        inactive_members = sorted(inactive_members, key=lambda x: x['days_inactive'], reverse=True)[:5]
-        
         return render_template('dashboard_enhanced.html',
                             revenue_trend=revenue_trend,
-                            total_members=len(all_members),
+                            total_members=len(members_list),
                             paid=status['paid'],
                             unpaid=status['unpaid'],
                             revenue=revenue,
                             current_month=current_month,
-                            all_members=all_members,
+                            all_members=members_list,
                             available_months=available_months,
                             expiring_count=expiring_count,
                             max_revenue=max_revenue,
