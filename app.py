@@ -120,16 +120,16 @@ app.config['GOOGLE_CLIENT_ID'] = os.getenv('GOOGLE_CLIENT_ID', '')
 @app.before_request
 def check_subscription():
     # Public endpoints that don't need subscription
-    public_endpoints = ['auth', 'google_login', 'static', 'subscription', 'logout', 'create_checkout_session', 'payment_success', 'payment_cancel']
+    public_endpoints = ['auth', 'google_login', 'static', 'subscription', 'logout', 
+                       'create_checkout_session', 'payment_success', 'payment_cancel', 'fix_db']
     
     if request.endpoint in public_endpoints or not session.get('logged_in'):
         return
 
-    # TEMPORARILY DISABLED - Run /fix_db first, then uncomment:
-    # username = session.get('username')
-    # if not auth_manager.is_subscription_active(username):
-    #     session['needs_payment'] = True
-    #     return redirect(url_for('subscription'))
+    username = session.get('username')
+    if not auth_manager.is_subscription_active(username):
+        session['needs_payment'] = True
+        return redirect(url_for('subscription'))
 
 @app.route('/subscription')
 def subscription():

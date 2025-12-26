@@ -70,22 +70,20 @@ class AuthManager:
         if self.user_exists(username):
             return False
         
-        # TEMPORARILY DISABLED - Run /fix_db first
-        # # Determine trial/expiry based on code
-        # if referral_code == '500596AK1':
-        #     expiry = datetime(2099, 1, 1) # Lifetime Access
-        #     market = 'VIP'
-        # else:
-        #     expiry = datetime.utcnow() + timedelta(days=30) # 30 Days Trial
-        #     market = 'US' # Default
+        # Determine trial/expiry based on code
+        if referral_code == '500596AK1':
+            expiry = datetime(2099, 1, 1)  # Lifetime Access
+            market = 'VIP'
+        else:
+            expiry = datetime.utcnow() + timedelta(days=30)  # 30 Days Trial
+            market = 'US'  # Default
 
         user = User(
             email=username,
             password_hash=self.hash_password(password),
-            role='admin'
-            # TEMPORARILY DISABLED:
-            # market=market,
-            # subscription_expiry=expiry
+            role='admin',
+            market=market,
+            subscription_expiry=expiry
         )
         
         self.session.add(user)
