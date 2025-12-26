@@ -2120,7 +2120,7 @@ def generate_smart_response(message, gym_name, username=None):
         return {
             'text': f"📞 **Contact {gym_name}:**\n\n"
                    "📱 Phone: +92 300 1234567\n"
-                   "✉️ Email: support@gymmanager.com\n"
+                   "✉️ Email: akkhankhattak122@gmail.com\n"
                    "📍 Location: [Your Gym Address]\n"
                    "💬 WhatsApp: +92 300 1234567\n\n"
                    "**Office Hours:**\n"
