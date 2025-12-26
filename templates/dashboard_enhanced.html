@@ -327,11 +327,18 @@
         <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
         <script>
             document.addEventListener('DOMContentLoaded', function () {
-                const ctx = document.getElementById('revenueChart').getContext('2d');
+                const canvas = document.getElementById('revenueChart');
+                const ctx = canvas.getContext('2d');
+
+                // Create Gradient
+                const gradient = ctx.createLinearGradient(0, 0, 0, 300);
+                gradient.addColorStop(0, 'rgba(139, 92, 246, 0.5)');
+                gradient.addColorStop(1, 'rgba(139, 92, 246, 0.0)');
 
                 // Parse the data passed from Flask
                 // We need to adhere to the format [{'month': 'Jan', 'revenue': 1000}, ...]
-                const revenueData = {{ revenue_trend | tojson | safe }};
+                const revenueData = {{ revenue_trend | tojson | safe
+            }};
 
             const labels = revenueData.map(d => d.month);
             const data = revenueData.map(d => d.revenue);
@@ -344,14 +351,15 @@
                         label: 'Monthly Revenue',
                         data: data,
                         borderColor: '#8b5cf6',
-                        backgroundColor: 'rgba(139, 92, 246, 0.1)',
+                        backgroundColor: gradient,
                         borderWidth: 3,
                         fill: true,
                         tension: 0.4,
                         pointBackgroundColor: '#06b6d4',
                         pointBorderColor: '#fff',
                         pointRadius: 6,
-                        pointHoverRadius: 8
+                        pointHoverRadius: 8,
+                        pointHoverBackgroundColor: '#fff'
                     }]
                 },
                 options: {
@@ -453,7 +461,15 @@
                         <td><span class="badge-enhanced badge-paid">✅ Paid</span></td>
                         <td>
                             <a href="{{ url_for('member_details', member_id=member.id) }}" class="btn btn-sm"
-                                style="background: linear-gradient(135deg, var(--primary), var(--secondary));">View</a>
+                                style="background: linear-gradient(135deg, var(--primary), var(--secondary)); display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; padding: 0; border-radius: 50%;">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
+                                    viewBox="0 0 16 16">
+                                    <path
+                                        d="M16 8s-3-5.5-8-5.5S0 8 0 8s3 5.5 8 5.5S16 8 16 8zM1.173 8a13.133 13.133 0 0 1 1.66-2.043C4.12 4.668 5.88 3.5 8 3.5c2.12 0 3.879 1.168 5.168 2.457A13.133 13.133 0 0 1 14.828 8c-.058.087-.122.183-.195.288-.335.48-.83 1.12-1.465 1.755C11.879 11.332 10.119 12.5 8 12.5c-2.12 0-3.879-1.168-5.168-2.457A13.134 13.134 0 0 1 1.172 8z" />
+                                    <path
+                                        d="M8 5.5a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5zM4.5 8a3.5 3.5 0 1 1 7 0 3.5 3.5 0 0 1-7 0z" />
+                                </svg>
+                            </a>
                         </td>
                     </tr>
                     {% endfor %}
@@ -503,7 +519,15 @@
                         <td><span class="badge-enhanced badge-unpaid">❌ Unpaid</span></td>
                         <td>
                             <a href="{{ url_for('member_details', member_id=member.id) }}" class="btn btn-sm"
-                                style="background: linear-gradient(135deg, var(--error), #d97706);">View</a>
+                                style="background: linear-gradient(135deg, var(--primary), var(--secondary)); display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; padding: 0; border-radius: 50%;">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
+                                    viewBox="0 0 16 16">
+                                    <path
+                                        d="M16 8s-3-5.5-8-5.5S0 8 0 8s3 5.5 8 5.5S16 8 16 8zM1.173 8a13.133 13.133 0 0 1 1.66-2.043C4.12 4.668 5.88 3.5 8 3.5c2.12 0 3.879 1.168 5.168 2.457A13.133 13.133 0 0 1 14.828 8c-.058.087-.122.183-.195.288-.335.48-.83 1.12-1.465 1.755C11.879 11.332 10.119 12.5 8 12.5c-2.12 0-3.879-1.168-5.168-2.457A13.134 13.134 0 0 1 1.172 8z" />
+                                    <path
+                                        d="M8 5.5a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5zM4.5 8a3.5 3.5 0 1 1 7 0 3.5 3.5 0 0 1-7 0z" />
+                                </svg>
+                            </a>
                         </td>
                     </tr>
                     {% endfor %}
