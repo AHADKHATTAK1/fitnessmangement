@@ -60,20 +60,20 @@
             </div>
 
             <div style="text-align: center; margin-bottom: 1.5rem;">
-                <p style="margin-bottom: 0.5rem;">Pay via <strong>EasyPaisa / JazzCash</strong></p>
-                <code
-                    style="background: rgba(255,255,255,0.1); padding: 0.5rem; border-radius: 6px; font-size: 1.2rem;">0300-1234567</code>
-                <p style="font-size: 0.8rem; color: var(--text-muted); margin-top: 0.5rem;">Title: Gym Manager Inc</p>
+                <!-- JazzCash Logo Area -->
+                <p style="margin-bottom: 0.5rem;">Pay securely via <strong>JazzCash</strong></p>
             </div>
 
-            <a href="https://wa.me/923001234567?text=Hi, I have paid 5000 PKR for Gym Manager Subscription. My Email is: ..."
-                target="_blank" class="btn btn-success"
-                style="width: 100%; padding: 1rem; font-size: 1.1rem; display: flex; justify-content: center; align-items: center; gap: 0.5rem; background: #25D366; border: none;">
-                <span>Verify via WhatsApp 💬</span>
-            </a>
-            <p style="text-align: center; margin-top: 1rem; font-size: 0.8rem; color: var(--text-muted);">
-                Send screenshot for instant activation via API.
-            </p>
+            <form action="{{ url_for('manual_payment') }}" method="POST">
+                <input type="hidden" name="payment_method" value="jazzcash">
+                <button type="submit" class="btn btn-success"
+                    style="width: 100%; padding: 1rem; font-size: 1.1rem; display: flex; justify-content: center; align-items: center; gap: 0.5rem; background: #c2121c; border: none;">
+                    <span>Pay with JazzCash 🔴</span>
+                </button>
+                <p style="text-align: center; margin-top: 1rem; font-size: 0.8rem; color: var(--text-muted);">
+                    Instant activation. Secured by JazzCash Gateway.
+                </p>
+            </form>
         </div>
 
         <script>

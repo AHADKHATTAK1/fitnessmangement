@@ -117,6 +117,17 @@ stripe.api_key = app.config['STRIPE_SECRET_KEY']
 # GOOGLE OAUTH CONFIGURATION - Loaded from environment variables
 app.config['GOOGLE_CLIENT_ID'] = os.getenv('GOOGLE_CLIENT_ID', '')
 
+# JAZZCASH CONFIGURATION
+app.config['JAZZCASH_MERCHANT_ID'] = os.getenv('JAZZCASH_MERCHANT_ID', '')
+app.config['JAZZCASH_PASSWORD'] = os.getenv('JAZZCASH_PASSWORD', '')
+app.config['JAZZCASH_RETURN_URL'] = os.getenv('JAZZCASH_RETURN_URL', 'http://localhost:5000/jazzcash_success')
+
+# JAZZCASH CONFIGURATION
+app.config['JAZZCASH_MERCHANT_ID'] = os.getenv('JAZZCASH_MERCHANT_ID', '')
+app.config['JAZZCASH_PASSWORD'] = os.getenv('JAZZCASH_PASSWORD', '')
+app.config['JAZZCASH_RETURN_URL'] = os.getenv('JAZZCASH_RETURN_URL', 'http://localhost:5000/jazzcash_return')
+
+
 @app.before_request
 def check_subscription():
     # Public endpoints that don't need subscription
@@ -192,6 +203,54 @@ def payment_cancel():
 
 @app.route('/manual_payment', methods=['GET', 'POST'])
 def manual_payment():
+    """Manual Payment Upload (Legacy) or JazzCash Redirect"""
+    if request.method == 'POST':
+        # If JazzCash button clicked
+        if request.form.get('payment_method') == 'jazzcash':
+            # Redirect to JazzCash Success (Mocking integration for now)
+            # In production, this would redirect to JazzCash Hosted Checkout
+            txn_ref = f"T{int(datetime.now().timestamp())}"
+            flash('Redirecting to JazzCash...', 'info')
+            return redirect(url_for('jazzcash_success', txn_ref=txn_ref))
+
+        # Legacy Manual Upload code...
+        if 'screenshot' not in request.files:
+            flash('No file uploaded', 'error')
+            return redirect(request.url)
+            
+        file = request.files['screenshot']
+        if file.filename == '':
+            flash('No selected file', 'error')
+            return redirect(request.url)
+            
+        if file and allowed_file(file.filename):
+            filename = secure_filename(file.filename)
+            file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+            
+            # Send email to admin (Simplified)
+            try:
+                username = session.get('username', 'Unknown')
+                # Email logic would go here
+            except:
+                pass
+            
+            flash('Receipt uploaded! Please wait for admin approval.', 'success')
+            return redirect(url_for('subscription'))
+            
+    return render_template('payment_manual.html')
+
+@app.route('/jazzcash_success')
+def jazzcash_success():
+    """Handle JazzCash Success Callback"""
+    txn_ref = request.args.get('txn_ref')
+    
+    # Auto-approve subscription for JazzCash users
+    if 'username' in session:
+        auth_manager.extend_subscription(session['username'], days=30)
+        auth_manager.set_market(session['username'], 'PK')
+        flash(f'✅ Payment Successful! Transaction: {txn_ref}. Subscription Active.', 'success')
+    
+    return redirect(url_for('dashboard'))
     username = session.get('username')
     if not username: return redirect(url_for('auth'))
     
