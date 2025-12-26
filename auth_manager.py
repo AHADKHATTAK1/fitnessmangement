@@ -118,45 +118,46 @@ class AuthManager:
             return False
 
     def is_subscription_active(self, username):
-        """TEMPORARILY DISABLED - Always returns True until database is migrated"""
-        return True  # Disabled subscription check
-        # user = self.session.query(User).filter_by(email=username).first()
-        # if not user:
-        #     return False
-        # 
-        # # VIP code (500596AK1) gets lifetime access
-        # if hasattr(user, 'market') and user.market == 'VIP':
-        #     return True
-        # 
-        # # Check expiry with 3-day grace period
-        # if user.subscription_expiry:
-        #     grace_period = timedelta(days=3)
-        #     return datetime.utcnow() < (user.subscription_expiry + grace_period)
-        # 
-        # # If no expiry set, give 30 days from now as grace
-        # return True
+        """Check if user's subscription is active (with 3-day grace period)"""
+        user = self.session.query(User).filter_by(email=username).first()
+        if not user:
+            return False
+        
+        # VIP code (500596AK1) gets lifetime access
+        if hasattr(user, 'market') and user.market == 'VIP':
+            return True
+        
+        # Check expiry with 3-day grace period
+        if user.subscription_expiry:
+            grace_period = timedelta(days=3)
+            return datetime.utcnow() < (user.subscription_expiry + grace_period)
+        
+        # If no expiry set, give 30 days trial from account creation
+        if user.created_at:
+            trial_end = user.created_at + timedelta(days=30)
+            return datetime.utcnow() < trial_end
+        
+        return False
 
     def extend_subscription(self, username, days=30):
-        """TEMPORARILY DISABLED"""
-        return True  # Disabled until /fix_db is run
-        # user = self.session.query(User).filter_by(email=username).first()
-        # if user:
-        #     if not user.subscription_expiry:
-        #         user.subscription_expiry = datetime.utcnow() + timedelta(days=days)
-        #     else:
-        #         user.subscription_expiry += timedelta(days=days)
-        #     self.session.commit()
-        #     return True
-        # return False
+        """Extend user's subscription by specified days"""
+        user = self.session.query(User).filter_by(email=username).first()
+        if user:
+            if not user.subscription_expiry:
+                user.subscription_expiry = datetime.utcnow() + timedelta(days=days)
+            else:
+                user.subscription_expiry += timedelta(days=days)
+            self.session.commit()
+            return True
+        return False
     
     def set_market(self, username, market):
-        """TEMPORARILY DISABLED"""
-        return True  # Disabled until /fix_db is run
-        # user = self.session.query(User).filter_by(email=username).first()
-        # if user:
-        #     user.market = market
-        #     self.session.commit()
-        #     return True
+        """Set user's market region ('US', 'PK', or 'VIP')"""
+        user = self.session.query(User).filter_by(email=username).first()
+        if user:
+            user.market = market
+            self.session.commit()
+            return True
         return False
     
     def get_market(self, username):

@@ -1,7 +1,11 @@
 -- Manual Database Migration Script
 -- Run these commands in psql to fix the database
 
--- Step 1: Add missing columns to members table
+-- Step 1: Add SaaS subscription columns to users table (CRITICAL!)
+ALTER TABLE users ADD COLUMN IF NOT EXISTS market VARCHAR(50) DEFAULT 'US';
+ALTER TABLE users ADD COLUMN IF NOT EXISTS subscription_expiry TIMESTAMP;
+
+-- Step 2: Add missing columns to members table
 ALTER TABLE members ADD COLUMN IF NOT EXISTS birthday DATE;
 ALTER TABLE members ADD COLUMN IF NOT EXISTS last_check_in TIMESTAMP;
 
