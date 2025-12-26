@@ -1074,101 +1074,141 @@ class GymManager:
         return True
     def get_dashboard_stats(self, months=6):
         """
-        Get all dashboard stats in optimized queries to avoid N+1 problem.
+        Get ALL dashboard stats in optimized queries.
         Returns:
-            - inactive_members: List of dicts with days_inactive
-            - revenue_trend: List of dicts with month label and revenue
-            - birthdays_today: List of members with birthday today
+            - stats: Dict with counts and revenue
+            - alerts: Dict with lists for UI alerts
+            - charts: Dict with data for charts
         """
         if self.legacy:
-            return [], [], []
+            return {}, {}, {}
 
-        # 1. OPTIMIZED INACTIVE MEMBERS (One Query)
-        # Find max check-in for each member, filter those > 14 days ago
+        today = datetime.now().date()
+        current_month_str = datetime.now().strftime('%Y-%m')
+        last_month_str = (datetime.now().replace(day=1) - timedelta(days=1)).strftime('%Y-%m')
+        
+        # 1. MEMBERS & REVENUE STATUS (Few Queries)
+        # Get all active members
+        members_query = self.session.query(Member).filter(
+            Member.gym_id == self.gym.id,
+            Member.active == True
+        ).all()
+        
+        total_members = len(members_query)
+        
+        # Get payments for current and last month
+        payments_query = self.session.query(Fee).filter(
+            Fee.gym_id == self.gym.id,
+            Fee.month.in_([current_month_str, last_month_str])
+        ).all()
+        
+        # Process payments in memory (fast for <10k records)
+        paid_member_ids = set()
+        current_revenue = 0.0
+        last_month_revenue = 0.0
+        
+        for p in payments_query:
+            if p.month == current_month_str:
+                current_revenue += float(p.amount)
+                paid_member_ids.add(p.member_id)
+            elif p.month == last_month_str:
+                last_month_revenue += float(p.amount)
+                
+        paid_count = len(paid_member_ids)
+        unpaid_count = total_members - paid_count
+        
+        # Calculate revenue change
+        revenue_change = 0
+        if last_month_revenue > 0:
+            revenue_change = round(((current_revenue - last_month_revenue) / last_month_revenue) * 100, 1)
+
+        # 2. ALERTS LOGIC (In Memory processing of the fetched members list)
+        unpaid_alert = []
+        expiring_trials = []
+        birthdays_today = []
+        
+        for m in members_query:
+            # Unpaid Alert
+            if m.id not in paid_member_ids:
+                unpaid_alert.append({'id': m.id, 'name': m.name, 'photo_url': m.photo_url, 'phone': m.phone})
+            
+            # Expiring Trials
+            if m.is_trial and m.trial_end_date:
+                days_left = (m.trial_end_date - today).days
+                if 0 <= days_left <= 3:
+                    expiring_trials.append({
+                        'id': m.id, 'name': m.name, 'photo_url': m.photo_url, 
+                        'days_left': days_left, 'trial_end': m.trial_end_date
+                    })
+            
+            # Birthdays
+            if m.birthday:
+                if m.birthday.month == today.month and m.birthday.day == today.day:
+                    birthdays_today.append({'id': m.id, 'name': m.name, 'photo_url': m.photo_url})
+        
+        # Limit alerts size
+        unpaid_alert = unpaid_alert[:5]
+
+        # 3. INACTIVE MEMBERS (Optimized Query)
         cutoff_date = datetime.now() - timedelta(days=14)
         
-        # Subquery to get last check-in per member
+        # Subquery for max date
         subquery = self.session.query(
             Attendance.member_id,
             func.max(Attendance.created_at).label('last_checkin')
         ).group_by(Attendance.member_id).subquery()
         
-        # Join with members and filter
+        # Join
         inactive_query = self.session.query(Member, subquery.c.last_checkin)\
             .outerjoin(subquery, Member.id == subquery.c.member_id)\
-            .filter(Member.gym_id == self.gym.id)\
-            .filter(Member.active == True)
+            .filter(Member.gym_id == self.gym.id, Member.active == True)
             
-        all_inactive = []
+        inactive_list = []
         for member, last_checkin in inactive_query.all():
             days_inactive = 999
             if last_checkin:
                 days_inactive = (datetime.now() - last_checkin).days
             
             if days_inactive > 14:
-                m_dict = {
-                    'id': member.id,
-                    'name': member.name,
-                    'photo_url': member.photo_url,
+                inactive_list.append({
+                    'id': member.id, 'name': member.name, 'photo_url': member.photo_url,
                     'days_inactive': days_inactive
-                }
-                all_inactive.append(m_dict)
-                
-        # Sort by inactivity
-        all_inactive.sort(key=lambda x: x['days_inactive'], reverse=True)
-        inactive_members = all_inactive[:5]
+                })
+        
+        inactive_list.sort(key=lambda x: x['days_inactive'], reverse=True)
+        inactive_list = inactive_list[:5]
 
-        # 2. OPTIMIZED REVENUE TREND (One Query)
-        # Get sum of payments grouped by month for last X months
+        # 4. REVENUE TREND CHART (Optimized Query)
         start_date = (datetime.now().replace(day=1) - timedelta(days=30*months)).strftime('%Y-%m')
+        revenue_hist = self.session.query(Fee.month, func.sum(Fee.amount))\
+            .filter(Fee.gym_id == self.gym.id, Fee.month >= start_date)\
+            .group_by(Fee.month).all()
+            
+        revenue_map = {r[0]: float(r[1]) for r in revenue_hist}
         
-        revenue_query = self.session.query(
-            Fee.month,
-            func.sum(Fee.amount)
-        ).filter(
-            Fee.gym_id == self.gym.id,
-            Fee.month >= start_date
-        ).group_by(Fee.month).all()
-        
-        revenue_map = {r[0]: float(r[1]) for r in revenue_query}
-        
-        # Format for chart
         revenue_trend = []
-        current_date = datetime.now()
+        current_dt = datetime.now()
         for i in range(months-1, -1, -1):
-            year = current_date.year
-            month = current_date.month - i
-            while month <= 0:
-                month += 12
-                year -= 1
+            year = current_dt.year
+            month = current_dt.month - i
+            while month <= 0: month += 12; year -= 1
             
             month_str = f"{year}-{month:02d}"
-            month_label = datetime(year, month, 1).strftime('%b')
-            
-            revenue_trend.append({
-                'month': month_label,
-                'revenue': revenue_map.get(month_str, 0)
-            })
+            label = datetime(year, month, 1).strftime('%b')
+            revenue_trend.append({'month': label, 'revenue': revenue_map.get(month_str, 0)})
 
-        # 3. OPTIMIZED BIRTHDAYS (One Query)
-        # Filter DB directly for today's birthday
-        today = datetime.now().date()
-        birthdays_today = []
-        
-        # Extract month/day from date column
-        birthday_query = self.session.query(Member).filter(
-            Member.gym_id == self.gym.id,
-            Member.active == True,
-            extract('month', Member.birthday) == today.month,
-            extract('day', Member.birthday) == today.day
-        ).all()
-        
-        for m in birthday_query:
-            birthdays_today.append({
-                'id': m.id,
-                'name': m.name,
-                'photo_url': m.photo_url,
-                'phone': m.phone
-            })
-            
-        return inactive_members, revenue_trend, birthdays_today
+        return {
+            'total_members': total_members,
+            'paid_count': paid_count,
+            'unpaid_count': unpaid_count,
+            'revenue': current_revenue,
+            'revenue_change': revenue_change,
+            'expiring_count': len(expiring_trials)
+        }, {
+            'unpaid': unpaid_alert,
+            'expiring': expiring_trials,
+            'birthdays': birthdays_today,
+            'inactive': inactive_list
+        }, {
+            'revenue_trend': revenue_trend
+        }
