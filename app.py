@@ -74,7 +74,7 @@ if not os.path.exists('users.json'):
 # Initialize managers
 # Note: `session_factory` is not defined in the provided context.
 # Assuming it's defined elsewhere or will be added.
-auth_manager = AuthManager('users.json', None) # Changed session_factory to None for now to avoid NameError
+auth_manager = AuthManager()
 email_sender = EmailSender()
 payment_manager = PaymentManager()
 
