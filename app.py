@@ -1206,6 +1206,7 @@ def fees():
 
 @app.route('/download_excel')
 def download_excel():
+    """Quick export - dashboard members list"""
     gym = get_gym()
     if not gym: return redirect(url_for('auth'))
     
@@ -1256,6 +1257,62 @@ def download_excel():
     
     filename = f'gym_members_{current_month}.xlsx'
     return send_file(output, download_name=filename, as_attachment=True)
+
+# ==================== ADVANCED EXPORT CENTER ====================
+
+@app.route('/export_center')
+def export_center():
+    """Export Center - Dashboard for all export options"""
+    gym = get_gym()
+    if not gym: return redirect(url_for('auth'))
+    
+    return render_template('export_center.html')
+
+@app.route('/export/members_complete')
+def export_members_complete():
+    """Export complete member database"""
+    gym = get_gym()
+    if not gym: return redirect(url_for('auth'))
+    
+    from export_manager import ExportManager
+    export_mgr = ExportManager(gym)
+    
+    output = export_mgr.export_members_complete()
+    filename = f'members_complete_{datetime.now().strftime("%Y%m%d_%H%M%S")}.xlsx'
+    
+    return send_file(output, download_name=filename, as_attachment=True, mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+
+@app.route('/export/revenue_report')
+def export_revenue_report():
+    """Export revenue report"""
+    gym = get_gym()
+    if not gym: return redirect(url_for('auth'))
+    
+    from export_manager import ExportManager
+    export_mgr = ExportManager(gym)
+    
+    # Get date range from query params
+    start_date = request.args.get('start_date')
+    end_date = request.args.get('end_date')
+    
+    output = export_mgr.export_revenue_report(start_date, end_date)
+    filename = f'revenue_report_{datetime.now().strftime("%Y%m%d")}.xlsx'
+    
+    return send_file(output, download_name=filename, as_attachment=True, mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+
+@app.route('/export/unpaid_members')
+def export_unpaid_members():
+    """Export unpaid members list"""
+    gym = get_gym()
+    if not gym: return redirect(url_for('auth'))
+    
+    from export_manager import ExportManager
+    export_mgr = ExportManager(gym)
+    
+    output = export_mgr.export_unpaid_members()
+    filename = f'unpaid_members_{datetime.now().strftime("%Y%m%d")}.xlsx'
+    
+    return send_file(output, download_name=filename, as_attachment=True, mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
 
 @app.route('/card/<member_id>')
 def generate_card(member_id):
