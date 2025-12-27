@@ -1,160 +1,329 @@
 {% extends "base.html" %}
 
-{% block title %}Fee Management - Gym Manager{% endblock %}
+{% block title %}💰 Payment Center - Premium{% endblock %}
 
 {% block content %}
-<div style="text-align: center; margin-bottom: 2.5rem;">
-    <h1
-        style="font-size: 3rem; font-weight: 800; background: linear-gradient(135deg, #fff 0%, var(--primary) 50%, var(--secondary) 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; filter: drop-shadow(0 0 20px rgba(139, 92, 246, 0.5)); margin-bottom: 0.5rem;">
-        💳 Fee Management
-    </h1>
-    <p style="color: var(--text-muted); font-size: 1.1rem; letter-spacing: 0.5px;">Record and track member payments</p>
-</div>
+<style>
+    @media (max-width: 768px) {
+        .payment-container {
+            padding: 80px 16px 16px 16px;
+        }
+    }
 
-<!-- VIP Summary Cards -->
-<div
-    style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.5rem; margin-bottom: 2rem;">
-    <!-- Total Collected -->
-    <div class="card"
-        style="text-align: center; background: rgba(16, 185, 129, 0.1); backdrop-filter: blur(20px); border: 1px solid rgba(16, 185, 129, 0.3); position: relative; overflow: hidden;">
-        <div
-            style="position: absolute; top: -50%; right: -50%; width: 200%; height: 200%; background: radial-gradient(circle, rgba(16, 185, 129, 0.1) 0%, transparent 70%); animation: pulse 4s ease-in-out infinite;">
+    .payment-container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 40px 20px;
+    }
+
+    .payment-header {
+        background: linear-gradient(135deg, #8b5cf6 0%, #ec4899 100%);
+        padding: 40px;
+        border-radius: 24px;
+        color: white;
+        margin-bottom: 40px;
+        box-shadow: 0 20px 60px rgba(139, 92, 246, 0.3);
+    }
+
+    .payment-header h1 {
+        font-size: 36px;
+        margin: 0 0 10px 0;
+        font-weight: 800;
+    }
+
+    .payment-header p {
+        font-size: 18px;
+        opacity: 0.95;
+        margin: 0;
+    }
+
+    .payment-tabs {
+        display: flex;
+        gap: 16px;
+        margin-bottom: 32px;
+        flex-wrap: wrap;
+    }
+
+    .payment-tab {
+        flex: 1;
+        min-width: 200px;
+        padding: 20px;
+        background: white;
+        border-radius: 16px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+        cursor: pointer;
+        transition: all 0.3s ease;
+        border: 2px solid transparent;
+    }
+
+    .payment-tab.active {
+        border-color: #8b5cf6;
+        background: linear-gradient(135deg, #f3e8ff 0%, #fdf4ff 100%);
+        box-shadow: 0 8px 24px rgba(139, 92, 246, 0.2);
+    }
+
+    .payment-tab:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 12px 32px rgba(0, 0, 0, 0.12);
+    }
+
+    .payment-form-card {
+        background: white;
+        padding: 40px;
+        border-radius: 24px;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+        margin-bottom: 32px;
+    }
+
+    .form-group {
+        margin-bottom: 24px;
+    }
+
+    .form-group label {
+        display: block;
+        font-weight: 600;
+        margin-bottom: 8px;
+        color: #1f2937;
+        font-size: 15px;
+    }
+
+    .form-input {
+        width: 100%;
+        padding: 16px;
+        border: 2px solid #e5e7eb;
+        border-radius: 12px;
+        font-size: 16px;
+        transition: all 0.3s ease;
+        background: #f9fafb;
+    }
+
+    .form-input:focus {
+        outline: none;
+        border-color: #8b5cf6;
+        background: white;
+        box-shadow: 0 0 0 4px rgba(139, 92, 246, 0.1);
+    }
+
+    .payment-history-table {
+        background: white;
+        border-radius: 24px;
+        overflow: hidden;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+    }
+
+    .table-header {
+        background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+        color: white;
+        padding: 20px;
+        font-weight: 600;
+    }
+
+    .table-row {
+        padding: 20px;
+        border-bottom: 1px solid #f3f4f6;
+        transition: all 0.2s ease;
+    }
+
+    .table-row:hover {
+        background: #f9fafb;
+    }
+
+    .status-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 6px 14px;
+        border-radius: 20px;
+        font-size: 13px;
+        font-weight: 600;
+    }
+
+    .status-paid {
+        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        color: white;
+    }
+
+    .status-pending {
+        background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+        color: white;
+    }
+
+    .empty-state {
+        text-align: center;
+        padding: 80px 20px;
+        color: #9ca3af;
+    }
+
+    .empty-state-icon {
+        font-size: 64px;
+        margin-bottom: 20px;
+    }
+</style>
+
+<div class="payment-container">
+    <!-- Premium Header -->
+    <div class="payment-header">
+        <h1>💰 Payment Center</h1>
+        <p>Record payments & manage transaction history</p>
+    </div>
+
+    <!-- Tabs -->
+    <div class="payment-tabs">
+        <div class="payment-tab active" onclick="showTab('record')">
+            <div style="font-size: 28px; margin-bottom: 8px;">💳</div>
+            <div style="font-weight: 600; font-size: 16px;">Record Payment</div>
+            <div style="font-size: 13px; color: #6b7280; margin-top: 4px;">Add new transaction</div>
         </div>
-        <div style="position: relative; z-index: 1;">
-            <div style="font-size: 3rem; margin-bottom: 0.5rem; filter: drop-shadow(0 0 10px rgba(16, 185, 129, 0.7));">
-                💰</div>
-            <h3
-                style="font-size: 0.85rem; text-transform: uppercase; letter-spacing: 2px; color: var(--success); margin-bottom: 0.5rem; font-weight: 700;">
-                Total Collected (All Time)</h3>
-            <div
-                style="font-size: 3rem; font-weight: 900; background: linear-gradient(135deg, #fff, var(--success)); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
-                {{ gym_details.currency or '$' }}{{ total_collected }}</div>
+        <div class="payment-tab" onclick="showTab('history')">
+            <div style="font-size: 28px; margin-bottom: 8px;">📜</div>
+            <div style="font-weight: 600; font-size: 16px;">Payment History</div>
+            <div style="font-size: 13px; color: #6b7280; margin-top: 4px;">View all transactions</div>
         </div>
     </div>
 
-    <!-- Current Month -->
-    <div class="card"
-        style="text-align: center; background: rgba(6, 182, 212, 0.1); backdrop-filter: blur(20px); border: 1px solid rgba(6, 182, 212, 0.3); position: relative; overflow: hidden;">
-        <div
-            style="position: absolute; top: -50%; right: -50%; width: 200%; height: 200%; background: radial-gradient(circle, rgba(6, 182, 212, 0.1) 0%, transparent 70%); animation: pulse 4s ease-in-out infinite 0.5s;">
-        </div>
-        <div style="position: relative; z-index: 1;">
-            <div style="font-size: 3rem; margin-bottom: 0.5rem; filter: drop-shadow(0 0 10px rgba(6, 182, 212, 0.7));">
-                📅</div>
-            <h3
-                style="font-size: 0.85rem; text-transform: uppercase; letter-spacing: 2px; color: var(--secondary); margin-bottom: 0.5rem; font-weight: 700;">
-                {{ current_month }} Revenue</h3>
-            <div
-                style="font-size: 3rem; font-weight: 900; background: linear-gradient(135deg, #fff, var(--secondary)); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
-                {{ gym_details.currency or '$' }}{{ current_month_total }}</div>
+    <!-- Record Payment Form -->
+    <div id="record-tab" class="tab-content">
+        <div class="payment-form-card">
+            <h2 style="margin-bottom: 24px; display: flex; align-items: center; gap: 12px;">
+                <span style="font-size: 32px;">💳</span>
+                Record New Payment
+            </h2>
+
+            <form action="{{ url_for('record_fee') }}" method="POST">
+                <div class="form-group">
+                    <label for="member_id">
+                        <span style="color: #ef4444;">*</span> Select Member
+                    </label>
+                    <select name="member_id" id="member_id" class="form-input" required>
+                        <option value="">Choose a member...</option>
+                        {% for member in members %}
+                        <option value="{{ member.id }}">
+                            {{ member.name }} - {{ member.phone }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                    <div class="form-group">
+                        <label for="amount">
+                            <span style="color: #ef4444;">*</span> Amount (Rs)
+                        </label>
+                        <input type="number" name="amount" id="amount" class="form-input" placeholder="e.g., 3000"
+                            required min="1">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="month">
+                            <span style="color: #ef4444;">*</span> Month
+                        </label>
+                        <input type="month" name="month" id="month" class="form-input" required>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="payment_method">Payment Method</label>
+                    <select name="payment_method" id="payment_method" class="form-input">
+                        <option value="cash">💵 Cash</option>
+                        <option value="online">💳 Online Transfer</option>
+                        <option value="jazzcash">📱 JazzCash</option>
+                        <option value="easypaisa">📱 EasyPaisa</option>
+                        <option value="card">💳 Debit/Credit Card</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="notes">Notes (Optional)</label>
+                    <textarea name="notes" id="notes" class="form-input" rows="3"
+                        placeholder="Add any additional notes..."></textarea>
+                </div>
+
+                <button type="submit" class="btn-primary" style="width: 100%; margin-top: 20px;">
+                    <span style="font-size: 20px; margin-right: 8px;">✓</span>
+                    Record Payment
+                </button>
+            </form>
         </div>
     </div>
 
-    <!-- Total Records -->
-    <div class="card"
-        style="text-align: center; background: rgba(139, 92, 246, 0.1); backdrop-filter: blur(20px); border: 1px solid rgba(139, 92, 246, 0.3); position: relative; overflow: hidden;">
-        <div
-            style="position: absolute; top: -50%; right: -50%; width: 200%; height: 200%; background: radial-gradient(circle, rgba(139, 92, 246, 0.1) 0%, transparent 70%); animation: pulse 4s ease-in-out infinite 1s;">
-        </div>
-        <div style="position: relative; z-index: 1;">
-            <div style="font-size: 3rem; margin-bottom: 0.5rem; filter: drop-shadow(0 0 10px rgba(139, 92, 246, 0.7));">
-                📜</div>
-            <h3
-                style="font-size: 0.85rem; text-transform: uppercase; letter-spacing: 2px; color: var(--primary); margin-bottom: 0.5rem; font-weight: 700;">
-                Payment Records</h3>
-            <div
-                style="font-size: 3rem; font-weight: 900; background: linear-gradient(135deg, #fff, var(--primary)); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
-                {{ fee_records|length }}</div>
-        </div>
-    </div>
-</div>
-
-<!-- Record New Payment -->
-<div class="card"
-    style="margin-bottom: 2rem; border: 1px solid hsla(260, 80%, 60%, 0.2); background: linear-gradient(145deg, hsla(230, 20%, 15%, 0.6), hsla(230, 20%, 10%, 0.9)); box-shadow: 0 20px 40px hsla(0, 0%, 0%, 0.2);">
-    <h2 style="margin-bottom: 1.5rem;">➕ Record New Payment</h2>
-    <form method="POST">
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
-            <div class="form-group">
-                <label for="member_id">Select Member *</label>
-                <select id="member_id" name="member_id" required
-                    style="width: 100%; padding: 0.8rem; border-radius: 8px; border: 1px solid var(--border); background: var(--bg-card); color: var(--text);">
-                    <option value="">-- Choose a member --</option>
-                    {% for member in members %}
-                    <option value="{{ member.id }}">{{ member.name }} (ID: {{ member.id }})</option>
-                    {% endfor %}
-                </select>
+    <!-- Payment History -->
+    <div id="history-tab" class="tab-content" style="display: none;">
+        <div class="payment-history-table">
+            <div class="table-header">
+                <h3 style="margin: 0; font-size: 20px;">Payment History</h3>
             </div>
 
-            <div class="form-group">
-                <label for="month">Month *</label>
-                <select id="month" name="month" required
-                    style="width: 100%; padding: 0.8rem; border-radius: 8px; border: 1px solid var(--border); background: var(--bg-card); color: var(--text);">
-                    {% for m in available_months %}
-                    <option value="{{ m.value }}" {% if m.value==current_month %}selected{% endif %}>{{ m.label }}
-                    </option>
-                    {% endfor %}
-                </select>
-            </div>
-
-            <div class="form-group">
-                <label for="amount">Amount *</label>
-                <input type="number" id="amount" name="amount" step="0.01" required placeholder="Enter fee amount"
-                    style="width: 100%; padding: 0.8rem; border-radius: 8px; border: 1px solid var(--border); background: var(--bg-card); color: var(--text);">
-            </div>
-
-            <div class="form-group">
-                <label for="notes">Notes (optional)</label>
-                <input type="text" id="notes" name="notes" placeholder="Payment notes"
-                    style="width: 100%; padding: 0.8rem; border-radius: 8px; border: 1px solid var(--border); background: var(--bg-card); color: var(--text);">
-            </div>
-        </div>
-
-        <button type="submit" class="btn btn-success" style="width: 100%; margin-top: 1rem;">
-            💰 Record Payment
-        </button>
-    </form>
-</div>
-
-<!-- Payment History -->
-<div class="card">
-    <h2 style="margin-bottom: 1.5rem;">📜 All Payment Records</h2>
-
-    {% if fee_records %}
-    <div style="overflow-x: auto;">
-        <table>
-            <thead>
-                <tr>
-                    <th>Member</th>
-                    <th>Month</th>
-                    <th>Amount</th>
-                    <th>Date Paid</th>
-                    <th>Notes</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for record in fee_records %}
-                <tr>
-                    <td><a href="{{ url_for('member_details', member_id=record.member_id) }}"
-                            style="color: var(--primary); text-decoration: none;">{{ record.member_name }}</a></td>
-                    <td>{{ record.month }}</td>
-                    <td><strong>{{ gym_details.currency or '$' }}{{ record.amount }}</strong></td>
-                    <td>{{ record.paid_date }}</td>
-                    <td>{{ record.notes or '-' }}</td>
-                </tr>
+            {% if fees %}
+            <div style="padding: 20px;">
+                {% for fee in fees %}
+                <div class="table-row"
+                    style="display: grid; grid-template-columns: 2fr 1fr 1fr 1fr 1fr; gap: 16px; align-items: center;">
+                    <div>
+                        <div style="font-weight: 600; color: #1f2937; margin-bottom: 4px;">
+                            {{ fee.member.name }}
+                        </div>
+                        <div style="font-size: 13px; color: #6b7280;">
+                            {{ fee.member.phone }}
+                        </div>
+                    </div>
+                    <div style="font-weight: 600; color: #059669; font-size: 18px;">
+                        Rs {{ fee.amount }}
+                    </div>
+                    <div style="color: #6b7280;">
+                        {{ fee.month }}
+                    </div>
+                    <div>
+                        <span class="status-badge status-paid">
+                            ✓ Paid
+                        </span>
+                    </div>
+                    <div style="font-size: 13px; color: #9ca3af;">
+                        {{ fee.paid_date.strftime('%d %b %Y') }}
+                    </div>
+                </div>
                 {% endfor %}
-            </tbody>
-        </table>
+            </div>
+            {% else %}
+            <div class="empty-state">
+                <div class="empty-state-icon">📭</div>
+                <h3 style="color: #6b7280; margin-bottom: 8px;">No Payments Yet</h3>
+                <p style="color: #9ca3af;">Record your first payment to see it here!</p>
+            </div>
+            {% endif %}
+        </div>
     </div>
-
-    <div style="text-align: center; margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid var(--border);">
-        <strong>Total: {{ gym_details.currency or '$' }}{{ total_collected }}</strong>
-    </div>
-    {% else %}
-    <p style="color: var(--text-muted); text-align: center; padding: 2rem;">
-        No payment records yet. Start by recording a payment above!
-    </p>
-    {% endif %}
 </div>
+
+<script>
+    function showTab(tabName) {
+        // Hide all tabs
+        document.querySelectorAll('.tab-content').forEach(tab => {
+            tab.style.display = 'none';
+        });
+
+        // Remove active class from all tabs
+        document.querySelectorAll('.payment-tab').forEach(tab => {
+            tab.classList.remove('active');
+        });
+
+        // Show selected tab
+        if (tabName === 'record') {
+            document.getElementById('record-tab').style.display = 'block';
+            document.querySelectorAll('.payment-tab')[0].classList.add('active');
+        } else {
+            document.getElementById('history-tab').style.display = 'block';
+            document.querySelectorAll('.payment-tab')[1].classList.add('active');
+        }
+    }
+
+    // Set current month as default
+    document.addEventListener('DOMContentLoaded', function () {
+        const monthInput = document.getElementById('month');
+        const now = new Date();
+        const year = now.getFullYear();
+        const month = String(now.getMonth() + 1).padStart(2, '0');
+        monthInput.value = `${year}-${month}`;
+    });
+</script>
 
 {% endblock %}
