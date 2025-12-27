@@ -270,6 +270,7 @@
         margin: 1rem 0;
         background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
         -webkit-background-clip: text;
+        background-clip: text;
         -webkit-text-fill-color: transparent;
     }
 
@@ -291,76 +292,76 @@
         new Chart(document.getElementById('revenueForecastChart'), {
             type: 'line',
             data: {
-                labels: {{ forecast_months| tojson | safe }},
+                labels: {{ forecast_months | tojson | safe }},
         datasets: [{
             label: 'Actual Revenue',
-            data: {{ actual_revenue| tojson | safe }},
+            data: {{ actual_revenue | tojson | safe }},
         borderColor: '#8b5cf6',
         backgroundColor: 'rgba(139, 92, 246, 0.1)',
         tension: 0.4
-            }, {
+                }, {
             label: 'Forecasted Revenue',
-            data: {{ forecasted_revenue| tojson | safe }},
+            data: {{ forecasted_revenue | tojson | safe }},
         borderColor: '#06b6d4',
         borderDash: [5, 5],
         backgroundColor: 'rgba(6, 182, 212, 0.1)',
         tension: 0.4
-            }]
-        },
+                }]
+            },
         options: {
         responsive: true,
         plugins: {
             legend: { display: true }
         }
     }
-    });
+        });
 
     // Member Growth Chart
     new Chart(document.getElementById('memberGrowthChart'), {
         type: 'bar',
         data: {
-            labels: {{ growth_months| tojson | safe }},
+            labels: {{ growth_months | tojson | safe }},
         datasets: [{
             label: 'New Members',
-            data: {{ new_members_data| tojson | safe }},
+            data: {{ new_members_data | tojson | safe }},
         backgroundColor: '#10b981'
-            }, {
+                }, {
             label: 'Churned Members',
-            data: {{ churned_members_data| tojson | safe }},
+            data: {{ churned_members_data | tojson | safe }},
         backgroundColor: '#ef4444'
-            }]
-        },
+                }]
+            },
         options: {
         responsive: true
     }
-    });
+        });
 
     // Revenue by Type
     new Chart(document.getElementById('revenueByTypeChart'), {
         type: 'doughnut',
         data: {
-            labels: {{ membership_types| tojson | safe }},
+            labels: {{ membership_types | tojson | safe }},
         datasets: [{
-            data: {{ revenue_by_type| tojson | safe }},
+            data: {{ revenue_by_type | tojson | safe }},
         backgroundColor: ['#8b5cf6', '#06b6d4', '#10b981', '#f59e0b']
-            }]
-        }
-    });
+                }]
+            }
+        });
 
     // Collection Rate
     new Chart(document.getElementById('collectionRateChart'), {
         type: 'line',
         data: {
-            labels: {{ collection_months| tojson | safe }},
+            labels: {{ collection_months | tojson | safe }},
         datasets: [{
             label: 'Collection Rate %',
-            data: {{ collection_rates| tojson | safe }},
+            data: {{ collection_rates | tojson | safe }},
         borderColor: '#10b981',
         backgroundColor: 'rgba(16, 185, 129, 0.1)',
         fill: true,
         tension: 0.4
-            }]
-        },
+                }]
+            },
         options: {
         responsive: true,
         scales: {
@@ -370,31 +371,31 @@
             }
         }
     }
-    });
+        });
 
     // Attendance Heatmap
     new Chart(document.getElementById('attendanceHeatmap'), {
         type: 'bar',
         data: {
-            labels: {{ heatmap_hours| tojson | safe }},
+            labels: {{ heatmap_hours | tojson | safe }},
         datasets: [{
             label: 'Average Attendance',
-            data: {{ heatmap_data| tojson | safe }},
+            data: {{ heatmap_data | tojson | safe }},
         backgroundColor: function (context) {
             const value = context.parsed.y;
             if (value > 50) return '#ef4444';
             if (value > 30) return '#f59e0b';
             return '#10b981';
         }
-            }]
-        },
+                }]
+            },
         options: {
         responsive: true,
         plugins: {
             legend: { display: false }
         }
     }
+        });
     });
-});
 </script>
 {% endblock %}
