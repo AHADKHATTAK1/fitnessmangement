@@ -5,32 +5,34 @@ const urlsToCache = [
     '/static/offline-db.js',
     '/dashboard',
     '/add_member',
-    '/fees',
-    '/scanner',
-    '/schedule',
-    '/reports',
-    '/settings',
-    // Add static assets
-    'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap',
-    'https://cdn.jsdelivr.net/npm/chart.js'
+    '/static/style.css',
+    '/static/css/mobile.min.css',
+    '/static/css/loading.css',
+    '/static/js/mobile.js',
+    '/static/js/animations.js',
+    '/static/manifest.json',
+    '/static/icons/icon-192x192.png',
+    '/static/icons/icon-512x512.png'
 ];
 
-// Install Service Worker
-self.addEventListener('install', event => {
+// Install event - cache static assets
+self.addEventListener('install', (event) => {
+    console.log('[Service Worker] Installing...');
     event.waitUntil(
         caches.open(CACHE_NAME)
-            .then(cache => {
-                console.log('Opened cache');
-                return cache.addAll(urlsToCache);
+            .then((cache) => {
+                console.log('[Service Worker] Caching static assets');
+                return cache.addAll(STATIC_ASSETS);
             })
+            .then(() => self.skipWaiting())
     );
-    self.skipWaiting(); // Activate immediately
 });
 
-// Activate Service Worker
-self.addEventListener('activate', event => {
+// Activate event - clean up old caches
+self.addEventListener('activate', (event) => {
+    console.log('[Service Worker] Activating...');
     event.waitUntil(
-        caches.keys().then(cacheNames => {
+        caches.keys().then((cacheNames) => {
             return Promise.all(
                 cacheNames.map(cacheName => {
                     if (cacheName !== CACHE_NAME) {
