@@ -189,7 +189,7 @@
                 Record New Payment
             </h2>
 
-            <form action="/fees" method="POST">
+            <form action="{{ url_for('record_fee') }}" method="POST">
                 <div class="form-group">
                     <label for="member_id">
                         <span style="color: #ef4444;">*</span> Select Member
