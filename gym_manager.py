@@ -1093,7 +1093,7 @@ class GymManager:
         
         members_query = self.session.query(Member).filter(
             Member.gym_id == self.gym.id,
-            Member.active == True
+            Member.is_active == True
         ).options(
             joinedload(Member.fees),  # Eager load fees to prevent N+1
             joinedload(Member.notes)   # Eager load notes too

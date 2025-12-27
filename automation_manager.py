@@ -119,7 +119,7 @@ class AutomationManager:
         
         members = self.session.query(Member).filter(
             Member.gym_id == gym_id,
-            Member.active == True,
+            Member.is_active == True,
             Member.birthday.isnot(None)
         ).all()
         
@@ -246,7 +246,7 @@ class AutomationManager:
         
         inactive_members = self.session.query(Member).filter(
             Member.gym_id == gym_id,
-            Member.active == True,
+            Member.is_active == True,
             Member.last_check_in < cutoff_date
         ).all()
         

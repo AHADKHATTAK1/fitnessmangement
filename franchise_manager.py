@@ -105,7 +105,7 @@ class FranchiseManager:
         # Total members across all locations
         total_members = self.session.query(Member).filter(
             Member.gym_id.in_(gym_ids),
-            Member.active == True
+            Member.is_active == True
         ).count()
         
         # Total revenue this month
