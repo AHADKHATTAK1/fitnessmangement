@@ -44,18 +44,18 @@ class Member(Base):
     __tablename__ = 'members'
     
     id = Column(Integer, primary_key=True)
-    gym_id = Column(Integer, ForeignKey('gyms.id'), nullable=False)
-    name = Column(String(255), nullable=False)
-    phone = Column(String(20), nullable=False)
+    gym_id = Column(Integer, ForeignKey('gyms.id'), nullable=False, index=True)
+    name = Column(String(255), nullable=False, index=True)
+    phone = Column(String(20), unique=True, nullable=False, index=True)
     email = Column(String(255))
     photo_url = Column(String(500))
     membership_type = Column(String(100), default='Gym')
     joined_date = Column(Date, nullable=False)
-    is_active = Column(Boolean, default=True)
+    active = Column(Boolean, default=True, index=True)
     is_trial = Column(Boolean, default=False)
     trial_end_date = Column(Date)
-    birthday = Column(Date)  # NEW: For birthday alerts
-    last_check_in = Column(DateTime)  # NEW: For inactive member tracking
+    birthday = Column(Date)  # For birthday alerts
+    last_check_in = Column(DateTime)  # For inactive member tracking
     created_at = Column(DateTime, default=datetime.utcnow)
     
     # Relationships
@@ -69,10 +69,10 @@ class Fee(Base):
     __tablename__ = 'fees'
     
     id = Column(Integer, primary_key=True)
-    member_id = Column(Integer, ForeignKey('members.id'), nullable=False)
-    month = Column(String(7), nullable=False)  # YYYY-MM format
+    member_id = Column(Integer, ForeignKey('members.id'), nullable=False, index=True)  # INDEXED
+    month = Column(String(7), nullable=False, index=True)  # INDEXED for monthly queries
     amount = Column(DECIMAL(10, 2), nullable=False)
-    paid_date = Column(DateTime, nullable=False)
+    paid_date = Column(DateTime, nullable=False, index=True)  # INDEXED for date range queries
     created_at = Column(DateTime, default=datetime.utcnow)
     
     # Relationships

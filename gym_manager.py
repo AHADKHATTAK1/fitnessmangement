@@ -1088,10 +1088,15 @@ class GymManager:
         last_month_str = (datetime.now().replace(day=1) - timedelta(days=1)).strftime('%Y-%m')
         
         # 1. MEMBERS & REVENUE STATUS (Few Queries)
-        # Get all active members
+        # 1. BASE QUERY with EAGER LOADING (prevent N+1 queries)
+        from sqlalchemy.orm import joinedload
+        
         members_query = self.session.query(Member).filter(
             Member.gym_id == self.gym.id,
-            Member.is_active == True
+            Member.active == True
+        ).options(
+            joinedload(Member.fees),  # Eager load fees to prevent N+1
+            joinedload(Member.notes)   # Eager load notes too
         ).all()
         
         total_members = len(members_query)
