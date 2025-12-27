@@ -49,9 +49,9 @@ class Member(Base):
     phone = Column(String(20), unique=True, nullable=False, index=True)
     email = Column(String(255))
     photo_url = Column(String(500))
-    membership_type = Column(String(100), default='Gym')
-    joined_date = Column(Date, nullable=False)
-    active = Column(Boolean, default=True, index=True)
+    membership_type = Column(String(50), default='monthly')
+    joined_date = Column(Date, default=datetime.utcnow().date)
+    is_active = Column(Boolean, default=True, index=True)  # Changed from 'active' to 'is_active'
     is_trial = Column(Boolean, default=False)
     trial_end_date = Column(Date)
     birthday = Column(Date)  # For birthday alerts
