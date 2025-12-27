@@ -199,7 +199,7 @@
 
 .chat-message.bot .message-bubble {
     background: white;
-    color: #333;
+    color: #1f2937 !important;
     border-radius: 18px 18px 18px 4px;
 }
 
@@ -209,7 +209,7 @@
 
 .chat-message.user .message-bubble {
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    color: white;
+    color: white !important;
     border-radius: 18px 18px 4px 18px;
 }
 
