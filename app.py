@@ -209,6 +209,30 @@ def payment_cancel():
     flash('Payment cancelled.', 'info')
     return redirect(url_for('subscription'))
 
+# ===== 3-DAY TRIAL & FLEXIBLE PAYMENT =====
+@app.route('/activate_trial', methods=['POST'])
+def activate_trial():
+    """Activate 3-day free trial"""
+    if 'logged_in' not in session:
+        return redirect(url_for('login'))
+    
+    username = session.get('username')
+    user = auth_manager.session.query(User).filter_by(email=username).first()
+    
+    if not user:
+        flash('User not found', 'error')
+        return redirect(url_for('subscription'))
+    
+    # Activate 3-day trial
+    from datetime import datetime, timedelta
+    user.subscription_status = 'trial'
+    user.subscription_expiry = datetime.utcnow() + timedelta(days=3)
+    
+    auth_manager.session.commit()
+    
+    flash('🎉 3-day trial activated! Enjoy full access. Pay anytime when ready.', 'success')
+    return redirect(url_for('dashboard'))
+
 @app.route('/initiate_payment', methods=['POST'])
 def initiate_payment():
     """Initiate payment with selected provider"""
