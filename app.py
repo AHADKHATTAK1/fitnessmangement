@@ -152,7 +152,17 @@ def check_subscription():
 
 @app.route('/subscription')
 def subscription():
+    """Payment required page"""
+    return render_template('subscription.html')
+
+@app.route('/subscription_plans')
+def subscription_plans():
+    """Comprehensive subscription plans page with all options"""
     username = session.get('username')
+    user = None
+    if username:
+        user = auth_manager.session.query(User).filter_by(email=username).first()
+    return render_template('subscription_plans.html', user=user)
     if auth_manager.is_subscription_active(username):
         return redirect(url_for('dashboard'))
         
