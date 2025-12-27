@@ -279,6 +279,8 @@
     border-radius: 24px;
     padding: 12px 16px;
     font-size: 14px;
+    color: #1f2937 !important;
+    background: white;
     outline: none;
     transition: border-color 0.2s;
 }
