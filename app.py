@@ -3,6 +3,8 @@ from flask_compress import Compress
 from werkzeug.utils import secure_filename
 from gym_manager import GymManager
 from auth_manager import AuthManager
+from payment_manager import PaymentManager
+from email_sender import EmailSender
 import os
 import json
 from datetime import datetime, timedelta
@@ -69,8 +71,12 @@ if not os.path.exists('users.json'):
     with open('users.json', 'w') as f:
         json.dump({}, f)
 
-# Initialize Auth Manager
-auth_manager = AuthManager()
+# Initialize managers
+# Note: `session_factory` is not defined in the provided context.
+# Assuming it's defined elsewhere or will be added.
+auth_manager = AuthManager('users.json', None) # Changed session_factory to None for now to avoid NameError
+email_sender = EmailSender()
+payment_manager = PaymentManager()
 
 def get_gym():
     """Get GymManager instance for logged-in user"""
@@ -202,58 +208,84 @@ def payment_cancel():
     flash('Payment cancelled.', 'info')
     return redirect(url_for('subscription'))
 
-@app.route('/manual_payment', methods=['GET', 'POST'])
-def manual_payment():
-    """Manual Payment Upload (Legacy) or JazzCash Redirect"""
-    if request.method == 'POST':
-        # If JazzCash button clicked
-        if request.form.get('payment_method') == 'jazzcash':
-            # Redirect to JazzCash Success (Mocking integration for now)
-            # In production, this would redirect to JazzCash Hosted Checkout
-            txn_ref = f"T{int(datetime.now().timestamp())}"
-            flash('Redirecting to JazzCash...', 'info')
-            return redirect(url_for('jazzcash_success', txn_ref=txn_ref))
-
-        # Legacy Manual Upload code...
-        if 'screenshot' not in request.files:
-            flash('No file uploaded', 'error')
-            return redirect(request.url)
-            
-        file = request.files['screenshot']
-        if file.filename == '':
-            flash('No selected file', 'error')
-            return redirect(request.url)
-            
-        if file and allowed_file(file.filename):
-            filename = secure_filename(file.filename)
-            file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
-            
-            # Send email to admin (Simplified)
-            try:
-                username = session.get('username', 'Unknown')
-                # Email logic would go here
-            except:
-                pass
-            
-            flash('Receipt uploaded! Please wait for admin approval.', 'success')
-            return redirect(url_for('subscription'))
-            
-    return render_template('payment_manual.html')
-
-@app.route('/jazzcash_success')
-def jazzcash_success():
-    """Handle JazzCash Success Callback"""
-    txn_ref = request.args.get('txn_ref')
-    
-    # Auto-approve subscription for JazzCash users
-    if 'username' in session:
-        auth_manager.extend_subscription(session['username'], days=30)
-        auth_manager.set_market(session['username'], 'PK')
-        flash(f'✅ Payment Successful! Transaction: {txn_ref}. Subscription Active.', 'success')
-    
-    return redirect(url_for('dashboard'))
+@app.route('/initiate_payment', methods=['POST'])
+def initiate_payment():
+    """Initiate payment with selected provider"""
     username = session.get('username')
-    if not username: return redirect(url_for('auth'))
+    if not username:
+        flash('Please login first', 'error')
+        return redirect(url_for('auth'))
+    
+    provider = request.form.get('provider')  # 'jazzcash', 'easypaisa', 'stripe'
+    amount_pkr = 5000  # Rs 5000 for PK
+    amount_usd = 60    # $60 for International
+    
+    # Determine amount based on provider
+    if provider in ['jazzcash', 'easypaisa']:
+        amount = amount_pkr
+        currency = 'PKR'
+    else:
+        amount = amount_usd
+        currency = 'USD'
+    
+    return_url = url_for('payment_callback', provider=provider, _external=True)
+    
+    # Initiate payment through PaymentManager
+    result = payment_manager.initiate_payment(
+        provider=provider,
+        amount=amount,
+        user_email=username,
+        return_url=return_url,
+        success_url=url_for('payment_success', _external=True),
+        cancel_url=url_for('payment_cancel', _external=True)
+    )
+    
+    if not result.get('success'):
+        flash(f'Payment initiation failed: {result.get("error")}', 'error')
+        return redirect(url_for('subscription'))
+    
+    # For Stripe, redirect to checkout URL
+    if provider == 'stripe':
+        return redirect(result['session_url'])
+    
+    # For JazzCash/EasyPaisa, render auto-submit form
+    return render_template('payment_redirect.html', 
+                          post_url=result['post_url'],
+                          form_data=result['form_data'])
+
+@app.route('/payment_callback/<provider>', methods=['GET', 'POST'])
+def payment_callback(provider):
+    """Handle payment gateway callback"""
+    username = session.get('username')
+    if not username:
+        flash('Session expired', 'error')
+        return redirect(url_for('auth'))
+    
+    # Get response data
+    if request.method == 'POST':
+        response_data = request.form.to_dict()
+    else:
+        response_data = request.args.to_dict()
+    
+    # Verify payment
+    success, message = payment_manager.verify_payment(provider, response_data)
+    
+    if success:
+        # Activate subscription
+        auth_manager.extend_subscription(username, days=30)
+        
+        # Set market based on provider
+        if provider in ['jazzcash', 'easypaisa']:
+            auth_manager.set_market(username, 'PK')
+        else:
+            auth_manager.set_market(username, 'US')
+        
+        flash(f'✅ Payment Successful! {message}', 'success')
+        session.pop('needs_payment', None)
+        return redirect(url_for('dashboard'))
+    else:
+        flash(f'❌ Payment Failed: {message}', 'error')
+        return redirect(url_for('subscription'))
     
     if request.method == 'POST':
         if 'payment_proof' in request.files:
