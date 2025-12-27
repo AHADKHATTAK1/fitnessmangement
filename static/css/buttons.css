@@ -1,0 +1,431 @@
+/* Ultra-Modern Premium Button Designs - Mobile */
+
+@media (max-width: 768px) {
+    /* === PRIMARY BUTTONS (Main Actions) === */
+
+    .btn-primary,
+    .mobile-btn-primary,
+    button[type="submit"]:not(.btn-secondary) {
+        background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 50%, #6d28d9 100%);
+        color: white;
+        border: none;
+        border-radius: 16px;
+        padding: 16px 24px;
+        font-size: 16px;
+        font-weight: 600;
+        box-shadow:
+            0 4px 16px rgba(139, 92, 246, 0.4),
+            0 2px 8px rgba(139, 92, 246, 0.2),
+            inset 0 1px 0 rgba(255, 255, 255, 0.2);
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        position: relative;
+        overflow: hidden;
+        width: 100%;
+        text-transform: none;
+        letter-spacing: 0.5px;
+    }
+
+    .btn-primary::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+        transition: left 0.5s;
+    }
+
+    .btn-primary:hover::before {
+        left: 100%;
+    }
+
+    .btn-primary:active {
+        transform: scale(0.97);
+        box-shadow:
+            0 2px 8px rgba(139, 92, 246, 0.3),
+            inset 0 2px 4px rgba(0, 0, 0, 0.2);
+    }
+
+    /* === SECONDARY BUTTONS === */
+
+    .btn-secondary,
+    .mobile-btn-secondary {
+        background: white;
+        color: #8b5cf6;
+        border: 2px solid #8b5cf6;
+        border-radius: 16px;
+        padding: 14px 24px;
+        font-size: 16px;
+        font-weight: 600;
+        box-shadow: 0 2px 8px rgba(139, 92, 246, 0.15);
+        transition: all 0.3s ease;
+        width: 100%;
+    }
+
+    .btn-secondary:active {
+        background: linear-gradient(135deg, #f3e8ff 0%, #ede9fe 100%);
+        transform: scale(0.97);
+    }
+
+    /* === SUCCESS BUTTONS (Paid, Active, etc.) === */
+
+    .btn-success,
+    .status-paid {
+        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        color: white;
+        border: none;
+        border-radius: 12px;
+        padding: 8px 16px;
+        font-size: 14px;
+        font-weight: 600;
+        box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+    .btn-success::before {
+        content: '✓';
+        font-weight: bold;
+    }
+
+    /* === DANGER BUTTONS (Delete, Cancel) === */
+
+    .btn-danger,
+    .status-unpaid {
+        background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+        color: white;
+        border: none;
+        border-radius: 12px;
+        padding: 8px 16px;
+        font-size: 14px;
+        font-weight: 600;
+        box-shadow: 0 2px 8px rgba(239, 68, 68, 0.3);
+    }
+
+    /* === ICON BUTTONS === */
+
+    .btn-icon,
+    .icon-btn {
+        width: 48px;
+        height: 48px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+        color: white;
+        border: none;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 20px;
+        box-shadow: 0 4px 12px rgba(139, 92, 246, 0.4);
+        transition: all 0.3s ease;
+    }
+
+    .btn-icon:active {
+        transform: scale(0.9);
+        box-shadow: 0 2px 6px rgba(139, 92, 246, 0.3);
+    }
+
+    /* === FLOATING ACTION BUTTON === */
+
+    .fab,
+    .floating-btn {
+        position: fixed;
+        bottom: 90px;
+        right: 20px;
+        width: 64px;
+        height: 64px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%);
+        color: white;
+        border: none;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 28px;
+        box-shadow:
+            0 8px 24px rgba(139, 92, 246, 0.5),
+            0 4px 12px rgba(139, 92, 246, 0.3);
+        z-index: 997;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        animation: float 3s ease-in-out infinite;
+    }
+
+    @keyframes float {
+
+        0%,
+        100% {
+            transform: translateY(0);
+        }
+
+        50% {
+            transform: translateY(-10px);
+        }
+    }
+
+    .fab:active {
+        transform: scale(0.9);
+        animation: none;
+    }
+
+    /* === OUTLINE BUTTONS === */
+
+    .btn-outline {
+        background: transparent;
+        color: #8b5cf6;
+        border: 2px solid #8b5cf6;
+        border-radius: 12px;
+        padding: 12px 20px;
+        font-size: 15px;
+        font-weight: 600;
+        transition: all 0.3s ease;
+    }
+
+    .btn-outline:active {
+        background: rgba(139, 92, 246, 0.1);
+        transform: scale(0.97);
+    }
+
+    /* === GHOST BUTTONS === */
+
+    .btn-ghost {
+        background: transparent;
+        color: #6b7280;
+        border: none;
+        border-radius: 12px;
+        padding: 12px 20px;
+        font-size: 15px;
+        font-weight: 500;
+        transition: all 0.2s ease;
+    }
+
+    .btn-ghost:active {
+        background: rgba(107, 114, 128, 0.1);
+    }
+
+    /* === GRADIENT BUTTONS (Special) === */
+
+    .btn-gradient-purple {
+        background: linear-gradient(135deg, #a855f7 0%, #8b5cf6 50%, #7c3aed 100%);
+        color: white;
+        border: none;
+        border-radius: 16px;
+        padding: 16px 24px;
+        font-size: 16px;
+        font-weight: 600;
+        box-shadow: 0 4px 16px rgba(168, 85, 247, 0.4);
+        position: relative;
+        overflow: hidden;
+    }
+
+    .btn-gradient-cyan {
+        background: linear-gradient(135deg, #06b6d4 0%, #0891b2 100%);
+        color: white;
+        border: none;
+        border-radius: 16px;
+        padding: 16px 24px;
+        font-size: 16px;
+        font-weight: 600;
+        box-shadow: 0 4px 16px rgba(6, 182, 212, 0.4);
+    }
+
+    .btn-gradient-pink {
+        background: linear-gradient(135deg, #ec4899 0%, #db2777 100%);
+        color: white;
+        border: none;
+        border-radius: 16px;
+        padding: 16px 24px;
+        font-size: 16px;
+        font-weight: 600;
+        box-shadow: 0 4px 16px rgba(236, 72, 153, 0.4);
+    }
+
+    /* === GLASS BUTTONS (Glassmorphism) === */
+
+    .btn-glass {
+        background: rgba(255, 255, 255, 0.1);
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        color: white;
+        border-radius: 16px;
+        padding: 14px 24px;
+        font-size: 15px;
+        font-weight: 600;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        transition: all 0.3s ease;
+    }
+
+    .btn-glass:active {
+        background: rgba(255, 255, 255, 0.2);
+        transform: scale(0.97);
+    }
+
+    /* === PILL BUTTONS === */
+
+    .btn-pill {
+        border-radius: 50px;
+        padding: 12px 28px;
+        background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+        color: white;
+        border: none;
+        font-size: 15px;
+        font-weight: 600;
+        box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3);
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    /* === LOADING BUTTONS === */
+
+    .btn-loading {
+        position: relative;
+        color: transparent;
+        pointer-events: none;
+    }
+
+    .btn-loading::after {
+        content: '';
+        position: absolute;
+        width: 20px;
+        height: 20px;
+        top: 50%;
+        left: 50%;
+        margin-left: -10px;
+        margin-top: -10px;
+        border: 3px solid rgba(255, 255, 255, 0.3);
+        border-top-color: white;
+        border-radius: 50%;
+        animation: spin 0.6s linear infinite;
+    }
+
+    @keyframes spin {
+        to {
+            transform: rotate(360deg);
+        }
+    }
+
+    /* === BUTTON GROUPS === */
+
+    .btn-group {
+        display: flex;
+        gap: 12px;
+        width: 100%;
+    }
+
+    .btn-group .btn {
+        flex: 1;
+    }
+
+    /* === SOCIAL BUTTONS === */
+
+    .btn-google {
+        background: white;
+        color: #1f2937;
+        border: 1px solid #e5e7eb;
+        border-radius: 12px;
+        padding: 14px 24px;
+        font-size: 15px;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 12px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    }
+
+    .btn-facebook {
+        background: #1877f2;
+        color: white;
+        border: none;
+        border-radius: 12px;
+        padding: 14px 24px;
+        font-size: 15px;
+        font-weight: 600;
+    }
+
+    /* === HAPTIC FEEDBACK === */
+
+    .btn-haptic:active {
+        animation: haptic 0.1s;
+    }
+
+    @keyframes haptic {
+
+        0%,
+        100% {
+            transform: scale(1);
+        }
+
+        50% {
+            transform: scale(0.95);
+        }
+    }
+
+    /* === RIPPLE EFFECT === */
+
+    .btn-ripple {
+        position: relative;
+        overflow: hidden;
+    }
+
+    .btn-ripple::after {
+        content: '';
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        width: 0;
+        height: 0;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.5);
+        transform: translate(-50%, -50%);
+        transition: width 0.6s, height 0.6s;
+    }
+
+    .btn-ripple:active::after {
+        width: 300px;
+        height: 300px;
+    }
+
+    /* === SIZE VARIANTS === */
+
+    .btn-sm {
+        padding: 10px 18px;
+        font-size: 14px;
+        border-radius: 10px;
+    }
+
+    .btn-lg {
+        padding: 18px 28px;
+        font-size: 18px;
+        border-radius: 18px;
+    }
+
+    .btn-xl {
+        padding: 20px 32px;
+        font-size: 20px;
+        border-radius: 20px;
+        font-weight: 700;
+    }
+
+    /* === DISABLED STATE === */
+
+    button:disabled,
+    .btn-disabled {
+        opacity: 0.5;
+        pointer-events: none;
+        cursor: not-allowed;
+    }
+
+    /* === TOUCH OPTIMIZATION === */
+
+    button,
+    .btn,
+    a.btn {
+        -webkit-tap-highlight-color: transparent;
+        user-select: none;
+        touch-action: manipulation;
+    }
+}
