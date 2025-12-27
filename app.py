@@ -1167,7 +1167,6 @@ def add_member():
                          today=current_date.strftime('%Y-%m-%d'))
 
 @app.route('/fees', methods=['GET', 'POST'])
-@app.route('/fees', methods=['GET', 'POST'])
 def fees():
     gym = get_gym()
     if not gym: return redirect(url_for('auth'))
