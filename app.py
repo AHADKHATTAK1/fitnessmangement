@@ -4,7 +4,7 @@ from werkzeug.utils import secure_filename
 from gym_manager import GymManager
 from auth_manager import AuthManager
 from payment_manager import PaymentManager
-from email_sender import EmailSender
+from email_utils import EmailSender
 import os
 import json
 from datetime import datetime, timedelta

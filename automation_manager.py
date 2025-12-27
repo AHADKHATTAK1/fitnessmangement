@@ -6,7 +6,7 @@ Handles automated campaigns: payment reminders, birthday wishes, re-engagement
 from datetime import datetime, timedelta
 from typing import List, Dict
 from models import Member, Fee, Gym
-from email_sender import EmailSender
+from email_utils import EmailSender
 import os
 
 

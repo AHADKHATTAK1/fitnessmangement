@@ -86,7 +86,7 @@ class SecurityManager:
     
     def send_email_code(self, email: str, code: str) -> bool:
         """Send email verification code"""
-        from email_sender import EmailSender
+        from email_utils import EmailSender
         sender = EmailSender()
         
         subject = "Gym Manager - Verification Code"
