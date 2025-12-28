@@ -20,12 +20,6 @@ class User(Base):
     role = Column(String(50), default='admin')
     market = Column(String(50), default='US', nullable=True)  # 'US' or 'PK' or 'VIP'
     subscription_expiry = Column(DateTime, nullable=True)  # Subscription expiry date
-    
-    # Tiered Subscription Fields (all nullable for backwards compatibility)
-    subscription_tier = Column(String(50), default='starter', nullable=True)
-    billing_cycle = Column(String(20), default='monthly', nullable=True)
-    tier_upgraded_at = Column(DateTime, nullable=True)
-    tier_downgrade_scheduled = Column(String(50), nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
     
     # Relationships
