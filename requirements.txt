@@ -16,7 +16,7 @@ reportlab==4.0.9
 requests==2.31.0
 
 # Payments
-stripe==7.13.0
+stripe>=11.0.0==7.13.0
 
 # Google APIs
 google-auth==2.26.2
