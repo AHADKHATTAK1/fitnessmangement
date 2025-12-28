@@ -69,6 +69,7 @@ function createBottomNav() {
         { icon: '➕', label: 'Add', url: '/add_member' },
         { icon: '💰', label: 'Fees', url: '/fees' },
         { icon: '📊', label: 'Stats', url: '/reports' },
+        { icon: '💎', label: 'Plan', url: '/subscription_plans' },
         { icon: '⚙️', label: 'More', url: '/settings' }
     ];
 
