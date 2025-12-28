@@ -16,11 +16,10 @@ class User(Base):
     
     id = Column(Integer, primary_key=True)
     email = Column(String(255), unique=True, nullable=False)
-    password_hash = Column(String(255), nullable=False) # Kept existing field
-    role = Column(String(50), default='admin') # Kept existing field
-    market = Column(String(50), default='US', nullable=True)  # 'US' or 'PK' or 'VIP' # Kept existing field, adjusted type to 50
-    referral_code = Column(String(50), nullable=True) # Added new field from instruction
-    subscription_expiry = Column(DateTime, nullable=True)  # Subscription expiry date # Kept existing field
+    password_hash = Column(String(255), nullable=False)
+    role = Column(String(50), default='admin')
+    market = Column(String(50), default='US', nullable=True)  # 'US' or 'PK' or 'VIP'
+    subscription_expiry = Column(DateTime, nullable=True)  # Subscription expiry date
     
     # Tiered Subscription Fields
     subscription_tier = Column(String(50), default='starter')  # starter, professional, enterprise, enterprise_plus
