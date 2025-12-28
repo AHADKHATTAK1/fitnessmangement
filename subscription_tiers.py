@@ -14,7 +14,7 @@ TIERS = {
         'currency': 'USD',
         'limits': {
             'gyms': 1,
-            'members': 50,
+            'members': 250,
             'staff': 2,
             'exports_per_month': 10,
             'storage_mb': 500,
@@ -39,7 +39,7 @@ TIERS = {
         'currency': 'USD',
         'limits': {
             'gyms': 5,
-            'members': 500,
+            'members': 1000,
             'staff': 10,
             'exports_per_month': 100,
             'storage_mb': 5000,
