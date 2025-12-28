@@ -5,7 +5,7 @@
 {% block content %}
 <style>
     .subscription-container {
-        max-width: 1200px;
+        max-width: 1400px;
         margin: 0 auto;
         padding: 40px 20px;
     }
@@ -15,115 +15,182 @@
         color: white;
         padding: 40px;
         border-radius: 24px;
-        margin-bottom: 40px;
+        margin-bottom: 50px;
         box-shadow: 0 20px 60px rgba(16, 185, 129, 0.3);
     }
 
-    .plan-grid {
+    .tier-grid {
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-        gap: 32px;
-        margin-bottom: 40px;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 30px;
+        margin-bottom: 60px;
     }
 
-    .plan-card {
+    .tier-card {
         background: white;
         border-radius: 24px;
-        padding: 32px;
-        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+        padding: 40px 30px;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
         border: 3px solid transparent;
         transition: all 0.3s ease;
         position: relative;
+        overflow: hidden;
     }
 
-    .plan-card:hover {
-        transform: translateY(-8px);
-        box-shadow: 0 16px 48px rgba(0, 0, 0, 0.12);
+    .tier-card:hover {
+        transform: translateY(-10px);
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
     }
 
-    .plan-card.featured {
-        border-color: #ec4899;
+    .tier-card.featured {
+        border-color: #8b5cf6;
         transform: scale(1.05);
+        z-index: 10;
     }
 
-    .plan-badge {
+    .tier-card.featured::before {
+        content: "⭐ MOST POPULAR";
         position: absolute;
-        top: -12px;
-        right: 24px;
-        background: linear-gradient(135deg, #ec4899, #db2777);
+        top: 20px;
+        right: -35px;
+        background: linear-gradient(135deg, #8b5cf6, #7c3aed);
         color: white;
-        padding: 6px 20px;
-        border-radius: 24px;
-        font-size: 13px;
+        padding: 5px 40px;
+        transform: rotate(45deg);
+        font-size: 12px;
         font-weight: 800;
+        letter-spacing: 1px;
     }
 
-    .plan-icon {
+    .tier-icon {
+        font-size: 64px;
+        margin-bottom: 20px;
+        display: block;
+    }
+
+    .tier-name {
+        font-size: 32px;
+        font-weight: 800;
+        margin-bottom: 10px;
+        background: linear-gradient(135deg, #667eea, #764ba2);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+    }
+
+    .tier-card.featured .tier-name {
+        background: linear-gradient(135deg, #8b5cf6, #ec4899);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+    }
+
+    .tier-price {
         font-size: 56px;
-        margin-bottom: 16px;
-    }
-
-    .plan-name {
-        font-size: 28px;
-        font-weight: 700;
-        margin-bottom: 8px;
-    }
-
-    .plan-price {
-        font-size: 48px;
         font-weight: 900;
-        margin-bottom: 8px;
+        color: #1f2937;
+        margin-bottom: 5px;
     }
 
-    .plan-period {
+    .tier-price span {
+        font-size: 24px;
+        font-weight: 600;
         color: #6b7280;
-        margin-bottom: 24px;
     }
 
-    .plan-features {
-        list-style: none;
-        padding: 0;
-        margin: 24px 0;
+    .tier-period {
+        color: #6b7280;
+        margin-bottom: 10px;
+        font-size: 14px;
     }
 
-    .plan-features li {
-        padding: 12px 0;
+    .tier-savings {
+        color: #10b981;
+        font-weight: 700;
+        font-size: 14px;
+        margin-bottom: 25px;
+    }
+
+    .tier-limits {
+        border-top: 2px solid #e5e7eb;
+        border-bottom: 2px solid #e5e7eb;
+        padding: 20px 0;
+        margin: 25px 0;
+    }
+
+    .limit-item {
         display: flex;
         align-items: center;
         gap: 12px;
+        margin: 12px 0;
+        font-size: 15px;
+        color: #374151;
+        font-weight: 600;
     }
 
-    .feature-icon {
+    .limit-icon {
+        font-size: 24px;
+    }
+
+    .tier-features {
+        margin: 25px 0;
+    }
+
+    .feature {
+        padding: 10px 0;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        color: #374151;
+        font-size: 15px;
+    }
+
+    .feature::before {
+        content: "✓";
         color: #10b981;
-        font-weight: bold;
+        font-weight: 900;
+        font-size: 18px;
     }
 
-    .plan-button {
+    .feature.disabled {
+        color: #9ca3af;
+        text-decoration: line-through;
+    }
+
+    .feature.disabled::before {
+        content: "✗";
+        color: #ef4444;
+    }
+
+    .tier-select-btn {
         width: 100%;
-        padding: 16px;
+        padding: 18px;
         border-radius: 12px;
         border: none;
         font-size: 18px;
-        font-weight: 600;
+        font-weight: 700;
         cursor: pointer;
         transition: all 0.3s ease;
+        text-transform: uppercase;
+        letter-spacing: 1px;
     }
 
-    .btn-upgrade {
-        background: linear-gradient(135deg, #8b5cf6, #7c3aed);
+    .tier-select-btn {
+        background: linear-gradient(135deg, #667eea, #764ba2);
         color: white;
     }
 
-    .btn-current {
+    .tier-select-btn:hover {
+        transform: scale(1.02);
+        box-shadow: 0 10px 30px rgba(102, 126, 234, 0.3);
+    }
+
+    .tier-card.featured .tier-select-btn {
+        background: linear-gradient(135deg, #8b5cf6, #ec4899);
+    }
+
+    .tier-select-btn.current {
         background: #e5e7eb;
         color: #6b7280;
         cursor: not-allowed;
-    }
-
-    .btn-downgrade {
-        background: white;
-        color: #8b5cf6;
-        border: 2px solid #8b5cf6;
     }
 
     @media (max-width: 768px) {
@@ -131,11 +198,11 @@
             padding: 80px 16px 16px;
         }
 
-        .plan-grid {
+        .tier-grid {
             grid-template-columns: 1fr;
         }
 
-        .plan-card.featured {
+        .tier-card.featured {
             transform: scale(1);
         }
     }
@@ -143,9 +210,10 @@
 
 <div class="subscription-container">
     <!-- Current Plan Status -->
+    {% if user and user.subscription_tier %}
     <div class="current-plan-card">
         <h1 style="font-size: 36px; margin: 0 0 24px 0; display: flex; align-items: center; gap: 12px;">
-            <span>💎</span> My Subscription
+            <span>💎</span> My Current Subscription
         </h1>
 
         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 24px;">
@@ -158,211 +226,276 @@
 
             <div style="background: rgba(255,255,255,0.2); padding: 24px; border-radius: 16px;">
                 <div style="opacity: 0.9; font-size: 14px; margin-bottom: 8px;">Current Plan</div>
-                <div style="font-size: 28px; font-weight: 700;">
-                    {% if user and user.subscription_plan %}{{ user.subscription_plan }}{% else %}Standard US{% endif %}
+                <div style="font-size: 28px; font-weight: 700; text-transform: capitalize;">
+                    {{ user.subscription_tier }}
                 </div>
             </div>
 
             <div style="background: rgba(255,255,255,0.2); padding: 24px; border-radius: 16px;">
                 <div style="opacity: 0.9; font-size: 14px; margin-bottom: 8px;">Valid Until</div>
                 <div style="font-size: 28px; font-weight: 700;">
-                    {% if user and user.subscription_expiry %}{{ user.subscription_expiry.strftime('%Y-%m-%d') }}{% else
+                    {% if user.subscription_expiry %}{{ user.subscription_expiry.strftime('%Y-%m-%d') }}{% else
                     %}2026-01-26{% endif %}
                 </div>
             </div>
         </div>
     </div>
+    {% endif %}
 
     <!-- All Available Plans -->
-    <h2 style="text-align: center; font-size: 36px; margin-bottom: 40px;">
-        🎯 Choose Your Perfect Plan
+    <h2 style="text-align: center; font-size: 42px; font-weight: 900; margin-bottom: 15px;">
+        Choose Your Perfect Plan 🚀
     </h2>
+    <p style="text-align: center; font-size: 18px; color: #6b7280; margin-bottom: 50px;">
+        Flexible pricing for gyms of all sizes. Upgrade or downgrade anytime.
+    </p>
 
-    <div class="plan-grid">
-        <!-- FREE TRIAL -->
-        <div class="plan-card" style="border-color: #10b981;">
-            <div class="plan-icon">⚡</div>
-            <div class="plan-name" style="color: #10b981;">Free Trial</div>
-            <div class="plan-price" style="color: #10b981;">FREE</div>
-            <div class="plan-period">3 Days Full Access</div>
+    <div class="tier-grid">
+        <!-- STARTER -->
+        <div class="tier-card" data-tier="starter">
+            <span class="tier-icon">⚡</span>
+            <div class="tier-name">Starter</div>
+            <div class="tier-price">$49<span>/month</span></div>
+            <div class="tier-period">Billed monthly</div>
+            <div class="tier-savings">or $490/year (save $98)</div>
 
-            <ul class="plan-features">
-                <li><span class="feature-icon">✓</span> All features unlocked</li>
-                <li><span class="feature-icon">✓</span> No credit card required</li>
-                <li><span class="feature-icon">✓</span> Pay anytime you want</li>
-                <li><span class="feature-icon">✓</span> Cancel anytime</li>
-            </ul>
+            <div class="tier-limits">
+                <div class="limit-item">
+                    <span class="limit-icon">🏢</span>
+                    <span>1 Gym Location</span>
+                </div>
+                <div class="limit-item">
+                    <span class="limit-icon">👥</span>
+                    <span>Up to 250 Members</span>
+                </div>
+                <div class="limit-item">
+                    <span class="limit-icon">👨‍💼</span>
+                    <span>2 Staff Accounts</span>
+                </div>
+            </div>
 
-            <form action="/activate_trial" method="POST">
-                <button type="submit" class="plan-button"
-                    style="background: linear-gradient(135deg, #10b981, #059669); color: white;">
-                    Start Free Trial
+            <div class="tier-features">
+                <div class="feature">Member Management</div>
+                <div class="feature">Payment Tracking</div>
+                <div class="feature">Basic Reports</div>
+                <div class="feature">Mobile App (PWA)</div>
+                <div class="feature">Email Support</div>
+                <div class="feature disabled">Marketing Automation</div>
+                <div class="feature disabled">AI Analytics</div>
+                <div class="feature disabled">API Access</div>
+            </div>
+
+            <form action="/upgrade_tier" method="POST">
+                <input type="hidden" name="tier" value="starter">
+                <input type="hidden" name="cycle" value="monthly">
+                <button type="submit"
+                    class="tier-select-btn {% if user and user.subscription_tier == 'starter' %}current{% endif %}">
+                    {% if user and user.subscription_tier == 'starter' %}Current Plan ✓{% else %}Choose Starter{% endif
+                    %}
                 </button>
             </form>
         </div>
 
-        <!-- MONTHLY PLAN -->
-        <div class="plan-card" style="border-color: #8b5cf6;">
-            <div class="plan-icon">💳</div>
-            <div class="plan-name" style="color: #8b5cf6;">Monthly</div>
-            <div class="plan-price" style="color: #8b5cf6;">$60</div>
-            <div class="plan-period">Per Month</div>
+        <!-- PROFESSIONAL (FEATURED) -->
+        <div class="tier-card featured" data-tier="professional">
+            <span class="tier-icon">💎</span>
+            <div class="tier-name">Professional</div>
+            <div class="tier-price">$149<span>/month</span></div>
+            <div class="tier-period">Billed monthly</div>
+            <div class="tier-savings">or $1,490/year (save $298)</div>
 
-            <ul class="plan-features">
-                <li><span class="feature-icon">✓</span> Unlimited members</li>
-                <li><span class="feature-icon">✓</span> All premium features</li>
-                <li><span class="feature-icon">✓</span> Email support</li>
-                <li><span class="feature-icon">✓</span> Mobile app access</li>
-                <li><span class="feature-icon">✓</span> Export reports</li>
-            </ul>
+            <div class="tier-limits">
+                <div class="limit-item">
+                    <span class="limit-icon">🏢</span>
+                    <span>5 Gym Locations</span>
+                </div>
+                <div class="limit-item">
+                    <span class="limit-icon">👥</span>
+                    <span>Up to 1,000 Members</span>
+                </div>
+                <div class="limit-item">
+                    <span class="limit-icon">👨‍💼</span>
+                    <span>10 Staff Accounts</span>
+                </div>
+            </div>
 
-            <form action="/initiate_payment" method="POST">
-                <input type="hidden" name="provider" value="stripe">
-                <input type="hidden" name="plan_type" value="monthly">
-                <button type="submit" class="plan-button btn-current">
-                    Current Plan ✓
+            <div class="tier-features">
+                <div class="feature">Everything in Starter</div>
+                <div class="feature">Marketing Automation</div>
+                <div class="feature">AI Churn Prediction</div>
+                <div class="feature">Advanced Analytics</div>
+                <div class="feature">Multi-Gym Management</div>
+                <div class="feature">Priority Support</div>
+                <div class="feature">Custom Branding</div>
+                <div class="feature disabled">API Access</div>
+            </div>
+
+            <form action="/upgrade_tier" method="POST">
+                <input type="hidden" name="tier" value="professional">
+                <input type="hidden" name="cycle" value="monthly">
+                <button type="submit"
+                    class="tier-select-btn {% if user and user.subscription_tier == 'professional' %}current{% endif %}">
+                    {% if user and user.subscription_tier == 'professional' %}Current Plan ✓{% else %}Choose
+                    Professional{% endif %}
                 </button>
             </form>
         </div>
 
-        <!-- YEARLY PLAN (BEST VALUE) -->
-        <div class="plan-card featured" style="border-color: #ec4899;">
-            <div class="plan-badge">BEST VALUE - SAVE $120</div>
-            <div class="plan-icon">💎</div>
-            <div class="plan-name" style="color: #ec4899;">Yearly</div>
-            <div class="plan-price" style="color: #ec4899;">$600</div>
-            <div class="plan-period">Only $50/month</div>
+        <!-- ENTERPRISE -->
+        <div class="tier-card" data-tier="enterprise">
+            <span class="tier-icon">🏆</span>
+            <div class="tier-name">Enterprise</div>
+            <div class="tier-price">$499<span>/month</span></div>
+            <div class="tier-period">Billed monthly</div>
+            <div class="tier-savings">or $4,990/year (save $998)</div>
 
-            <ul class="plan-features">
-                <li><span class="feature-icon">✓</span> All Monthly features</li>
-                <li><span class="feature-icon">✓</span> 2 months FREE (Save $120)</li>
-                <li><span class="feature-icon">✓</span> Priority support</li>
-                <li><span class="feature-icon">✓</span> Early access to new features</li>
-                <li><span class="feature-icon">✓</span> Dedicated account manager</li>
-            </ul>
+            <div class="tier-limits">
+                <div class="limit-item">
+                    <span class="limit-icon">♾️</span>
+                    <span>Unlimited Gyms</span>
+                </div>
+                <div class="limit-item">
+                    <span class="limit-icon">♾️</span>
+                    <span>Unlimited Members</span>
+                </div>
+                <div class="limit-item">
+                    <span class="limit-icon">♾️</span>
+                    <span>Unlimited Staff</span>
+                </div>
+            </div>
 
-            <form action="/initiate_payment" method="POST">
-                <input type="hidden" name="provider" value="stripe">
-                <input type="hidden" name="plan_type" value="yearly">
-                <button type="submit" class="plan-button btn-upgrade">
-                    Upgrade to Yearly 🚀
+            <div class="tier-features">
+                <div class="feature">Everything in Pro</div>
+                <div class="feature">White-Label Branding</div>
+                <div class="feature">Full API Access</div>
+                <div class="feature">Webhooks</div>
+                <div class="feature">Custom Domain</div>
+                <div class="feature">Dedicated Account Manager</div>
+                <div class="feature">SLA Guarantee</div>
+                <div class="feature">24/7 Support</div>
+            </div>
+
+            <form action="/upgrade_tier" method="POST">
+                <input type="hidden" name="tier" value="enterprise">
+                <input type="hidden" name="cycle" value="monthly">
+                <button type="submit"
+                    class="tier-select-btn {% if user and user.subscription_tier == 'enterprise' %}current{% endif %}">
+                    {% if user and user.subscription_tier == 'enterprise' %}Current Plan ✓{% else %}Choose Enterprise{%
+                    endif %}
+                </button>
+            </form>
+        </div>
+
+        <!-- ENTERPRISE+ -->
+        <div class="tier-card" data-tier="enterprise_plus">
+            <span class="tier-icon">👑</span>
+            <div class="tier-name">Enterprise+</div>
+            <div class="tier-price">$1,999<span>/month</span></div>
+            <div class="tier-period">Billed monthly</div>
+            <div class="tier-savings">or $19,990/year (save $3,998)</div>
+
+            <div class="tier-limits">
+                <div class="limit-item">
+                    <span class="limit-icon">♾️</span>
+                    <span>Everything Unlimited</span>
+                </div>
+                <div class="limit-item">
+                    <span class="limit-icon">🌐</span>
+                    <span>Multi-Region Deploy</span>
+                </div>
+                <div class="limit-item">
+                    <span class="limit-icon">🔧</span>
+                    <span>Custom Development</span>
+                </div>
+            </div>
+
+            <div class="tier-features">
+                <div class="feature">Everything in Enterprise</div>
+                <div class="feature">On-Premise Deployment</div>
+                <div class="feature">Custom Feature Development</div>
+                <div class="feature">Phone Support</div>
+                <div class="feature">Training Sessions</div>
+                <div class="feature">Data Migration</div>
+                <div class="feature">Compliance Support</div>
+                <div class="feature">Dedicated Resources</div>
+            </div>
+
+            <form action="/upgrade_tier" method="POST">
+                <input type="hidden" name="tier" value="enterprise_plus">
+                <input type="hidden" name="cycle" value="monthly">
+                <button type="submit"
+                    class="tier-select-btn {% if user and user.subscription_tier == 'enterprise_plus' %}current{% endif %}">
+                    {% if user and user.subscription_tier == 'enterprise_plus' %}Current Plan ✓{% else %}Contact Sales{%
+                    endif %}
                 </button>
             </form>
         </div>
     </div>
 
     <!-- Pakistan Plans -->
-    <div style="margin-top: 60px; padding-top: 40px; border-top: 2px solid #e5e7eb;">
-        <h3 style="text-align: center; font-size: 32px; margin-bottom: 32px;">
-            🇵🇰 Pakistan Payment Methods
+    <div style="margin-top: 80px; padding-top: 60px; border-top: 3px solid #e5e7eb;">
+        <h3 style="text-align: center; font-size: 36px; font-weight: 900; margin-bottom: 15px;">
+            🇵🇰 Pakistan Special Pricing
         </h3>
+        <p style="text-align: center; font-size: 16px; color: #6b7280; margin-bottom: 40px;">
+            Pay easily with JazzCash or EasyPaisa
+        </p>
 
-        <div class="plan-grid" style="grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));">
-            <!-- JAZZCASH -->
-            <div class="plan-card" style="border-color: #ff6600;">
-                <div class="plan-icon">📱</div>
-                <div class="plan-name" style="color: #ff6600;">JazzCash</div>
-                <div class="plan-price" style="color: #ff6600;">Rs 5,000</div>
-                <div class="plan-period">Per Month</div>
+        <div class="tier-grid"
+            style="grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); max-width: 900px; margin: 0 auto;">
+            <!-- PAKISTAN STARTER -->
+            <div class="tier-card">
+                <span class="tier-icon">📱</span>
+                <div class="tier-name">Starter PK</div>
+                <div class="tier-price">Rs 4,000<span>/month</span></div>
+                <div class="tier-period">JazzCash / EasyPaisa</div>
 
-                <ul class="plan-features">
-                    <li><span class="feature-icon">✓</span> Mobile wallet payment</li>
-                    <li><span class="feature-icon">✓</span> Instant activation</li>
-                    <li><span class="feature-icon">✓</span> All features included</li>
-                </ul>
+                <div class="tier-limits">
+                    <div class="limit-item">
+                        <span class="limit-icon">👥</span>
+                        <span>Up to 250 Members</span>
+                    </div>
+                    <div class="limit-item">
+                        <span class="limit-icon">✓</span>
+                        <span>All Basic Features</span>
+                    </div>
+                </div>
 
                 <form action="/initiate_payment" method="POST">
                     <input type="hidden" name="provider" value="jazzcash">
-                    <button type="submit" class="plan-button" style="background: #ff6600; color: white;">
+                    <input type="hidden" name="plan" value="starter_pk">
+                    <button type="submit" class="tier-select-btn" style="background: #ff6600;">
                         Pay with JazzCash
                     </button>
                 </form>
             </div>
 
-            <!-- EASYPAISA -->
-            <div class="plan-card" style="border-color: #00c853;">
-                <div class="plan-icon">💚</div>
-                <div class="plan-name" style="color: #00c853;">EasyPaisa</div>
-                <div class="plan-price" style="color: #00c853;">Rs 5,000</div>
-                <div class="plan-period">Per Month</div>
+            <!-- PAKISTAN PROFESSIONAL -->
+            <div class="tier-card">
+                <span class="tier-icon">💚</span>
+                <div class="tier-name">Professional PK</div>
+                <div class="tier-price">Rs 12,000<span>/month</span></div>
+                <div class="tier-period">JazzCash / EasyPaisa</div>
 
-                <ul class="plan-features">
-                    <li><span class="feature-icon">✓</span> Mobile wallet payment</li>
-                    <li><span class="feature-icon">✓</span> Instant activation</li>
-                    <li><span class="feature-icon">✓</span> All features included</li>
-                </ul>
+                <div class="tier-limits">
+                    <div class="limit-item">
+                        <span class="limit-icon">👥</span>
+                        <span>Up to 1,000 Members</span>
+                    </div>
+                    <div class="limit-item">
+                        <span class="limit-icon">✓</span>
+                        <span>All Pro Features</span>
+                    </div>
+                </div>
 
                 <form action="/initiate_payment" method="POST">
                     <input type="hidden" name="provider" value="easypaisa">
-                    <button type="submit" class="plan-button" style="background: #00c853; color: white;">
+                    <input type="hidden" name="plan" value="professional_pk">
+                    <button type="submit" class="tier-select-btn" style="background: #00c853;">
                         Pay with EasyPaisa
                     </button>
                 </form>
             </div>
-        </div>
-    </div>
-
-    <!-- Plan Comparison -->
-    <div style="margin-top: 60px; padding: 40px; background: #f9fafb; border-radius: 24px;">
-        <h3 style="text-align: center; font-size: 28px; margin-bottom: 32px;">
-            📊 Feature Comparison
-        </h3>
-
-        <div style="overflow-x: auto;">
-            <table style="width: 100%; border-collapse: collapse;">
-                <thead>
-                    <tr style="border-bottom: 2px solid #e5e7eb;">
-                        <th style="padding: 16px; text-align: left;">Feature</th>
-                        <th style="padding: 16px; text-align: center;">Free Trial</th>
-                        <th style="padding: 16px; text-align: center;">Monthly</th>
-                        <th style="padding: 16px; text-align: center; background: rgba(236, 72, 153, 0.1);">Yearly</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr style="border-bottom: 1px solid #e5e7eb;">
-                        <td style="padding: 16px;">Unlimited Members</td>
-                        <td style="padding: 16px; text-align: center;">✅</td>
-                        <td style="padding: 16px; text-align: center;">✅</td>
-                        <td style="padding: 16px; text-align: center;">✅</td>
-                    </tr>
-                    <tr style="border-bottom: 1px solid #e5e7eb;">
-                        <td style="padding: 16px;">Payment Tracking</td>
-                        <td style="padding: 16px; text-align: center;">✅</td>
-                        <td style="padding: 16px; text-align: center;">✅</td>
-                        <td style="padding: 16px; text-align: center;">✅</td>
-                    </tr>
-                    <tr style="border-bottom: 1px solid #e5e7eb;">
-                        <td style="padding: 16px;">Mobile App (PWA)</td>
-                        <td style="padding: 16px; text-align: center;">✅</td>
-                        <td style="padding: 16px; text-align: center;">✅</td>
-                        <td style="padding: 16px; text-align: center;">✅</td>
-                    </tr>
-                    <tr style="border-bottom: 1px solid #e5e7eb;">
-                        <td style="padding: 16px;">AI Churn Prediction</td>
-                        <td style="padding: 16px; text-align: center;">✅</td>
-                        <td style="padding: 16px; text-align: center;">✅</td>
-                        <td style="padding: 16px; text-align: center;">✅</td>
-                    </tr>
-                    <tr style="border-bottom: 1px solid #e5e7eb;">
-                        <td style="padding: 16px;">Email Support</td>
-                        <td style="padding: 16px; text-align: center;">❌</td>
-                        <td style="padding: 16px; text-align: center;">✅</td>
-                        <td style="padding: 16px; text-align: center;">✅</td>
-                    </tr>
-                    <tr style="border-bottom: 1px solid #e5e7eb;">
-                        <td style="padding: 16px;">Priority Support</td>
-                        <td style="padding: 16px; text-align: center;">❌</td>
-                        <td style="padding: 16px; text-align: center;">❌</td>
-                        <td style="padding: 16px; text-align: center;">✅</td>
-                    </tr>
-                    <tr>
-                        <td style="padding: 16px;">Early Features Access</td>
-                        <td style="padding: 16px; text-align: center;">❌</td>
-                        <td style="padding: 16px; text-align: center;">❌</td>
-                        <td style="padding: 16px; text-align: center;">✅</td>
-                    </tr>
-                </tbody>
-            </table>
         </div>
     </div>
 </div>
