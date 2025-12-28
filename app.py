@@ -2389,5 +2389,9 @@ def generate_smart_response(message, gym_name, username=None):
             'quick_replies': ['View hours', 'Check pricing', 'Contact us', 'View classes']
         }
 
+if __name__ == '__main__':
+    # Initialize tier upgrade routes
+    init_upgrade_routes(app, auth_manager)
+    
     port = int(os.environ.get('PORT', 5000))
-    app.run(host='0.0.0.0', port=port)
+    app.run(host='0.0.0.0', port=port, debug=False)
