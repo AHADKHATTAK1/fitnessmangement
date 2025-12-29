@@ -34,7 +34,7 @@ try:
     init_db()
     print("✅ Database initialized successfully")
 except Exception as e:
-    print(f("⚠️  Database init warning: {str(e)}")
+    print(f"⚠️  Database init warning: {str(e)}")
     import traceback
     traceback.print_exc()
 
