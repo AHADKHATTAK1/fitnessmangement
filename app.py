@@ -1484,31 +1484,17 @@ def fees():
     # Get current month
     current_month = datetime.now().strftime('%Y-%m')
     
-    # Get all payment records across all members
-    all_members = gym.get_all_members()
-    fee_records = []
-    
-    for member in all_members:
-        member_id = member.get('id')
-        payment_history = gym.get_payment_history(member_id)
-        
-        for payment in payment_history:
-            fee_records.append({
-                'member_id': member_id,
-                'member_name': member.get('name', 'Unknown'),
-                'month': payment.get('month'),
-                'amount': payment.get('amount', 0),
-                'paid_date': payment.get('paid_date'),
-                'notes': payment.get('notes', '')
-            })
-    
-    # Sort by date descending
-    fee_records.sort(key=lambda x: x['paid_date'], reverse=True)
+    # Get all payment records across all members for this gym
+    fees_query = gym.session.query(Fee).join(Member).filter(Member.gym_id == gym.gym.id).order_by(Fee.paid_date.desc())
+    fees_list = fees_query.all()
     
     # Calculate summary
-    total_collected = sum(r['amount'] for r in fee_records)
-    current_month_records = [r for r in fee_records if r['month'] == current_month]
-    current_month_total = sum(r['amount'] for r in current_month_records)
+    total_collected = sum(f.amount for f in fees_list)
+    current_month_records = [f for f in fees_list if f.month == current_month]
+    current_month_total = sum(f.amount for f in current_month_records)
+    
+    # Get all members for the dropdown
+    all_members = gym.get_all_members()
     
     # Generate months for dropdown (using standard datetime instead of pandas for compatibility)
     current_date = datetime.now()
@@ -1528,7 +1514,7 @@ def fees():
     
     return render_template('fees.html', 
                          members=all_members,
-                         fee_records=fee_records,
+                         fees=fees_list,
                          current_month=current_month,
                          available_months=available_months,
                          total_collected=total_collected,

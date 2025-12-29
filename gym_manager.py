@@ -625,10 +625,12 @@ class GymManager:
                     print(f"DEBUG Import: Name={name}, Status={status_val}, Month={month_val}")
                     
                     # Logic: If explicitly marked 'paid' or if a payment month is provided
-                    # We default the paid month to the JOINING MONTH if no specific month is given
+                    # BUT skip if explicitly marked 'unpaid'
                     joined_month_str = joined_date.strftime('%Y-%m')
                     
-                    if 'paid' in status_val or month_val:
+                    if 'unpaid' in status_val:
+                        paid_month = None
+                    elif 'paid' in status_val or month_val:
                         paid_month = month_val if month_val else joined_month_str
                         fee_amount = float(amount_val) if amount_val else 0.0
                     
