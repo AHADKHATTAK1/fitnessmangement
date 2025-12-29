@@ -1731,7 +1731,7 @@ def scan_check(member_id):
     attendance_history = gym.get_attendance(member_id)
     
     # Get payment details
-    payment_history = gym.get_payment_history(member_id)
+    payment_history = gym.get_member_fees(member_id)
     last_payment = payment_history[0] if payment_history else None
              
     return render_template('scan_result.html', 
