@@ -38,6 +38,33 @@ except Exception as e:
     import traceback
     traceback.print_exc()
 
+# AUTO-MIGRATION: Add tier columns if they don't exist
+try:
+    from sqlalchemy import text
+    from models import get_session
+    print("🔧 Running auto-migration for tier columns...")
+    session = get_session()
+    
+    migrations = [
+        "ALTER TABLE users ADD COLUMN IF NOT EXISTS subscription_tier VARCHAR(50) DEFAULT 'starter'",
+        "ALTER TABLE users ADD COLUMN IF NOT EXISTS billing_cycle VARCHAR(20) DEFAULT 'monthly'",
+        "ALTER TABLE users ADD COLUMN IF NOT EXISTS tier_upgraded_at TIMESTAMP",
+        "ALTER TABLE users ADD COLUMN IF NOT EXISTS tier_downgrade_scheduled VARCHAR(50)"
+    ]
+    
+    for migration in migrations:
+        try:
+            session.execute(text(migration))
+            session.commit()
+        except Exception as e:
+            # Column might already exist - safe to ignore
+            session.rollback()
+    
+    session.close()
+    print("✅ Tier columns migration complete")
+except Exception as e:
+    print(f"ℹ️  Migration note: {str(e)[:100]}")
+
 app = Flask(__name__)
 
 # Check secret key
