@@ -2526,128 +2526,101 @@ def chatbot_api():
         return jsonify({'error': str(e)}), 500
 
 def generate_smart_response(message, gym_name, username=None):
-    """Generate intelligent responses based on message content"""
+    """Generate intelligent responses based on message content with a VIP brand voice"""
     
-    # Greeting
-    if any(word in message for word in ['hi', 'hello', 'hey', 'start']):
+    # Greeting / Start
+    if any(word in message for word in ['hi', 'hello', 'hey', 'start', 'salaam', 'aoa']):
         return {
-            'text': f"👋 Hello! Welcome to {gym_name}! I'm your AI assistant. How can I help you today?",
-            'quick_replies': ['View hours', 'Check pricing', 'Payment info', 'Contact us']
+            'text': f"💎 **Welcome to {gym_name} VIP Concierge!**\n\n"
+                   f"How can I assist you today? I can help you with **Subscriptions**, **Gym Hours**, **Classes**, or **Account** details.\n\n"
+                   "What's on your mind? 🔥",
+            'quick_replies': ['Subscription Plans', 'Gym Hours', 'Our Facilities', 'Contact Us']
         }
     
-    # Hours/Timing
-    elif any(word in message for word in ['hour', 'time', 'open', 'close', 'timing']):
+    # Subscription / Plans (Dedicated Block)
+    elif any(word in message for word in ['subscription', 'sub', 'membership', 'tier', 'plan', 'package']):
         return {
-            'text': f"🕐 **{gym_name} Hours:**\n\n"
-                   "📅 Monday - Friday: 6:00 AM - 10:00 PM\n"
-                   "📅 Saturday - Sunday: 7:00 AM - 9:00 PM\n\n"
-                   "We're open 7 days a week! 💪",
-            'quick_replies': ['Check pricing', 'View classes', 'Contact']
+            'text': " ✨ **Exclusive Membership Tiers** ✨\n\n"
+                   "Choose a plan that fits your fitness journey:\n\n"
+                   "🏋️ **Starter VIP** — Rs 2,500/mo\n"
+                   "• Standard gym access\n"
+                   "• Essential equipment\n\n"
+                   "💪 **Professional VIP** — Rs 4,500/mo\n"
+                   "• Full gym & cardio access\n"
+                   "• Group fitness classes\n"
+                   "• Steam & sauna access\n\n"
+                   "👑 **Ultimate Elite** — Rs 7,500/mo\n"
+                   "• Unlimited access to all facilities\n"
+                   "• Personal trainer (2 sessions/mo)\n"
+                   "• Nutrition & supplement plan\n"
+                   "• Free guest passes\n\n"
+                   "💡 *Pay yearly to save 20%!*",
+            'quick_replies': ['Payment Options', 'Gym Hours', 'Book a Tour']
         }
     
-    # Pricing
-    elif any(word in message for word in ['price', 'cost', 'fee', 'membership', 'plan']):
+    # Hours / Timing
+    elif any(word in message for word in ['hour', 'time', 'open', 'close', 'timing', 'schedule']):
         return {
-            'text': "💰 **Membership Plans:**\n\n"
-                   "🏋️ **Basic Plan** - Rs 2,000/month\n"
-                   "   • Gym access\n"
-                   "   • Basic equipment\n\n"
-                   "💪 **Premium Plan** - Rs 3,500/month\n"
-                   "   • Everything in Basic\n"
-                   "   • Group classes\n"
-                   "   • Steam room\n\n"
-                   "⭐ **VIP Plan** - Rs 5,000/month\n"
-                   "   • Everything in Premium\n"
-                   "   • Personal trainer sessions\n"
-                   "   • Nutrition guidance\n\n"
-                   "💡 First month - 20% OFF!",
-            'quick_replies': ['View hours', 'Payment options', 'Contact']
+            'text': f"🕒 **{gym_name} Operational Hours:**\n\n"
+                   "━━━━━━━━━━━━━━\n"
+                   "📅 **Mon - Fri:** 6:00 AM - 11:00 PM\n"
+                   "📅 **Sat - Sun:** 7:00 AM - 9:00 PM\n"
+                   "━━━━━━━━━━━━━━\n\n"
+                   "We are open 365 days a year to keep you consistent! 💪",
+            'quick_replies': ['Subscription Plans', 'Our Facilities']
         }
     
-    # Payment
-    elif any(word in message for word in ['payment', 'pay', 'due', 'balance', 'late fee']):
+    # Payment / Bills
+    elif any(word in message for word in ['payment', 'pay', 'due', 'bill', 'fee', 'charge', 'invoice']):
         return {
-            'text': "💳 **Payment Information:**\n\n"
-                   "**Accepted Methods:**\n"
-                   "✅ Cash (at reception)\n"
-                   "✅ Card (Debit/Credit)\n"
-                   "✅ Online Transfer\n"
-                   "✅ UPI / Mobile Wallet\n\n"
-                   "**Payment Terms:**\n"
-                   "• Due date: 1st of every month\n"
-                   "• Grace period: 5 days\n"
-                   "• Late fee: Rs 100 (after 5 days)\n\n"
-                   "💡 Set up auto-pay to never miss a payment!",
-            'quick_replies': ['Check pricing', 'View account', 'Contact']
+            'text': "💳 **VIP Payment Portal Info**\n\n"
+                   "We offer multiple convenient ways to pay:\n"
+                   "✅ **Direct Transfer:** JazzCash / EasyPaisa\n"
+                   "✅ **Digital Card:** Visa, Mastercard, Amex\n"
+                   "✅ **At Desk:** Cash or Card swipe\n\n"
+                   "📍 Payments are due by the **5th** of each month.\n"
+                   "💡 *Save your card details in your profile for auto-pay.*",
+            'quick_replies': ['Check My Balance', 'Subscription Plans', 'Contact Support']
         }
     
-    # Classes
-    elif any(word in message for word in ['class', 'yoga', 'zumba', 'spin', 'group', 'workout']):
+    # Facilities / Equipment
+    elif any(word in message for word in ['facility', 'equipment', 'amenity', 'locker', 'spa', 'shower']):
         return {
-            'text': "🧘 **Group Classes Schedule:**\n\n"
-                   "📅 **Monday:** Yoga (7:00 PM)\n"
-                   "📅 **Tuesday:** Zumba (6:00 PM)\n"
-                   "📅 **Wednesday:** Spinning (7:00 PM)\n"
-                   "📅 **Thursday:** CrossFit (6:00 PM)\n"
-                   "📅 **Friday:** HIIT (7:00 PM)\n"
-                   "📅 **Saturday:** Mixed Martial Arts (10:00 AM)\n"
-                   "📅 **Sunday:** Pilates (9:00 AM)\n\n"
-                   "✨ All classes FREE for Premium & VIP members!",
-            'quick_replies': ['Check pricing', 'View hours', 'Contact']
+            'text': "🏢 **Premium Amenities & Equipment**\n\n"
+                   "Our facility is equipped with top-of-the-line gear:\n"
+                   "🚀 **Strength Room:** Hammer Strength & Rogue rigs\n"
+                   "🏃 **Cardio Suite:** Peloton bikes & Technogym treadmills\n"
+                   "🧘 **Studio:** Yoga, Pilates, & HIIT zones\n"
+                   "🚿 **Lounge:** Luxury showers & spa recovery\n\n"
+                   "Experience the best in the city! 💫",
+            'quick_replies': ['View Schedule', 'Subscription Plans']
         }
     
-    # Trainer/PT
-    elif any(word in message for word in ['trainer', 'pt', 'personal', 'coach']):
+    # Contact / Support
+    elif any(word in message for word in ['contact', 'phone', 'call', 'support', 'help', 'whatsapp', 'address']):
         return {
-            'text': "👨‍🏫 **Personal Training:**\n\n"
-                   "Our certified trainers can help you:\n"
-                   "✅ Create custom workout plans\n"
-                   "✅ Achieve your fitness goals\n"
-                   "✅ Learn proper techniques\n"
-                   "✅ Track your progress\n\n"
-                   "**Rates:**\n"
-                   "• 1 session: Rs 1,500\n"
-                   "• 5 sessions: Rs 6,500\n"
-                   "• 10 sessions: Rs 12,000\n\n"
-                   "💡 VIP members get 2 FREE PT sessions/month!",
-            'quick_replies': ['Book session', 'View pricing', 'Contact']
+            'text': "📞 **Get in Touch with VIP Support**\n\n"
+                   "We are here to assist you 24/7:\n\n"
+                   "📱 **WhatsApp:** +92 300 1234567\n"
+                   "📞 **Phone:** +92 300 1234567\n"
+                   "✉️ **Email:** support@fitnessmanagement.site\n\n"
+                   "📍 **Visit Us:** Main Boulevard, Fitness Plaza, Lahore.\n\n"
+                   "Response time: Within 15 minutes! ⚡",
+            'quick_replies': ['Subscription Plans', 'Gym Hours']
         }
     
-    # Contact/Support
-    elif any(word in message for word in ['contact', 'phone', 'email', 'support', 'help', 'location']):
+    # Default Response
+    else:
         return {
-            'text': f"📞 **Contact {gym_name}:**\n\n"
-                   "📱 Phone: +92 300 1234567\n"
-                   "✉️ Email: akkhankhattak122@gmail.com\n"
-                   "📍 Location: [Your Gym Address]\n"
-                   "💬 WhatsApp: +92 300 1234567\n\n"
-                   "**Office Hours:**\n"
-                   "Monday - Friday: 9 AM - 6 PM\n\n"
-                   "We typically respond within 1 hour! 😊",
-            'quick_replies': ['View hours', 'Check pricing']
+            'text': "🤖 **I'm your Fitness HQ AI.**\n\n"
+                   "I'm here to help you dominate your goals. Ask me about:\n\n"
+                   "⭐ **Membership Options**\n"
+                   "⏰ **Timing & Schedules**\n"
+                   "💳 **Billing & Payments**\n"
+                   "🏋️ **Facilities & Trainers**\n\n"
+                   "How can I serve you today?",
+            'quick_replies': ['Subscription Plans', 'Gym Hours', 'Contact Us']
         }
-    
-    # Account/Login
-    elif any(word in message for word in ['account', 'login', 'profile', 'membership']):
-        if username:
-            return {
-                'text': "👤 **Your Account:**\n\n"
-                       f"You're logged in as: {username}\n\n"
-                       "You can:\n"
-                       "✅ View your dashboard\n"
-                       "✅ Check payment history\n"
-                       "✅ Update profile\n"
-                       "✅ Track attendance\n\n"
-                       "Need help with your account?",
-                'quick_replies': ['View dashboard', 'Payment history', 'Contact']
-            }
-        else:
-            return {
-                'text': "🔐 **Account Access:**\n\n"
-                       "To view your account details, please log in first!\n\n"
-                       "✅ Manage your membership\n"
-                       "✅ Track your progress\n"
-                       "✅ View payment history\n"
                        "✅ Book classes & PT sessions",
                 'quick_replies': ['Login now', 'Sign up', 'Contact']
             }

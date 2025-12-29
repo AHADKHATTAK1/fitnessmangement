@@ -29,7 +29,8 @@
         <ul style="margin: 0.5rem 0 0 1.5rem; line-height: 1.6;">
             <li>Phone numbers must be unique (used to detect duplicates)</li>
             <li>If phone exists, member details will be updated</li>
-            <li>If phone doesn't exist, new member will be created</li>
+            <li>Add <strong>Status</strong> column with "Paid" to auto-record payments</li>
+            <li>Add <strong>Month</strong> and <strong>Amount</strong> to specify payment details</li>
             <li>Name and Phone are required fields</li>
         </ul>
     </div>
@@ -89,15 +90,21 @@
                     <th>Email</th>
                     <th>Membership Type</th>
                     <th>Joined Date</th>
+                    <th>Status</th>
+                    <th>Month</th>
+                    <th>Amount</th>
                 </tr>
             </thead>
             <tbody>
                 <tr>
-                    <td>John Doe</td>
+                    <td>Ahmed Ali</td>
                     <td>03001234567</td>
-                    <td>john@example.com</td>
+                    <td>ahmed@example.com</td>
                     <td>Gym</td>
                     <td>2025-01-01</td>
+                    <td><span style="color: var(--success); font-weight: bold;">Paid</span></td>
+                    <td>2025-01</td>
+                    <td>3000</td>
                 </tr>
                 <tr>
                     <td>Jane Smith</td>
@@ -105,13 +112,19 @@
                     <td>jane@example.com</td>
                     <td>Gym + Cardio</td>
                     <td>2025-01-05</td>
+                    <td><span style="color: var(--error);">Unpaid</span></td>
+                    <td></td>
+                    <td></td>
                 </tr>
                 <tr>
-                    <td>Ahmed Ali</td>
+                    <td>John Doe</td>
                     <td>03009876543</td>
-                    <td>ahmed@example.com</td>
+                    <td>john@example.com</td>
                     <td>Gym</td>
                     <td>2025-01-10</td>
+                    <td><span style="color: var(--success); font-weight: bold;">Paid</span></td>
+                    <td>2025-01</td>
+                    <td>2500</td>
                 </tr>
             </tbody>
         </table>

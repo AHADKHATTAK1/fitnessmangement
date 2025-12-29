@@ -612,16 +612,38 @@ class GymManager:
                     new_members.append(member)
                     existing_phones.add(phone) # Prevent duplicates within same file
                     
-                    # NEW: Check for Paid Month column to auto-create fee record
-                    paid_month = row.get('Paid Month') or row.get('paid_month')
-                    amount = row.get('Amount') or row.get('amount')
+                    # SMART PAYMENT DETECTION: Check for Paid Month, Status, or dedicated Payment columns
+                    paid_month = None
+                    fee_amount = 0.0
                     
-                    if paid_month and str(paid_month).strip():
-                        # Store for later processing after member is added
+                    # Try to find payment info in various possible column names
+                    status_val = str(row.get('Status') or row.get('Paid') or row.get('Payment') or '').strip().lower()
+                    month_val = str(row.get('Paid Month') or row.get('Month') or '').strip()
+                    amount_val = row.get('Amount') or row.get('Fee') or 0.0
+                    
+                    # Log for debugging
+                    print(f"DEBUG Import: Name={name}, Status={status_val}, Month={month_val}")
+                    
+                    # Condition 1: Direct "Paid" keyword in Status/Paid column
+                    if status_val == 'paid' or 'paid' in status_val:
+                        paid_month = month_val if month_val else datetime.now().strftime('%Y-%m')
+                        fee_amount = float(amount_val) if amount_val else 0.0
+                    
+                    # Condition 2: Month is specified (assumed paid if month is there)
+                    elif month_val:
+                        paid_month = month_val
+                        fee_amount = float(amount_val) if amount_val else 0.0
+                        
+                    # Condition 3: Amount provided but status empty (assume paid for current month as fallback)
+                    elif amount_val and float(amount_val) > 0:
+                        paid_month = datetime.now().strftime('%Y-%m')
+                        fee_amount = float(amount_val)
+                    
+                    if paid_month:
                         fee_records.append({
                             'phone': phone,
-                            'month': str(paid_month).strip(),
-                            'amount': float(amount) if amount else 0.0
+                            'month': paid_month,
+                            'amount': fee_amount
                         })
                     
                     success += 1
