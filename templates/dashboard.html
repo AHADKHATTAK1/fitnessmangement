@@ -448,179 +448,329 @@
                 👁️
             </button>
         </div>
-        <div class="revenue-bar-label">{{ trend.month }}</div>
-    </div>
-    {% endfor %}
-</div>
-<p style="text-align: center; margin-top: 2rem; color: var(--text-muted); font-size: 0.9rem;">
-    Last 6 Months
-    Revenue</p>
-</div>
-</div>
+        <div class="container mt-4">
+            <div class="row mb-4">
+                <div class="col-md-12">
+                    <h2 class="mb-3">Dashboard</h2>
 
-<script>
-    let isChartHidden = false;
+                    <!-- Quick Actions -->
+                    <div class="quick-actions-bar mb-4">
+                        <a href="/subscription_plans" class="action-btn action-btn-premium">
+                            <span class="action-icon">💎</span>
+                            <div class="action-text">
+                                <div class="action-title">Subscription Plans</div>
+                                <div class="action-subtitle">Upgrade your tier</div>
+                            </div>
+                        </a>
 
-    function toggleChart() {
-        const container = document.getElementById('revenue-chart-container');
-        isChartHidden = !isChartHidden;
+                        <a href="/webhooks" class="action-btn action-btn-integrations">
+                            <span class="action-icon">🔗</span>
+                            <div class="action-text">
+                                <div class="action-title">Webhooks</div>
+                                <div class="action-subtitle">Manage integrations</div>
+                            </div>
+                        </a>
 
-        if (isChartHidden) {
-            container.style.display = 'none';
-        } else {
-            container.style.display = 'block';
-        }
-    }
-</script>
+                        <a href="/add_member?gym_id={{ selected_gym.id if selected_gym else '' }}"
+                            class="action-btn action-btn-primary">
+                            <span class="action-icon">➕</span>
+                            <div class="action-text">
+                                <div class="action-title">Add Member</div>
+                                <div class="action-subtitle">Quick add</div>
+                            </div>
+                        </a>
 
-<!-- Search and Actions -->
-<div
-    style="margin-bottom: 2rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
-    <h1
-        style="font-size: 2.5rem; font-weight: 700; background: linear-gradient(135deg, #fff, var(--primary)); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
-        Members</h1>
-    <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
-        <a href="{{ url_for('analytics') }}" class="btn"
-            style="background: linear-gradient(135deg, var(--primary), var(--secondary)); border: none;">
-            📊 Analytics
-        </a>
-        <a href="{{ url_for('bulk_operations') }}" class="btn"
-            style="background: linear-gradient(135deg, var(--secondary), var(--primary)); border: none;">
-            ⚡ Bulk Operations
-        </a>
-        <input type="text" id="memberSearch" onkeyup="filterMembers()" placeholder="🔍 Search members..."
-            style="padding: 0.75rem 1rem; border-radius: 24px; border: 1px solid var(--border); background: var(--bg-card); color: var(--text); width: 250px; transition: all 0.3s;"
-            onfocus="this.style.width='300px'" onblur="this.style.width='250px'">
-        <a href="{{ url_for('add_member') }}" class="btn btn-success member-card-3d">✨ Add Member</a>
-    </div>
-</div>
+                        <a href="/fees?gym_id={{ selected_gym.id if selected_gym else '' }}"
+                            class="action-btn action-btn-success">
+                            <span class="action-icon">💰</span>
+                            <div class="action-text">
+                                <div class="action-title">Record Payment</div>
+                                <div class="action-subtitle">Collect fees</div>
+                            </div>
+                        </a>
+                    </div>
 
-<!-- Paid Members Table -->
-<div class="card member-card-3d" id="paid-members">
-    <h2 style="margin-bottom: 1.5 rem; color: var(--success); font-weight: 800;">✅ Paid Members ({{
-        current_month
-        }})</h2>
-    {% if paid %}
-    <div style="overflow-x: auto;">
-        <table>
-            <thead>
-                <tr>
-                    <th>Photo</th>
-                    <th>Name</th>
-                    <th>Phone</th>
-                    <th>Status</th>
-                    <th>Actions</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for member in paid %}
-                <tr style="transition: all 0.3s ease;" onmouseover="this.style.background='rgba(139, 92, 246, 0.05)'"
-                    onmouseout="this.style.background=''">
-                    <td>
-                        {% if member.photo %}
-                        <img src="{{ url_for('static', filename='uploads/' + member.photo) }}"
-                            class="member-photo-enhanced" alt="{{member.name}}">
-                        {% else %}
-                        <div class="member-photo-enhanced"
-                            style="display: flex; align-items: center; justify-content: center; background: linear-gradient(135deg, var(--primary), var(--secondary)); color: white; font-weight: 700; font-size: 1.2rem;">
-                            {{ member.name[0] }}</div>
-                        {% endif %}
-                    </td>
-                    <td><a href="{{ url_for('member_details', member_id=member.id) }}"
-                            style="color: var(--primary); font-weight: 600; text-decoration: none; transition: all 0.3s;"
-                            onmouseover="this.style.color='var(--secondary)'"
-                            onmouseout="this.style.color='var(--primary)'">{{ member.name }}</a></td>
-                    <td>{{ member.phone }}</td>
-                    <td><span class="badge-enhanced badge-paid">✅ Paid</span></td>
-                    <td>
-                        <a href="{{ url_for('member_details', member_id=member.id) }}" class="btn btn-sm"
-                            style="background: linear-gradient(135deg, var(--primary), var(--secondary));">View</a>
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </div>
-    {% else %}
-    <p style="text-align: center; color: var(--text-muted); padding: 2rem;">No paid members for this
-        month</p>
-    {% endif %}
-</div>
+                    <style>
+                        .quick-actions-bar {
+                            display: grid;
+                            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+                            gap: 1rem;
+                            margin-bottom: 2rem;
+                        }
 
-<!-- Unpaid Members -->
-<div class="card member-card-3d" id="unpaid-members" style="margin-top: 2rem;">
-    <h2 style="margin-bottom: 1.5rem; color: var(--error); font-weight: 800;">❌ Unpaid Members ({{
-        current_month }})
-    </h2>
-    {% if unpaid %}
-    <div style="overflow-x: auto;">
-        <table>
-            <thead>
-                <tr>
-                    <th>Photo</th>
-                    <th>Name</th>
-                    <th>Phone</th>
-                    <th>Status</th>
-                    <th>Actions</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for member in unpaid %}
-                <tr style="transition: all 0.3s ease;" onmouseover="this.style.background='rgba(239, 68, 68, 0.05)'"
-                    onmouseout="this.style.background=''">
-                    <td>
-                        {% if member.photo %}
-                        <img src="{{ url_for('static', filename='uploads/' + member.photo) }}"
-                            class="member-photo-enhanced" alt="{{member.name}}">
-                        {% else %}
-                        <div class="member-photo-enhanced"
-                            style="display: flex; align-items: center; justify-content: center; background: linear-gradient(135deg, var(--error), #d97706); color: white; font-weight: 700; font-size: 1.2rem;">
-                            {{ member.name[0] }}</div>
-                        {% endif %}
-                    </td>
-                    <td><a href="{{ url_for('member_details', member_id=member.id) }}"
-                            style="color: var(--error); font-weight: 600; text-decoration: none; transition: all 0.3s;"
-                            onmouseover="this.style.color='#d97706'" onmouseout="this.style.color='var(--error)'">{{
-                            member.name }}</a></td>
-                    <td>{{ member.phone }}</td>
-                    <td><span class="badge-enhanced badge-unpaid">❌ Unpaid</span></td>
-                    <td>
-                        <a href="{{ url_for('member_details', member_id=member.id) }}" class="btn btn-sm"
-                            style="background: linear-gradient(135deg, var(--error), #d97706);">View</a>
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </div>
-    {% else %}
-    <p style="text-align: center; color: var(--text-muted); padding: 2rem;">All members have paid! 🎉
-    </p>
-    {% endif %}
-</div>
-</div>
+                        .action-btn {
+                            display: flex;
+                            align-items: center;
+                            gap: 1rem;
+                            padding: 1.25rem;
+                            background: white;
+                            border-radius: 12px;
+                            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+                            text-decoration: none;
+                            color: #333;
+                            transition: all 0.3s ease;
+                            border-left: 4px solid #ddd;
+                        }
 
-<script>
-    function filterMembers() {
-        var input = document.getElementById("memberSearch");
-        var filter = input.value.toUpperCase();
-        var tables = document.getElementsByTagName("table");
+                        .action-btn:hover {
+                            transform: translateY(-4px);
+                            box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15);
+                            text-decoration: none;
+                        }
 
-        for (var j = 0; j < tables.length; j++) {
-            var tr = tables[j].getElementsByTagName("tr");
-            for (var i = 0; i < tr.length; i++) {
-                var td = tr[i].getElementsByTagName("td");
-                if (td.length > 0) {
-                    var rowText = tr[i].textContent || tr[i].innerText;
-                    if (rowText.toUpperCase().indexOf(filter) > -1) {
-                        tr[i].style.display = "";
-                    } else {
-                        tr[i].style.display = "none";
+                        .action-btn-premium {
+                            border-left-color: #9b59b6;
+                            background: linear-gradient(135deg, #fff 0%, #f8f4ff 100%);
+                        }
+
+                        .action-btn-premium:hover {
+                            background: linear-gradient(135deg, #f8f4ff 0%, #f0e6ff 100%);
+                        }
+
+                        .action-btn-integrations {
+                            border-left-color: #3498db;
+                            background: linear-gradient(135deg, #fff 0%, #f0f8ff 100%);
+                        }
+
+                        .action-btn-integrations:hover {
+                            background: linear-gradient(135deg, #f0f8ff 0%, #e3f2ff 100%);
+                        }
+
+                        .action-btn-primary {
+                            border-left-color: #667eea;
+                        }
+
+                        .action-btn-success {
+                            border-left-color: #27ae60;
+                        }
+
+                        .action-icon {
+                            font-size: 2rem;
+                            line-height: 1;
+                        }
+
+                        .action-text {
+                            flex: 1;
+                        }
+
+                        .action-title {
+                            font-weight: 600;
+                            font-size: 1rem;
+                            margin-bottom: 0.25rem;
+                        }
+
+                        .action-subtitle {
+                            font-size: 0.875rem;
+                            color: #666;
+                        }
+
+                        @media (max-width: 768px) {
+                            .quick-actions-bar {
+                                grid-template-columns: 1fr 1fr;
+                            }
+
+                            .action-btn {
+                                padding: 1rem;
+                            }
+
+                            .action-icon {
+                                font-size: 1.5rem;
+                            }
+
+                            .action-title {
+                                font-size: 0.9rem;
+                            }
+
+                            .action-subtitle {
+                                font-size: 0.75rem;
+                            }
+                        }
+                    </style>
+                    <div id="revenue-chart-container">
+                        <div class="revenue-chart">
+                            {% for trend in revenue_trend %}
+                            <div class="revenue-bar"
+                                style="height: {{ (trend.revenue / max_revenue * 100) if max_revenue > 0 else 0 }}%;"
+                                title="{{ gym_details.currency }}{{ trend.revenue }}">
+                                <div class="revenue-bar-label">{{ trend.month }}</div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        <p style="text-align: center; margin-top: 2rem; color: var(--text-muted); font-size: 0.9rem;">
+                            Last 6 Months
+                            Revenue</p>
+                    </div>
+                </div>
+
+                <script>
+                    let isChartHidden = false;
+
+                    function toggleChart() {
+                        const container = document.getElementById('revenue-chart-container');
+                        isChartHidden = !isChartHidden;
+
+                        if (isChartHidden) {
+                            container.style.display = 'none';
+                        } else {
+                            container.style.display = 'block';
+                        }
+                    }
+                </script>
+
+                <!-- Search and Actions -->
+                <div
+                    style="margin-bottom: 2rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+                    <h1
+                        style="font-size: 2.5rem; font-weight: 700; background: linear-gradient(135deg, #fff, var(--primary)); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
+                        Members</h1>
+                    <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
+                        <a href="{{ url_for('analytics') }}" class="btn"
+                            style="background: linear-gradient(135deg, var(--primary), var(--secondary)); border: none;">
+                            📊 Analytics
+                        </a>
+                        <a href="{{ url_for('bulk_operations') }}" class="btn"
+                            style="background: linear-gradient(135deg, var(--secondary), var(--primary)); border: none;">
+                            ⚡ Bulk Operations
+                        </a>
+                        <input type="text" id="memberSearch" onkeyup="filterMembers()"
+                            placeholder="🔍 Search members..."
+                            style="padding: 0.75rem 1rem; border-radius: 24px; border: 1px solid var(--border); background: var(--bg-card); color: var(--text); width: 250px; transition: all 0.3s;"
+                            onfocus="this.style.width='300px'" onblur="this.style.width='250px'">
+                        <a href="{{ url_for('add_member') }}" class="btn btn-success member-card-3d">✨ Add Member</a>
+                    </div>
+                </div>
+
+                <!-- Paid Members Table -->
+                <div class="card member-card-3d" id="paid-members">
+                    <h2 style="margin-bottom: 1.5 rem; color: var(--success); font-weight: 800;">✅ Paid Members ({{
+                        current_month
+                        }})</h2>
+                    {% if paid %}
+                    <div style="overflow-x: auto;">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Photo</th>
+                                    <th>Name</th>
+                                    <th>Phone</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for member in paid %}
+                                <tr style="transition: all 0.3s ease;"
+                                    onmouseover="this.style.background='rgba(139, 92, 246, 0.05)'"
+                                    onmouseout="this.style.background=''">
+                                    <td>
+                                        {% if member.photo %}
+                                        <img src="{{ url_for('static', filename='uploads/' + member.photo) }}"
+                                            class="member-photo-enhanced" alt="{{member.name}}">
+                                        {% else %}
+                                        <div class="member-photo-enhanced"
+                                            style="display: flex; align-items: center; justify-content: center; background: linear-gradient(135deg, var(--primary), var(--secondary)); color: white; font-weight: 700; font-size: 1.2rem;">
+                                            {{ member.name[0] }}</div>
+                                        {% endif %}
+                                    </td>
+                                    <td><a href="{{ url_for('member_details', member_id=member.id) }}"
+                                            style="color: var(--primary); font-weight: 600; text-decoration: none; transition: all 0.3s;"
+                                            onmouseover="this.style.color='var(--secondary)'"
+                                            onmouseout="this.style.color='var(--primary)'">{{ member.name }}</a></td>
+                                    <td>{{ member.phone }}</td>
+                                    <td><span class="badge-enhanced badge-paid">✅ Paid</span></td>
+                                    <td>
+                                        <a href="{{ url_for('member_details', member_id=member.id) }}"
+                                            class="btn btn-sm"
+                                            style="background: linear-gradient(135deg, var(--primary), var(--secondary));">View</a>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <p style="text-align: center; color: var(--text-muted); padding: 2rem;">No paid members for this
+                        month</p>
+                    {% endif %}
+                </div>
+
+                <!-- Unpaid Members -->
+                <div class="card member-card-3d" id="unpaid-members" style="margin-top: 2rem;">
+                    <h2 style="margin-bottom: 1.5rem; color: var(--error); font-weight: 800;">❌ Unpaid Members ({{
+                        current_month }})
+                    </h2>
+                    {% if unpaid %}
+                    <div style="overflow-x: auto;">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Photo</th>
+                                    <th>Name</th>
+                                    <th>Phone</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for member in unpaid %}
+                                <tr style="transition: all 0.3s ease;"
+                                    onmouseover="this.style.background='rgba(239, 68, 68, 0.05)'"
+                                    onmouseout="this.style.background=''">
+                                    <td>
+                                        {% if member.photo %}
+                                        <img src="{{ url_for('static', filename='uploads/' + member.photo) }}"
+                                            class="member-photo-enhanced" alt="{{member.name}}">
+                                        {% else %}
+                                        <div class="member-photo-enhanced"
+                                            style="display: flex; align-items: center; justify-content: center; background: linear-gradient(135deg, var(--error), #d97706); color: white; font-weight: 700; font-size: 1.2rem;">
+                                            {{ member.name[0] }}</div>
+                                        {% endif %}
+                                    </td>
+                                    <td><a href="{{ url_for('member_details', member_id=member.id) }}"
+                                            style="color: var(--error); font-weight: 600; text-decoration: none; transition: all 0.3s;"
+                                            onmouseover="this.style.color='#d97706'"
+                                            onmouseout="this.style.color='var(--error)'">{{
+                                            member.name }}</a></td>
+                                    <td>{{ member.phone }}</td>
+                                    <td><span class="badge-enhanced badge-unpaid">❌ Unpaid</span></td>
+                                    <td>
+                                        <a href="{{ url_for('member_details', member_id=member.id) }}"
+                                            class="btn btn-sm"
+                                            style="background: linear-gradient(135deg, var(--error), #d97706);">View</a>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <p style="text-align: center; color: var(--text-muted); padding: 2rem;">All members have paid! 🎉
+                    </p>
+                    {% endif %}
+                </div>
+            </div>
+
+            <script>
+                function filterMembers() {
+                    var input = document.getElementById("memberSearch");
+                    var filter = input.value.toUpperCase();
+                    var tables = document.getElementsByTagName("table");
+
+                    for (var j = 0; j < tables.length; j++) {
+                        var tr = tables[j].getElementsByTagName("tr");
+                        for (var i = 0; i < tr.length; i++) {
+                            var td = tr[i].getElementsByTagName("td");
+                            if (td.length > 0) {
+                                var rowText = tr[i].textContent || tr[i].innerText;
+                                if (rowText.toUpperCase().indexOf(filter) > -1) {
+                                    tr[i].style.display = "";
+                                } else {
+                                    tr[i].style.display = "none";
+                                }
+                            }
+                        }
                     }
                 }
-            }
-        }
-    }
-</script>
+            </script>
 
-{% endblock %}
+            {% endblock %}
