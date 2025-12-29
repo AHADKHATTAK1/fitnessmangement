@@ -32,11 +32,11 @@
             <div style="flex-shrink: 0;">
                 {% if member.photo %}
                 <img src="{{ url_for('static', filename='uploads/' + member.photo) }}"
-                    style="width: 150px; height: 150px; border-radius: 12px; object-fit: cover;"
+                    style="width: 150px; height: 150px; border-radius: 20px; object-fit: cover; border: 3px solid var(--accent-gold); box-shadow: 0 0 20px var(--accent-gold-glow);"
                     alt="{{ member.name }}">
                 {% else %}
                 <div
-                    style="width: 150px; height: 150px; border-radius: 12px; background: linear-gradient(135deg, var(--primary), var(--secondary)); display: flex; align-items: center; justify-content: center; font-size: 4rem; font-weight: 700; color: white; box-shadow: 0 10px 20px hsla(260, 80%, 60%, 0.3);">
+                    style="width: 150px; height: 150px; border-radius: 20px; background: linear-gradient(135deg, var(--primary), var(--secondary), var(--accent-gold)); display: flex; align-items: center; justify-content: center; font-size: 4rem; font-weight: 800; color: white; box-shadow: 0 15px 30px rgba(0,0,0,0.4), 0 0 20px var(--primary-glow);">
                     {{ member.name[0] }}
                 </div>
                 {% endif %}
@@ -52,11 +52,13 @@
 
                 <p style="color: var(--text-muted); margin-top: 0.5rem;">ID: {{ member.id }}</p>
 
-                <div style="margin-top: 1.5rem; display: grid; gap: 0.5rem;">
-                    <div><strong>📱 Phone:</strong> {{ member.phone }}</div>
-                    <div><strong>📅 Joined:</strong> {{ member.joined_date }}</div>
-                    <div style="font-size: 1.1rem; color: var(--success); margin-top: 0.5rem;">
-                        <strong>💰 Total Paid:</strong> {{ gym_details.currency or '$' }}{{
+                <div style="margin-top: 1.5rem; display: grid; gap: 0.8rem;">
+                    <div><strong style="color: var(--accent-gold);">📱 Phone:</strong> {{ member.phone }}</div>
+                    <div><strong style="color: var(--accent-gold);">📅 Joined:</strong> {{ member.joined_date }}</div>
+                    <div
+                        style="font-size: 1.3rem; color: var(--success); margin-top: 0.5rem; font-weight: 800; text-shadow: 0 0 15px rgba(16, 185, 129, 0.3);">
+                        <strong style="color: var(--text-muted); font-size: 0.9rem; text-transform: uppercase;">💰 Total
+                            Paid:</strong> {{ gym_details.currency or '$' }}{{
                         history|sum(attribute='amount') }}
                     </div>
                 </div>
