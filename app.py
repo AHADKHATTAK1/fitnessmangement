@@ -29,12 +29,34 @@ print("=" * 80)
 
 # Initialize database tables on startup
 try:
-    from models import init_db
-    print("📊 Attempting database initialization...")
-    init_db()
+    from models import Base, engine
+    Base.metadata.create_all(engine)
     print("✅ Database initialized successfully")
+    
+    # Auto-migrate tier columns if they don't exist
+    from sqlalchemy import text
+    db_session = get_session()
+    try:
+        migrations = [
+            "ALTER TABLE users ADD COLUMN IF NOT EXISTS subscription_tier VARCHAR(50) DEFAULT 'starter'",
+            "ALTER TABLE users ADD COLUMN IF NOT EXISTS billing_cycle VARCHAR(20) DEFAULT 'monthly'",
+            "ALTER TABLE users ADD COLUMN IF NOT EXISTS tier_upgraded_at TIMESTAMP",
+            "ALTER TABLE users ADD COLUMN IF NOT EXISTS tier_downgrade_scheduled VARCHAR(50)"
+        ]
+        for migration in migrations:
+            try:
+                db_session.execute(text(migration))
+                db_session.commit()
+            except:
+                db_session.rollback()
+        print("✅ Tier columns migration complete")
+    except Exception as e:
+        print(f"⚠️  Tier migration: {str(e)[:100]}")
+    finally:
+        if db_session:
+            db_session.close()
 except Exception as e:
-    print(f"⚠️  Database init warning: {str(e)}")
+    print(f"Database initialization error: {e}")
     import traceback
     traceback.print_exc()
 

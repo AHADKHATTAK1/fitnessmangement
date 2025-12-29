@@ -158,29 +158,32 @@ class TierManager:
         return TIERS['starter']
     
     @staticmethod
-    def check_limit(user, resource, current_count=0):
+    def check_limit(user, resource, count):
         """
-        Check if user is within tier limits
+        Check if user has reached their tier limit
         
         Args:
-            user: User object with subscription_tier field
-            resource: Resource type (gyms, members, staff, etc.)
-            current_count: Current usage count
+            user: User object
+            resource: Resource type ('gyms', 'members', 'staff', 'exports')
+            count: Current count
             
         Returns:
-            bool: True if within limit, False if exceeded
+            tuple: (has_capacity, limit, message)
         """
-        if not user or not hasattr(user, 'subscription_tier'):
-            return False
+        # Default to starter if tier is None (backwards compatibility)
+        tier = user.subscription_tier or 'starter'
+        
+        if tier not in TIERS:
+            tier = 'starter'
             
-        tier = TierManager.get_tier_config(user.subscription_tier)
-        limit = tier['limits'].get(resource, 0)
+        tier_config = TIERS[tier]
+        limit = tier_config['limits'].get(resource, -1)
         
         # -1 means unlimited
         if limit == -1:
             return True
             
-        return current_count < limit
+        return count < limit
     
     @staticmethod
     def get_limit(user, resource):
