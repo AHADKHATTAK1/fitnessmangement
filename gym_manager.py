@@ -624,26 +624,20 @@ class GymManager:
                     # Log for debugging
                     print(f"DEBUG Import: Name={name}, Status={status_val}, Month={month_val}")
                     
-                    # Condition 1: Direct "Paid" keyword in Status/Paid column
-                    if status_val == 'paid' or 'paid' in status_val:
-                        paid_month = month_val if month_val else datetime.now().strftime('%Y-%m')
-                        fee_amount = float(amount_val) if amount_val else 0.0
+                    # Logic: If explicitly marked 'paid' or if a payment month is provided
+                    # We default the paid month to the JOINING MONTH if no specific month is given
+                    joined_month_str = joined_date.strftime('%Y-%m')
                     
-                    # Condition 2: Month is specified (assumed paid if month is there)
-                    elif month_val:
-                        paid_month = month_val
+                    if 'paid' in status_val or month_val:
+                        paid_month = month_val if month_val else joined_month_str
                         fee_amount = float(amount_val) if amount_val else 0.0
-                        
-                    # Condition 3: Amount provided but status empty (assume paid for current month as fallback)
-                    elif amount_val and float(amount_val) > 0:
-                        paid_month = datetime.now().strftime('%Y-%m')
-                        fee_amount = float(amount_val)
                     
                     if paid_month:
                         fee_records.append({
                             'phone': phone,
                             'month': paid_month,
-                            'amount': fee_amount
+                            'amount': fee_amount,
+                            'paid_date': joined_date # Use joining date as payment date for accuracy
                         })
                     
                     success += 1
@@ -681,7 +675,7 @@ class GymManager:
                                         member_id=member.id,
                                         month=fee_data['month'],
                                         amount=fee_data['amount'],
-                                        paid_date=datetime.now().date()
+                                        paid_date=fee_data.get('paid_date', datetime.now().date())
                                     )
                                     self.session.add(fee)
                             except Exception as e:
