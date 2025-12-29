@@ -2538,23 +2538,15 @@ def generate_smart_response(message, gym_name, username=None):
         }
     
     # Subscription / Plans (Dedicated Block)
-    elif any(word in message for word in ['subscription', 'sub', 'membership', 'tier', 'plan', 'package']):
+    elif any(word in message for word in ['subscription', 'sub', 'membership', 'tier', 'plan', 'package', 'pricing', 'price']):
         return {
             'text': " ✨ **Exclusive Membership Tiers** ✨\n\n"
-                   "Choose a plan that fits your fitness journey:\n\n"
+                   "Choose a plan that fits your fitness journey. You can view all details and **upgrade instantly** here:\n"
+                   "🔗 **[View & Upgrade Subscription Plans](/subscription_plans)**\n\n"
                    "🏋️ **Starter VIP** — Rs 2,500/mo\n"
-                   "• Standard gym access\n"
-                   "• Essential equipment\n\n"
                    "💪 **Professional VIP** — Rs 4,500/mo\n"
-                   "• Full gym & cardio access\n"
-                   "• Group fitness classes\n"
-                   "• Steam & sauna access\n\n"
-                   "👑 **Ultimate Elite** — Rs 7,500/mo\n"
-                   "• Unlimited access to all facilities\n"
-                   "• Personal trainer (2 sessions/mo)\n"
-                   "• Nutrition & supplement plan\n"
-                   "• Free guest passes\n\n"
-                   "💡 *Pay yearly to save 20%!*",
+                   "👑 **Ultimate Elite** — Rs 7,500/mo\n\n"
+                   "💡 *Pay yearly to save 20%! Click the link above to get started.*",
             'quick_replies': ['Payment Options', 'Gym Hours', 'Book a Tour']
         }
     
@@ -2571,16 +2563,17 @@ def generate_smart_response(message, gym_name, username=None):
         }
     
     # Payment / Bills
-    elif any(word in message for word in ['payment', 'pay', 'due', 'bill', 'fee', 'charge', 'invoice']):
+    elif any(word in message for word in ['payment', 'pay', 'due', 'bill', 'fee', 'charge', 'invoice', 'gateway']):
         return {
             'text': "💳 **VIP Payment Portal Info**\n\n"
-                   "We offer multiple convenient ways to pay:\n"
+                   "We offer multiple convenient ways to pay. Manage your billing details here:\n"
+                   "🔗 **[Go to Payment Settings](/settings)**\n\n"
                    "✅ **Direct Transfer:** JazzCash / EasyPaisa\n"
                    "✅ **Digital Card:** Visa, Mastercard, Amex\n"
                    "✅ **At Desk:** Cash or Card swipe\n\n"
                    "📍 Payments are due by the **5th** of each month.\n"
-                   "💡 *Save your card details in your profile for auto-pay.*",
-            'quick_replies': ['Check My Balance', 'Subscription Plans', 'Contact Support']
+                   "💡 *Click 'Go to Payment Settings' to save your card for auto-pay.*",
+            'quick_replies': ['Subscription Plans', 'Check My Balance', 'Contact Support']
         }
     
     # Facilities / Equipment
