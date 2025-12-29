@@ -2614,42 +2614,6 @@ def generate_smart_response(message, gym_name, username=None):
                    "How can I serve you today?",
             'quick_replies': ['Subscription Plans', 'Gym Hours', 'Contact Us']
         }
-                       "✅ Book classes & PT sessions",
-                'quick_replies': ['Login now', 'Sign up', 'Contact']
-            }
-    
-    # Facilities
-    elif any(word in message for word in ['facility', 'equipment', 'amenity', 'feature']):
-        return {
-            'text': "🏋️ **Our Facilities:**\n\n"
-                   "**Cardio Zone:**\n"
-                   "• Treadmills, Ellipticals, Bikes\n\n"
-                   "**Strength Training:**\n"
-                   "• Free weights, Machines, Racks\n\n"
-                   "**Amenities:**\n"
-                   "• Locker rooms & showers\n"
-                   "• Steam room & sauna\n"
-                   "• Juice bar\n"
-                   "• Parking\n"
-                   "• WiFi\n\n"
-                   "All equipment is regularly sanitized! 🧼",
-            'quick_replies': ['View classes', 'Check pricing', 'Contact']
-        }
-    
-    # Default response
-    else:
-        return {
-            'text': "🤖 I'm here to help! You can ask me about:\n\n"
-                   "⏰ Gym hours & schedule\n"
-                   "💰 Membership pricing\n"
-                   "💳 Payment options\n"
-                   "🏋️ Classes & trainers\n"
-                   "🏢 Facilities & equipment\n"
-                   "📞 Contact information\n"
-                   "👤 Account management\n\n"
-                   "What would you like to know?",
-            'quick_replies': ['View hours', 'Check pricing', 'Contact us', 'View classes']
-        }
 
 if __name__ == '__main__':
     # Initialize tier upgrade routes
