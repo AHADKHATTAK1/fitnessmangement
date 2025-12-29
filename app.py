@@ -325,8 +325,177 @@ def cancel_subscription():
     user.tier_downgrade_scheduled = 'starter'
     auth_manager.session.commit()
     
+@app.route('/cancel_subscription', methods=['POST'])
+def cancel_subscription():
+    """Cancel subscription (switch to starter at end of period)"""
+    username = session.get('username')
+    if not username:
+        return redirect(url_for('auth'))
+    
+    user = auth_manager.session.query(User).filter_by(email=username).first()
+    if not user:
+        return redirect(url_for('auth'))
+    
+    # Schedule downgrade to starter
+    user.tier_downgrade_scheduled = 'starter'
+    auth_manager.session.commit()
+    
     flash('Subscription will be canceled at end of billing period. You will be moved to Starter plan.', 'info')
     return redirect(url_for('settings'))
+
+
+#  ========== WEBHOOK MANAGEMENT ROUTES ==========
+
+@app.route('/webhooks')
+def webhooks():
+    """Webhook management page"""
+    from webhook_manager import WebhookManager, Webhook
+    from subscription_tiers import TierManager
+    
+    username = session.get('username')
+    if not username:
+        return redirect(url_for('auth'))
+    
+    user = auth_manager.session.query(User).filter_by(email=username).first()
+    if not user:
+        return redirect(url_for('auth'))
+    
+    # Check if user has webhook access (Enterprise tier)
+    if not TierManager.has_feature(user, 'webhooks'):
+        flash('Webhooks are only available in Enterprise tier and above', 'warning')
+        return redirect(url_for('subscription_plans'))
+    
+    # Get user's webhooks
+    webhooks_list = WebhookManager.get_webhooks(user.id)
+    
+    return render_template('webhooks.html', 
+                         webhooks=webhooks_list,
+                         available_events=WebhookManager.EVENTS)
+
+
+@app.route('/webhooks/create', methods=['POST'])
+def create_webhook():
+    """Create new webhook"""
+    from webhook_manager import Webhook
+    from models import get_session
+    import secrets
+    
+    username = session.get('username')
+    if not username:
+        return redirect(url_for('auth'))
+    
+    user = auth_manager.session.query(User).filter_by(email=username).first()
+    if not user:
+        return redirect(url_for('auth'))
+    
+    name = request.form.get('name')
+    url = request.form.get('url')
+    events = request.form.getlist('events')
+    secret = request.form.get('secret') or secrets.token_urlsafe(32)
+    
+    # Create webhook
+    webhook_session = get_session()
+    webhook = Webhook(
+        user_id=user.id,
+        name=name,
+        url=url,
+        events=json.dumps(events),
+        secret=secret
+    )
+    
+    webhook_session.add(webhook)
+    webhook_session.commit()
+    webhook_session.close()
+    
+    flash(f'✅ Webhook "{name}" created successfully!', 'success')
+    return redirect(url_for('webhooks'))
+
+
+@app.route('/webhooks/<int:webhook_id>/toggle', methods=['POST'])
+def toggle_webhook(webhook_id):
+    """Enable/disable webhook"""
+    from webhook_manager import Webhook
+    from models import get_session
+    
+    username = session.get('username')
+    if not username:
+        return redirect(url_for('auth'))
+    
+    webhook_session = get_session()
+    webhook = webhook_session.query(Webhook).get(webhook_id)
+    
+    if webhook:
+        webhook.is_active = not webhook.is_active
+        webhook_session.commit()
+        
+        status = "enabled" if webhook.is_active else "disabled"
+        flash(f'Webhook {status}', 'success')
+    
+    webhook_session.close()
+    return redirect(url_for('webhooks'))
+
+
+@app.route('/webhooks/<int:webhook_id>/delete', methods=['POST'])
+def delete_webhook(webhook_id):
+    """Delete webhook"""
+    from webhook_manager import Webhook
+    from models import get_session
+    
+    username = session.get('username')
+    if not username:
+        return redirect(url_for('auth'))
+    
+    webhook_session = get_session()
+    webhook = webhook_session.query(Webhook).get(webhook_id)
+    
+    if webhook:
+        webhook_session.delete(webhook)
+        webhook_session.commit()
+        flash('🗑️ Webhook deleted', 'success')
+    
+    webhook_session.close()
+    return redirect(url_for('webhooks'))
+
+
+@app.route('/webhooks/<int:webhook_id>/test', methods=['POST'])
+def test_webhook(webhook_id):
+    """Test webhook with sample data"""
+    from webhook_manager import WebhookManager
+    
+    username = session.get('username')
+    if not username:
+        return redirect(url_for('auth'))
+    
+    user = auth_manager.session.query(User).filter_by(email=username).first()
+    
+    # Trigger test event
+    WebhookManager.trigger_event(
+        user_id=user.id,
+        event_type='member.created',
+        data={
+            'test': True,
+            'member_id': 999,
+            'name': 'Test Member',
+            'message': 'This is a test webhook delivery'
+        }
+    )
+    
+    flash('🧪 Test webhook sent! Check logs for results.', 'info')
+    return redirect(url_for('webhooks'))
+
+
+@app.route('/webhooks/<int:webhook_id>/logs')
+def webhook_logs(webhook_id):
+    """View webhook logs"""
+    from webhook_manager import WebhookManager
+    
+    username = session.get('username')
+    if not username:
+        return redirect(url_for('auth'))
+    
+    logs = WebhookManager.get_webhook_logs(webhook_id, limit=100)
+    
+    return render_template('webhook_logs.html', logs=logs, webhook_id=webhook_id)
     if auth_manager.is_subscription_active(username):
         return redirect(url_for('dashboard'))
         
