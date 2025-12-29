@@ -179,12 +179,154 @@ def subscription():
 
 @app.route('/subscription_plans')
 def subscription_plans():
-    """Comprehensive subscription plans page with all options"""
+    """Display subscription pricing page"""
+    from subscription_tiers import TIERS, TIERS_PAKISTAN
+    
+    # Get current user if logged in
     username = session.get('username')
-    user = None
+    current_tier = None
     if username:
         user = auth_manager.session.query(User).filter_by(email=username).first()
-    return render_template('subscription_plans.html', user=user)
+        if user:
+            current_tier = user.subscription_tier or 'starter'
+    
+    return render_template('subscription_plans.html',
+                         tiers=TIERS,
+                         tiers_pakistan=TIERS_PAKISTAN,
+                         current_tier=current_tier)
+
+
+@app.route('/upgrade_tier', methods=['POST'])
+def upgrade_tier():
+    """Handle tier upgrade with Stripe checkout"""
+    import stripe
+    from subscription_tiers import TIERS
+    
+    username = session.get('username')
+    if not username:
+        flash('Please login first', 'error')
+        return redirect(url_for('auth'))
+    
+    user = auth_manager.session.query(User).filter_by(email=username).first()
+    if not user:
+        flash('User not found', 'error')
+        return redirect(url_for('auth'))
+    
+    # Get form data
+    new_tier = request.form.get('tier')
+    billing_cycle = request.form.get('cycle', 'monthly')
+    
+    # Validate tier
+    if new_tier not in TIERS:
+        flash('Invalid tier selected', 'error')
+        return redirect(url_for('subscription_plans'))
+    
+    # Get tier config
+    tier_config = TIERS[new_tier]
+    
+    # Calculate amount
+    if billing_cycle == 'yearly':
+        amount = tier_config['price_yearly']
+        interval = 'year'
+    else:
+        amount = tier_config['price_monthly']
+        interval = 'month'
+    
+    # Initialize Stripe
+    stripe.api_key = os.getenv('STRIPE_SECRET_KEY')
+    
+    if not stripe.api_key or stripe.api_key == 'your_stripe_secret_key_here':
+        flash('Payment system is not configured. Please contact support.', 'error')
+        return redirect(url_for('subscription_plans'))
+    
+    try:
+        # Create Stripe checkout session
+        checkout_session = stripe.checkout.Session.create(
+            payment_method_types=['card'],
+            line_items=[{
+                'price_data': {
+                    'currency': 'usd',
+                    'product_data': {
+                        'name': f'{tier_config["name"]} Plan',
+                        'description': f'{tier_config["description"]}',
+                    },
+                    'unit_amount': int(amount * 100),  # Convert to cents
+                    'recurring': {
+                        'interval': interval
+                    }
+                },
+                'quantity': 1,
+            }],
+            mode='subscription',
+            success_url=url_for('upgrade_success', tier=new_tier, cycle=billing_cycle, _external=True),
+            cancel_url=url_for('subscription_plans', _external=True),
+            client_reference_id=user.email,
+            metadata={
+                'tier': new_tier,
+                'billing_cycle': billing_cycle,
+                'user_email': user.email
+            }
+        )
+        
+        return redirect(checkout_session.url)
+        
+    except Exception as e:
+        flash(f'Payment error: {str(e)}', 'error')
+        return redirect(url_for('subscription_plans'))
+
+
+@app.route('/upgrade_success')
+def upgrade_success():
+    """Handle successful tier upgrade"""
+    from subscription_tiers import TIERS
+    from datetime import datetime, timedelta
+    
+    username = session.get('username')
+    if not username:
+        return redirect(url_for('auth'))
+    
+    user = auth_manager.session.query(User).filter_by(email=username).first()
+    if not user:
+        return redirect(url_for('auth'))
+    
+    # Get tier and cycle from query params
+    new_tier = request.args.get('tier')
+    billing_cycle = request.args.get('cycle', 'monthly')
+    
+    # Update user subscription
+    user.subscription_tier = new_tier
+    user.billing_cycle = billing_cycle
+    user.tier_upgraded_at = datetime.utcnow()
+    
+    # Set new expiry date
+    if billing_cycle == 'yearly':
+        user.subscription_expiry = datetime.utcnow() + timedelta(days=365)
+    else:
+        user.subscription_expiry = datetime.utcnow() + timedelta(days=30)
+    
+    auth_manager.session.commit()
+    
+    flash(f'🎉 Successfully upgraded to {TIERS[new_tier]["name"]} plan!', 'success')
+    return redirect(url_for('dashboard'))
+
+
+@app.route('/cancel_subscription', methods=['POST'])
+def cancel_subscription():
+    """Cancel subscription (switch to starter at end of period)"""
+    username = session.get('username')
+    if not username:
+        return redirect(url_for('auth'))
+    
+    user = auth_manager.session.query(User).filter_by(email=username).first()
+    if not user:
+        return redirect(url_for('auth'))
+    
+    # Schedule downgrade to starter
+    user.tier_downgrade_scheduled = 'starter'
+    auth_manager.session.commit()
+    
+    flash('Subscription will be canceled at end of billing period. You will be moved to Starter plan.', 'info')
+    return redirect(url_for('settings'))
     if auth_manager.is_subscription_active(username):
         return redirect(url_for('dashboard'))
         
