@@ -25,7 +25,7 @@ class User(Base):
     subscription_tier = Column(String(50), nullable=True, default='starter')
     billing_cycle = Column(String(20), nullable=True, default='monthly')
     tier_upgraded_at = Column(DateTime, nullable=True)
-    tier_downgrade_scheduled = Column(String(String(50), nullable=True)
+    tier_downgrade_scheduled = Column(String(50), nullable=True)
     
     created_at = Column(DateTime, default=datetime.utcnow)
     
