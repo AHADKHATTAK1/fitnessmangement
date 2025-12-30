@@ -1496,6 +1496,17 @@ def fees():
     # Get all members for the dropdown
     all_members = gym.get_all_members()
     
+    # Get paid/unpaid members for current month
+    paid_members = []
+    unpaid_members = []
+    
+    for member in all_members:
+        is_paid = gym.is_fee_paid(member['id'], current_month)
+        if is_paid:
+            paid_members.append(member)
+        else:
+            unpaid_members.append(member)
+    
     # Generate months for dropdown (using standard datetime instead of pandas for compatibility)
     current_date = datetime.now()
     available_months = []
@@ -1514,6 +1525,8 @@ def fees():
     
     return render_template('fees.html', 
                          members=all_members,
+                         paid_members=paid_members,
+                         unpaid_members=unpaid_members,
                          fees=fees_list,
                          current_month=current_month,
                          available_months=available_months,

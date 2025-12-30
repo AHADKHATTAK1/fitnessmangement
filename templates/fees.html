@@ -161,23 +161,41 @@
 </style>
 
 <div class="payment-container">
-    <!-- Premium Header -->
+    <!-- Premium Header with Subscription Button -->
     <div class="payment-header">
-        <h1>💰 Payment Center</h1>
-        <p>Record payments & manage transaction history</p>
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+            <div>
+                <h1 style="margin: 0;">💰 Payment Center</h1>
+                <p style="margin: 0.5rem 0 0 0;">Record payments & manage transaction history</p>
+            </div>
+            <a href="{{ url_for('subscription_plans') }}" class="btn"
+                style="background: linear-gradient(135deg, var(--accent-gold), #d97706); color: #000; font-weight: 700; padding: 1rem 2rem; text-decoration: none; display: inline-flex; align-items: center; gap: 0.5rem; box-shadow: 0 0 20px var(--gold-shadow); border: none;">
+                💎 Subscription Plans
+            </a>
+        </div>
     </div>
 
-    <!-- Tabs -->
+    <!-- Enhanced Tabs with Paid/Unpaid -->
     <div class="payment-tabs">
         <div class="payment-tab active" onclick="showTab('record')">
             <div style="font-size: 28px; margin-bottom: 8px;">💳</div>
             <div style="font-weight: 600; font-size: 16px;">Record Payment</div>
             <div style="font-size: 13px; color: #6b7280; margin-top: 4px;">Add new transaction</div>
         </div>
+        <div class="payment-tab" onclick="showTab('paid')">
+            <div style="font-size: 28px; margin-bottom: 8px;">✅</div>
+            <div style="font-weight: 600; font-size: 16px;">Paid Members</div>
+            <div style="font-size: 13px; color: #10b981; margin-top: 4px;">{{ paid_members|length }} this month</div>
+        </div>
+        <div class="payment-tab" onclick="showTab('unpaid')">
+            <div style="font-size: 28px; margin-bottom: 8px;">❌</div>
+            <div style="font-weight: 600; font-size: 16px;">Unpaid Members</div>
+            <div style="font-size: 13px; color: #ef4444; margin-top: 4px;">{{ unpaid_members|length }} pending</div>
+        </div>
         <div class="payment-tab" onclick="showTab('history')">
             <div style="font-size: 28px; margin-bottom: 8px;">📜</div>
             <div style="font-weight: 600; font-size: 16px;">Payment History</div>
-            <div style="font-size: 13px; color: #6b7280; margin-top: 4px;">View all transactions</div>
+            <div style="font-size: 13px; color: #6b7280; margin-top: 4px;">{{ fees|length }} total</div>
         </div>
     </div>
 
@@ -246,39 +264,120 @@
         </div>
     </div>
 
-    <!-- Payment History -->
+    <!-- Paid Members Tab -->
+    <div id="paid-tab" class="tab-content" style="display: none;">
+        <div class="payment-form-card">
+            <h2 style="margin-bottom: 24px; display: flex; align-items: center; gap: 12px; color: #10b981;">
+                <span style="font-size: 32px;">✅</span>
+                Paid Members ({{ current_month }})
+            </h2>
+            {% if paid_members %}
+            <div style="display: grid; gap: 1rem;">
+                {% for member in paid_members %}
+                <div
+                    style="padding: 1.5rem; background: linear-gradient(135deg, rgba(16, 185, 129, 0.05), rgba(16, 185, 129, 0.02)); border-left: 4px solid #10b981; border-radius: 12px; display: flex; justify-content: space-between; align-items: center;">
+                    <div style="flex: 1;">
+                        <div style="font-weight: 700; font-size: 1.1rem; color: #1f2937; margin-bottom: 0.25rem;">{{
+                            member.name }}</div>
+                        <div style="font-size: 0.9rem; color: #6b7280;">📱 {{ member.phone }}</div>
+                    </div>
+                    <div style="text-align: right;">
+                        <span
+                            style="background: #10b981; color: white; padding: 0.5rem 1rem; border-radius: 8px; font-weight: 600; font-size: 0.9rem;">✓
+                            PAID</span>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="empty-state">
+                <div class="empty-state-icon">😔</div>
+                <h3 style="color: #6b7280;">No Paid Members This Month</h3>
+                <p style="color: #9ca3af;">Record payments to see them here!</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Unpaid Members Tab -->
+    <div id="unpaid-tab" class="tab-content" style="display: none;">
+        <div class="payment-form-card">
+            <h2 style="margin-bottom: 24px; display: flex; align-items: center; gap: 12px; color: #ef4444;">
+                <span style="font-size: 32px;">❌</span>
+                Unpaid Members ({{ current_month }})
+            </h2>
+            {% if unpaid_members %}
+            <div style="display: grid; gap: 1rem;">
+                {% for member in unpaid_members %}
+                <div
+                    style="padding: 1.5rem; background: linear-gradient(135deg, rgba(239, 68, 68, 0.05), rgba(239, 68, 68, 0.02)); border-left: 4px solid #ef4444; border-radius: 12px; display: flex; justify-content: space-between; align-items: center;">
+                    <div style="flex: 1;">
+                        <div style="font-weight: 700; font-size: 1.1rem; color: #1f2937; margin-bottom: 0.25rem;">{{
+                            member.name }}</div>
+                        <div style="font-size: 0.9rem; color: #6b7280;">📱 {{ member.phone }}</div>
+                    </div>
+                    <div style="text-align: right;">
+                        <span
+                            style="background: #ef4444; color: white; padding: 0.5rem 1rem; border-radius: 8px; font-weight: 600; font-size: 0.9rem;">❌
+                            UNPAID</span>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="empty-state">
+                <div class="empty-state-icon">🎉</div>
+                <h3 style="color: #10b981;">All Members Paid!</h3>
+                <p style="color: #9ca3af;">Great job collecting this month's fees!</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Payment History Tab -->
     <div id="history-tab" class="tab-content" style="display: none;">
-        <div class="payment-history-table">
-            <div class="table-header">
-                <h3 style="margin: 0; font-size: 20px;">Payment History</h3>
+        <div class="payment-form-card">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+                <h2 style="margin: 0; display: flex; align-items: center; gap: 12px;">
+                    <span style="font-size: 32px;">📜</span>
+                    Payment History
+                </h2>
+                <div style="text-align: right;">
+                    <div style="font-size: 0.9rem; color: #6b7280;">Total Collected</div>
+                    <div style="font-size: 1.5rem; font-weight: 800; color: #10b981;">{{ gym_details.currency or 'Rs' }}
+                        {{ total_collected }}</div>
+                </div>
             </div>
 
             {% if fees %}
-            <div style="padding: 20px;">
+            <div style="display: grid; gap: 0.75rem;">
                 {% for fee in fees %}
-                <div class="table-row"
-                    style="display: grid; grid-template-columns: 2fr 1fr 1fr 1fr 1fr; gap: 16px; align-items: center;">
+                <div
+                    style="padding: 1.25rem; background: rgba(139, 92, 246, 0.03); border-left: 3px solid var(--primary); border-radius: 12px; display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; gap: 1rem; align-items: center;">
                     <div>
-                        <div style="font-weight: 600; color: #1f2937; margin-bottom: 4px;">
-                            {{ fee.member.name }}
+                        <div style="font-weight: 700; color: #1f2937; margin-bottom: 0.25rem;">{{ fee.member.name }}
                         </div>
-                        <div style="font-size: 13px; color: #6b7280;">
-                            {{ fee.member.phone }}
-                        </div>
-                    </div>
-                    <div style="font-weight: 600; color: #059669; font-size: 18px;">
-                        Rs {{ fee.amount }}
-                    </div>
-                    <div style="color: #6b7280;">
-                        {{ fee.month }}
+                        <div style="font-size: 0.85rem; color: #6b7280;">📱 {{ fee.member.phone }}</div>
                     </div>
                     <div>
-                        <span class="status-badge status-paid">
-                            ✓ Paid
-                        </span>
+                        <div
+                            style="font-size: 0.75rem; color: #6b7280; text-transform: uppercase; letter-spacing: 0.5px;">
+                            Amount</div>
+                        <div style="font-weight: 700; color: #10b981; font-size: 1.1rem;">{{ gym_details.currency or
+                            'Rs' }} {{ fee.amount }}</div>
                     </div>
-                    <div style="font-size: 13px; color: #9ca3af;">
-                        {{ fee.paid_date.strftime('%d %b %Y') }}
+                    <div>
+                        <div
+                            style="font-size: 0.75rem; color: #6b7280; text-transform: uppercase; letter-spacing: 0.5px;">
+                            Month</div>
+                        <div style="font-weight: 600; color: #1f2937;">{{ fee.month }}</div>
+                    </div>
+                    <div style="text-align: right;">
+                        <div
+                            style="font-size: 0.75rem; color: #6b7280; text-transform: uppercase; letter-spacing: 0.5px;">
+                            Paid On</div>
+                        <div style="font-weight: 600; color: #1f2937; font-size: 0.9rem;">{{ fee.paid_date.strftime('%d
+                            %b %Y') }}</div>
                     </div>
                 </div>
                 {% endfor %}
@@ -286,7 +385,7 @@
             {% else %}
             <div class="empty-state">
                 <div class="empty-state-icon">📭</div>
-                <h3 style="color: #6b7280; margin-bottom: 8px;">No Payments Yet</h3>
+                <h3 style="color: #6b7280; margin-bottom: 8px;">No Payment History</h3>
                 <p style="color: #9ca3af;">Record your first payment to see it here!</p>
             </div>
             {% endif %}
@@ -306,13 +405,20 @@
             tab.classList.remove('active');
         });
 
-        // Show selected tab
+        // Show selected tab and activate corresponding button
+        const tabs = document.querySelectorAll('.payment-tab');
         if (tabName === 'record') {
             document.getElementById('record-tab').style.display = 'block';
-            document.querySelectorAll('.payment-tab')[0].classList.add('active');
-        } else {
+            tabs[0].classList.add('active');
+        } else if (tabName === 'paid') {
+            document.getElementById('paid-tab').style.display = 'block';
+            tabs[1].classList.add('active');
+        } else if (tabName === 'unpaid') {
+            document.getElementById('unpaid-tab').style.display = 'block';
+            tabs[2].classList.add('active');
+        } else if (tabName === 'history') {
             document.getElementById('history-tab').style.display = 'block';
-            document.querySelectorAll('.payment-tab')[1].classList.add('active');
+            tabs[3].classList.add('active');
         }
     }
 
