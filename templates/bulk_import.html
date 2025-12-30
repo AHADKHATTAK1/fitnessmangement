@@ -5,10 +5,11 @@
 {% block content %}
 <div style="text-align: center; margin-bottom: 2rem;">
     <h1
-        style="font-size: 2.5rem; background: linear-gradient(135deg, var(--primary), var(--secondary)); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 0.5rem;">
-        📥 Bulk Member Import
+        style="font-size: 2.8rem; background: linear-gradient(135deg, #fff 0%, var(--primary) 30%, var(--secondary) 60%, var(--accent-gold) 100%); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 0.5rem; filter: drop-shadow(0 0 12px rgba(139, 92, 246, 0.4));">
+        📊 Advanced Import Center
     </h1>
-    <p style="color: var(--text-muted);">Upload Excel or CSV file to import multiple members at once</p>
+    <p style="color: var(--text-muted); font-size: 1.05rem;">Upload Excel or CSV with validation, preview & smart
+        duplicate handling</p>
 </div>
 
 <!-- Instructions Card -->
@@ -16,31 +17,43 @@
     style="margin-bottom: 2rem; background: linear-gradient(145deg, hsla(210, 100%, 50%, 0.1), hsla(210, 100%, 40%, 0.05));">
     <h2 style="margin-bottom: 1rem;">📋 How to Use</h2>
 
-    <ol style="color: var(--text); line-height: 1.8;">
-        <li><strong>Download the template</strong> - Click button below to get sample Excel file</li>
-        <li><strong>Fill in your data</strong> - Add member details in the Excel file</li>
-        <li><strong>Upload the file</strong> - Select and upload your completed file</li>
-        <li><strong>Review results</strong> - Check for any errors and confirm import</li>
+    <ol style="color: var(--text); line-height: 2; font-size: 1.05rem;">
+        <li><strong>📥 Download Template</strong> - Get sample Excel with all required columns</li>
+        <li><strong>✍️ Fill Your Data</strong> - Add member details in the Excel file</li>
+        <li><strong>⬆️ Upload File</strong> - System validates data automatically</li>
+        <li><strong>👁️ Preview Results</strong> - Review validation, see duplicates, choose strategy</li>
+        <li><strong>✅ Confirm Import</strong> - Import only valid data with your chosen duplicate handling</li>
     </ol>
 
     <div
-        style="margin-top: 1.5rem; padding: 1rem; background: hsla(50, 100%, 50%, 0.1); border-left: 4px solid var(--warning); border-radius: 8px;">
-        <strong>💡 Tips:</strong>
-        <ul style="margin: 0.5rem 0 0 1.5rem; line-height: 1.6;">
-            <li>Phone numbers must be unique (used to detect duplicates)</li>
-            <li>If phone exists, member details will be updated</li>
-            <li>Add <strong>Status</strong> column with "Paid" to auto-record payments</li>
-            <li>If "Paid", payment is auto-recorded for the <strong>Joining month</strong></li>
-            <li>Add <strong>Month</strong> and <strong>Amount</strong> for specific payment history</li>
-            <li>Members not marked "Paid" remain unpaid by default</li>
-            <li>Name and Phone are required fields</li>
+        style="margin-top: 1.5rem; padding: 1.25rem; background: linear-gradient(135deg, rgba(234, 179, 8, 0.15), rgba(234, 179, 8, 0.05)); border-left: 4px solid var(--accent-gold); border-radius: 12px;">
+        <strong style="color: var(--accent-gold); font-size: 1.1rem;">✨ New: Smart Import Features</strong>
+        <ul style="margin: 0.75rem 0 0 1.5rem; line-height: 1.8;">
+            <li><strong>Auto-Validation:</strong> Required fields checked automatically</li>
+            <li><strong>Duplicate Detection:</strong> Phone numbers matched against existing members</li>
+            <li><strong>Smart Handling:</strong> Choose Skip/Update/Merge for duplicates</li>
+            <li><strong>Auto-Payments:</strong> Mark "Paid" to record fees for joining month</li>
+            <li><strong>Preview Mode:</strong> See validation results before importing</li>
+            <li><strong>Error Reports:</strong> Detailed messages for each issue found</li>
         </ul>
+    </div>
+
+    <div
+        style="margin-top: 1rem; padding: 1rem; background: rgba(139, 92, 246, 0.1); border-left: 4px solid var(--primary); border-radius: 12px;">
+        <strong style="color: var(--primary);">📝 Required Fields:</strong>
+        <ul style="margin: 0.5rem 0 0 1.5rem; line-height: 1.6;">
+            <li><strong>Name</strong> - Member's full name (minimum 2 characters)</li>
+            <li><strong>Phone</strong> - Unique phone number (10-15 digits)</li>
+        </ul>
+        <div style="margin-top: 0.75rem; color: var(--text-muted); font-size: 0.9rem;">
+            <em>Email, Membership Type, and Dates are optional but recommended</em>
+        </div>
     </div>
 </div>
 
 <!-- Download Template Card -->
 <div class="card" style="margin-bottom: 2rem;">
-    <h2 style="margin-bottom: 1rem;">📄 Step 1: Download Template</h2>
+    <h2 style="margin-bottom: 1rem; color: var(--accent-gold);">📄 Step 1: Download Template</h2>
     <p style="color: var(--text-muted); margin-bottom: 1.5rem;">
         Download the sample Excel file with pre-filled headers and example data
     </p>
@@ -52,7 +65,7 @@
 
 <!-- Upload File Card -->
 <div class="card">
-    <h2 style="margin-bottom: 1rem;">📤 Step 2: Upload Your File</h2>
+    <h2 style="margin-bottom: 1rem; color: var(--secondary);">📤 Step 2: Upload Your File</h2>
     <p style="color: var(--text-muted); margin-bottom: 1.5rem;">
         Select your completed Excel (.xlsx) or CSV (.csv) file
     </p>
@@ -68,13 +81,19 @@
             <div id="fileName" style="margin-top: 0.5rem; color: var(--text-muted); font-size: 0.9rem;"></div>
         </div>
 
+        <input type="hidden" name="action" value="upload">
+
         <div style="display: flex; gap: 1rem; margin-top: 1.5rem;">
-            <button type="submit" class="btn btn-success" style="flex: 1;">
-                ⬆️ Upload and Import
+            <button type="submit" class="btn btn-success" style="flex: 1; font-size: 1.1rem; padding: 1rem;">
+                ⬆️ Upload & Preview
             </button>
-            <a href="{{ url_for('dashboard') }}" class="btn" style="flex: 1;">
+            <a href="{{ url_for('dashboard') }}" class="btn" style="flex: 1; font-size: 1.1rem; padding: 1rem;">
                 ❌ Cancel
             </a>
+        </div>
+
+        <div style="margin-top: 1rem; text-align: center; color: var(--text-muted); font-size: 0.9rem;">
+            <em>✨ You'll see a preview before importing</em>
         </div>
     </form>
 </div>
