@@ -2186,61 +2186,135 @@ def bulk_import():
     if not gym: return redirect(url_for('auth'))
     
     if request.method == 'POST':
-        if 'import_file' not in request.files:
-            flash('No file selected!', 'error')
-            return redirect(url_for('bulk_import'))
+        action = request.form.get('action', 'upload')
         
-        file = request.files['import_file']
-        if file.filename == '':
-            flash('No file selected!', 'error')
-            return redirect(url_for('bulk_import'))
-        
-        # Validate file extension
-        if not (file.filename.lower().endswith('.xlsx') or file.filename.lower().endswith('.csv')):
-            flash('Invalid file format! Use .xlsx or .csv files only.', 'error')
-            return redirect(url_for('bulk_import'))
-        
-        try:
-            # Save file temporarily - use /tmp for Railway compatibility
-            upload_folder = app.config['UPLOAD_FOLDER']
+        # STEP 1: Upload & Preview
+        if action == 'upload':
+            if 'import_file' not in request.files:
+                flash('No file selected!', 'error')
+                return redirect(url_for('bulk_import'))
             
-            # Check if upload folder is writable, fallback to /tmp
-            if not os.access(upload_folder, os.W_OK):
-                upload_folder = '/tmp'
+            file = request.files['import_file']
+            if file.filename == '':
+                flash('No file selected!', 'error')
+                return redirect(url_for('bulk_import'))
             
-            filename = secure_filename(f"import_{datetime.now().strftime('%Y%m%d%H%M%S')}_{file.filename}")
-            filepath = os.path.join(upload_folder, filename)
-            file.save(filepath)
+            # Validate file extension
+            if not (file.filename.lower().endswith('.xlsx') or file.filename.lower().endswith('.csv')):
+                flash('Invalid file format! Use .xlsx or .csv files only.', 'error')
+                return redirect(url_for('bulk_import'))
             
-            # Process import
-            success_count, error_count, errors = gym.bulk_import_members(filepath)
-            
-            # Delete temp file
             try:
-                os.remove(filepath)
-            except:
-                pass  # Ignore cleanup errors
+                # Save file temporarily
+                upload_folder = app.config.get('UPLOAD_FOLDER', '/tmp')
+                if not os.access(upload_folder, os.W_OK):
+                    upload_folder = '/tmp'
                 
-        except Exception as e:
-            flash(f'❌ Upload failed: {str(e)}', 'error')
-            return redirect(url_for('bulk_import'))
+                filename = secure_filename(f"import_{datetime.now().strftime('%Y%m%d%H%M%S')}_{file.filename}")
+                filepath = os.path.join(upload_folder, filename)
+                file.save(filepath)
+                
+                # Validate and preview import data
+                from import_validator import ImportValidator
+                import openpyxl
+                
+                # Read Excel data
+                wb = openpyxl.load_workbook(filepath)
+                ws = wb.active
+                
+                # Convert to list of dicts
+                headers = [cell.value for cell in ws[1]]
+                rows_data = []
+                for row in ws.iter_rows(min_row=2, values_only=True):
+                    row_dict = {headers[i]: row[i] for i in range(len(headers)) if i < len(row)}
+                    rows_data.append(row_dict)
+                
+                # Validate
+                validator = ImportValidator(gym)
+                validation_results = validator.validate_import_data(rows_data)
+                
+                # Store in session for confirmation
+                session['import_file_path'] = filepath
+                session['import_validation'] = {
+                    'summary': validation_results,
+                    'filename': file.filename
+                }
+                
+                return redirect(url_for('import_preview'))
+                
+            except Exception as e:
+                flash(f'❌ Error processing file: {str(e)}', 'error')
+                return redirect(url_for('bulk_import'))
         
-        # Show results
-        if success_count > 0:
-            # Get actual count from database for verification
-            total_members = len(gym.get_all_members())
-            flash(f'✅ Successfully imported {success_count} members! Total: {total_members}', 'success')
-            flash('🔄 Page will refresh to show new members...', 'info')
-            # Redirect to dashboard to see imported members
-            return redirect(url_for('dashboard'))
-        if error_count > 0:
-            flash(f'⚠️ {error_count} errors occurred during import.', 'error')
-            for error in errors[:10]:  # Show max 10 errors
-                flash(error, 'error')
-        
-        return redirect(url_for('bulk_import'))
+        # STEP 2: Confirm Import (from preview)
+        elif action == 'confirm':
+            filepath = session.get('import_file_path')
+            if not filepath or not os.path.exists(filepath):
+                flash('Session expired. Please upload file again.', 'error')
+                return redirect(url_for('bulk_import'))
+            
+            try:
+                # Get duplicate strategy
+                duplicate_strategy = request.form.get('duplicate_strategy', 'skip')
+                
+                # Process import
+                success_count, error_count, errors = gym.bulk_import_members(
+                    filepath, 
+                    duplicate_strategy=duplicate_strategy
+                )
+                
+                # Clean up
+                try:
+                    os.remove(filepath)
+                    session.pop('import_file_path', None)
+                    session.pop('import_validation', None)
+                except:
+                    pass
+                
+                # Show results
+                if success_count > 0:
+                    flash(f'✅ Successfully imported {success_count} members!', 'success')
+                    return redirect(url_for('dashboard'))
+                if error_count > 0:
+                    flash(f'⚠️ {error_count} errors occurred.', 'error')
+                    for error in errors[:5]:
+                        flash(error, 'error')
+                
+                return redirect(url_for('bulk_import'))
+                
+            except Exception as e:
+                flash(f'❌ Import failed: {str(e)}', 'error')
+                return redirect(url_for('bulk_import'))
+    
+    # Clear any stale session data
+    session.pop('import_file_path', None)
+    session.pop('import_validation', None)
     
     return render_template('bulk_import.html')
+
+@app.route('/import_preview')
+def import_preview():
+    """Show preview of import data with validation results"""
+    gym = get_gym()
+    if not gym: return redirect(url_for('auth'))
+    
+    validation_data = session.get('import_validation')
+    if not validation_data:
+        flash('No import data found. Please upload a file first.', 'error')
+        return redirect(url_for('bulk_import'))
+    
+    # Apply duplicate handling preview
+    from import_validator import ImportValidator
+    validator = ImportValidator(gym)
+    
+    # Get summary
+    summary = validation_data['summary']
+    duplicate_count = sum(1 for row in summary['rows'] if row.get('existing_member'))
+    
+    return render_template('import_preview.html',
+                         validation=summary,
+                         filename=validation_data['filename'],
+                         duplicate_count=duplicate_count)
 
 @app.route('/download_template')
 def download_template():
