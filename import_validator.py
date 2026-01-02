@@ -100,7 +100,8 @@ class ImportValidator:
             
             # Check for duplicates
             if cleaned_phone in existing_phones:
-                existing = self.gym.session.query(self.gym.Member).filter_by(
+                from models import Member
+                existing = self.gym.session.query(Member).filter_by(
                     gym_id=self.gym.gym.id,
                     phone=cleaned_phone
                 ).first()
