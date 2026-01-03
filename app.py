@@ -24,6 +24,8 @@ import secrets
 import traceback
 from subscription_tiers import TIERS, TIERS_PAKISTAN, TierManager
 from tier_routes import init_upgrade_routes
+from apscheduler.schedulers.background import BackgroundScheduler
+from automation_manager import AutomationManager
 
 # Load environment variables from .env file
 load_dotenv()
@@ -88,6 +90,44 @@ security_manager = SecurityManager(get_session)
 
 # Initialize modular routes (Required for Gunicorn production)
 init_upgrade_routes(app, auth_manager, security_manager)
+
+# ==================== BACKGROUND SCHEDULER (Phase 2) ====================
+
+def run_scheduled_summaries():
+    """Background task to send daily summaries to all gym owners"""
+    with app.app_context():
+        session = get_session()
+        try:
+            gyms = session.query(Gym).all()
+            for gym in gyms:
+                auto_man = AutomationManager(session, email_sender)
+                auto_man.generate_daily_business_summary(gym.id)
+        except Exception as e:
+            print(f"❌ Scheduler Error (Summaries): {str(e)}")
+        finally:
+            session.close()
+
+def run_scheduled_automations():
+    """Background task to run daily reminders and wishes for all gyms"""
+    with app.app_context():
+        session = get_session()
+        try:
+            gyms = session.query(Gym).all()
+            for gym in gyms:
+                auto_man = AutomationManager(session, email_sender)
+                auto_man.run_daily_automations(gym.id)
+        except Exception as e:
+            print(f"❌ Scheduler Error (Automations): {str(e)}")
+        finally:
+            session.close()
+
+# Start the scheduler
+scheduler = BackgroundScheduler(daemon=True)
+scheduler.add_job(func=run_scheduled_summaries, trigger="cron", hour=23, minute=59)
+scheduler.add_job(func=run_scheduled_automations, trigger="cron", hour=9, minute=0)
+scheduler.start()
+
+print("⏰ Background Scheduler started successfully (Summaries @ 23:59, Automations @ 09:00)")
 
 def get_gym():
     """Get GymManager instance for logged-in user"""
@@ -1442,6 +1482,18 @@ def scan_check(member_id):
         status = 'ACCESS GRANTED'
         # Log attendance automatically
         gym.log_attendance(member_id)
+        
+        # Check for milestone alerts (Phase 2)
+        try:
+            attn_history = gym.get_attendance(member_id)
+            total_visits = len(attn_history)
+            if total_visits in [50, 100, 250, 500, 1000]:
+                session_db = get_session()
+                auto_man = AutomationManager(session_db, email_sender)
+                auto_man.send_milestone_alert(member_id, total_visits)
+                session_db.close()
+        except Exception as e:
+            print(f"⚠️ Milestone alert error: {str(e)}")
     # Special check for trial
     elif not is_paid and member.get('is_trial'):
         today = datetime.now().strftime('%Y-%m-%d')

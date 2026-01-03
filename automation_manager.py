@@ -5,8 +5,9 @@ Handles automated campaigns: payment reminders, birthday wishes, re-engagement
 
 from datetime import datetime, timedelta
 from typing import List, Dict
-from models import Member, Fee, Gym
+from models import Member, Fee, Gym, Attendance, User
 from email_utils import EmailSender
+from sqlalchemy import func
 import os
 
 
@@ -352,3 +353,182 @@ class AutomationManager:
             results['errors'].append(str(e))
         
         return results
+
+    # ==================== BUSINESS REPORTING ====================
+    
+    def generate_daily_business_summary(self, gym_id: int) -> bool:
+        """Generate and send a daily summary email to the gym owner"""
+        gym = self.session.query(Gym).filter_by(id=gym_id).first()
+        if not gym:
+            return False
+            
+        owner = self.session.query(User).filter_by(id=gym.user_id).first()
+        if not owner or not owner.email:
+            return False
+            
+        today_start = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
+        today_end = today_start + timedelta(days=1)
+        
+        # 1. Today's Revenue
+        revenue_today = self.session.query(func.sum(Fee.amount))\
+            .join(Member)\
+            .filter(Member.gym_id == gym_id, Fee.paid_date >= today_start, Fee.paid_date < today_end)\
+            .scalar() or 0
+            
+        # 2. Today's Check-ins
+        checkins_today = self.session.query(func.count(Attendance.id))\
+            .join(Member)\
+            .filter(Member.gym_id == gym_id, Attendance.check_in_time >= today_start, Attendance.check_in_time < today_end)\
+            .scalar() or 0
+            
+        # 3. New Members Today
+        new_members_today = self.session.query(func.count(Member.id))\
+            .filter(Member.gym_id == gym_id, Member.created_at >= today_start, Member.created_at < today_end)\
+            .scalar() or 0
+            
+        # 4. Expiring Trials Today
+        expiring_today = self.session.query(func.count(Member.id))\
+            .filter(Member.gym_id == gym_id, Member.is_trial == True, Member.trial_end_date == today_start.date())\
+            .scalar() or 0
+            
+        # 5. Get Overdue Escalations
+        overdue_members = self.get_overdue_escalation_list(gym_id)
+        overdue_html = ""
+        if overdue_members:
+            overdue_html = """
+            <h3 style="color: #ef4444; border-bottom: 2px solid #fee2e2; padding-bottom: 10px; margin-top: 30px;">🚨 Priority Overdue Alerts</h3>
+            <table style="width: 100%; border-collapse: collapse; margin-top: 15px;">
+            """
+            for m in overdue_members[:5]: # Top 5 priority
+                overdue_html += f"""
+                <tr>
+                    <td style="padding: 10px 0; border-bottom: 1px solid #f1f5f9;">
+                        <strong>{m['name']}</strong><br>
+                        <span style="font-size: 11px; color: #94a3b8;">{m['phone']}</span>
+                    </td>
+                    <td style="padding: 10px 0; text-align: right; color: #ef4444; font-weight: bold;">
+                        {m['days_overdue']} days late
+                    </td>
+                </tr>
+                """
+            if len(overdue_members) > 5:
+                overdue_html += f"<tr><td colspan='2' style='text-align: center; color: #94a3b8; font-size: 11px; padding: 10px 0;'>+ {len(overdue_members)-5} more overdue</td></tr>"
+            overdue_html += "</table>"
+
+        subject = f"📊 Daily Business Summary - {gym.name}"
+        
+        body = f"""
+        <html>
+        <body style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #f3f4f6; padding: 20px;">
+            <div style="background: linear-gradient(135deg, #1e293b 0%, #334155 100%); padding: 30px; text-align: center; border-radius: 12px 12px 0 0;">
+                <h1 style="color: white; margin: 0;">Business Summary</h1>
+                <p style="color: #94a3b8; margin-top: 5px;">{today_start.strftime('%B %d, %Y')}</p>
+            </div>
+            
+            <div style="padding: 30px; background: white; border-radius: 0 0 12px 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);">
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 30px;">
+                    <div style="padding: 20px; background: #f0fdf4; border-radius: 8px; text-align: center; border: 1px solid #bbf7d0;">
+                        <h4 style="margin: 0; color: #166534; text-transform: uppercase; font-size: 12px;">Today's Revenue</h4>
+                        <p style="font-size: 24px; font-weight: bold; margin: 10px 0; color: #14532d;">{gym.currency}{float(revenue_today):,.0f}</p>
+                    </div>
+                    <div style="padding: 20px; background: #eff6ff; border-radius: 8px; text-align: center; border: 1px solid #bfdbfe;">
+                        <h4 style="margin: 0; color: #1e40af; text-transform: uppercase; font-size: 12px;">New Members</h4>
+                        <p style="font-size: 24px; font-weight: bold; margin: 10px 0; color: #1e3a8a;">{new_members_today}</p>
+                    </div>
+                </div>
+                
+                <h3 style="color: #1e293b; border-bottom: 2px solid #e2e8f0; padding-bottom: 10px;">📉 Performance Metrics</h3>
+                <table style="width: 100%; border-collapse: collapse; margin-top: 15px;">
+                    <tr>
+                        <td style="padding: 12px 0; color: #64748b;">Daily Attendance</td>
+                        <td style="padding: 12px 0; text-align: right; font-weight: bold; color: #1e293b;">{checkins_today} check-ins</td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 12px 0; color: #64748b;">Expiring Trials</td>
+                        <td style="padding: 12px 0; text-align: right; font-weight: bold; color: #f59e0b;">{expiring_today} members</td>
+                    </tr>
+                </table>
+                
+                {overdue_html}
+                
+                <div style="margin-top: 40px; padding: 20px; background: #f8fafc; border-radius: 8px; text-align: center;">
+                    <a href="https://fitnessmanagement.site/dashboard" style="background: #2563eb; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold;">View Full Dashboard</a>
+                </div>
+            </div>
+            
+            <p style="text-align: center; color: #94a3b8; font-size: 12px; margin-top: 20px;">
+                This is an automated report from your Gym Manager system.
+            </p>
+        </body>
+        </html>
+        """
+        
+        return self.email_sender.send_email(owner.email, subject, body)
+
+    def send_milestone_alert(self, member_id: int, milestone_count: int) -> bool:
+        """Send a congratulatory email for attendance milestones"""
+        member = self.session.query(Member).filter_by(id=member_id).first()
+        if not member or not member.email:
+            return False
+            
+        gym = self.session.query(Gym).filter_by(id=member.gym_id).first()
+        
+        subject = f"🔥 MASSIVE MILESTONE! {milestone_count} Visits at {gym.name}!"
+        
+        body = f"""
+        <html>
+        <body style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; text-align: center;">
+            <div style="background: linear-gradient(135deg, #f59e0b 0%, #ef4444 100%); padding: 50px;">
+                <h1 style="color: white; font-size: 60px; margin: 0;">🏆</h1>
+                <h1 style="color: white; margin: 10px 0;">{milestone_count} VISITS!</h1>
+                <p style="color: rgba(255,255,255,0.8); font-size: 18px;">That's pure dedication, {member.name}</p>
+            </div>
+            
+            <div style="padding: 40px;">
+                <p style="font-size: 20px; color: #1e293b; line-height: 1.6;">
+                    You just hit your <strong>{milestone_count}th</strong> visit at {gym.name}! 
+                    Most people quit long before this, but you're still showing up and putting in the work.
+                </p>
+                
+                <div style="margin: 40px 0; padding: 30px; border: 2px dashed #f59e0b; border-radius: 12px; background: #fffbeb;">
+                    <h3 style="color: #92400e; margin-top: 0;">🎁 Milestone Reward</h3>
+                    <p style="color: #b45309;">Show this email to the front desk for a <strong>FREE protein shake</strong> or <strong>Gym Merch</strong>!</p>
+                </div>
+                
+                <p style="color: #64748b;">Keep pushing, keep growing!</p>
+                <p style="font-weight: bold; color: #1e293b;">Team {gym.name}</p>
+            </div>
+        </body>
+        </html>
+        """
+        
+        return self.email_sender.send_email(member.email, subject, body)
+
+    def get_overdue_escalation_list(self, gym_id: int) -> List[Dict]:
+        """Identify members overdue by 7+ days for priority alerts"""
+        today = datetime.now()
+        current_month = today.strftime('%Y-%m')
+        
+        # This logic is a simplified proxy - in a real app, you'd check a dedicated 'due_date' field
+        unpaid_members = self.session.query(Member).filter(
+            Member.gym_id == gym_id,
+            Member.is_active == True
+        ).all()
+        
+        escalation_list = []
+        for member in unpaid_members:
+            paid_this_month = self.session.query(Fee).filter(
+                Fee.member_id == member.id,
+                Fee.month == current_month
+            ).first()
+            
+            # If it's more than 7 days into the month and no payment
+            if not paid_this_month and today.day > 7:
+                escalation_list.append({
+                    'id': member.id,
+                    'name': member.name,
+                    'phone': member.phone,
+                    'days_overdue': today.day # Days since 1st of month
+                })
+        
+        return escalation_list

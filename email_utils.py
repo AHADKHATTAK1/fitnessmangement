@@ -131,3 +131,38 @@ class EmailSender:
         except Exception as e:
             print(f"Error sending notification: {str(e)}")
             return False
+
+    def send_email(self, to_email, subject, body_html):
+        """
+        Generic method to send HTML emails
+        
+        Args:
+            to_email: Recipient email
+            subject: Email subject
+            body_html: HTML content of the email
+            
+        Returns:
+            bool: True if sent successfully
+        """
+        if not self.enabled:
+            print(f"Email not configured. To: {to_email}, Subject: {subject}")
+            return False
+            
+        try:
+            msg = MIMEMultipart('alternative')
+            msg['From'] = self.email
+            msg['To'] = to_email
+            msg['Subject'] = subject
+            
+            msg.attach(MIMEText(body_html, 'html'))
+            
+            with smtplib.SMTP(self.smtp_server, self.smtp_port) as server:
+                server.starttls()
+                server.login(self.email, self.password)
+                server.send_message(msg)
+                
+            return True
+            
+        except Exception as e:
+            print(f"Error sending generic email: {str(e)}")
+            return False
