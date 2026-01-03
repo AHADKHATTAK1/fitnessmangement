@@ -107,7 +107,7 @@ class GymManager:
                 'membership_type': membership_type,
                 'joined_date': joined_date if joined_date else datetime.now().strftime('%Y-%m-%d'),
                 'is_trial': is_trial,
-                'active': True,
+                'is_active': True,
                 'email': email
             }
             self.save_legacy_data()
@@ -249,7 +249,7 @@ class GymManager:
             'membership_type': member.membership_type,
             'is_trial': member.is_trial,
             'trial_end_date': member.trial_end_date.strftime('%Y-%m-%d') if member.trial_end_date else None,
-            'active': member.is_active
+            'is_active': member.is_active
         }
 
     def record_fee(self, member_id, month, amount, date=None):
@@ -500,12 +500,19 @@ class GymManager:
             self.save_legacy_data()
             return True
 
+        # Get member to update last_check_in
+        member = self.session.query(Member).get(int(member_id))
+        
         attendance = Attendance(
             member_id=int(member_id),
-            # check_in_time removed - using default created_at
+            check_in_time=datetime.utcnow(),
             emotion=emotion,
             confidence=confidence
         )
+        
+        if member:
+            member.last_check_in = datetime.utcnow()
+            
         self.session.add(attendance)
         self.session.commit()
         return True
@@ -516,9 +523,9 @@ class GymManager:
             return sorted(self.data['attendance'].get(str(member_id), []), 
                           key=lambda x: x.get('timestamp', ''), reverse=True)
 
-        records = self.session.query(Attendance).filter_by(member_id=int(member_id)).order_by(Attendance.created_at.desc()).all()
+        records = self.session.query(Attendance).filter_by(member_id=int(member_id)).order_by(Attendance.check_in_time.desc()).all()
         return [{
-            'timestamp': r.created_at.strftime('%Y-%m-%d %H:%M:%S'),
+            'timestamp': r.check_in_time.strftime('%Y-%m-%d %H:%M:%S'),
             'emotion': r.emotion,
             'confidence': float(r.confidence) if r.confidence else None
         } for r in records]
@@ -1196,7 +1203,7 @@ class GymManager:
         # Subquery for max date
         subquery = self.session.query(
             Attendance.member_id,
-            func.max(Attendance.created_at).label('last_checkin')
+            func.max(Attendance.check_in_time).label('last_checkin')
         ).group_by(Attendance.member_id).subquery()
         
         # Join

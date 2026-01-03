@@ -10,9 +10,69 @@ import stripe
 import os
 from datetime import datetime, timedelta
 
-def init_upgrade_routes(app, auth_manager):
+
+def init_upgrade_routes(app, auth_manager, security_manager):
     """Initialize tier upgrade routes"""
     
+    @app.route('/subscription')
+    def subscription():
+        """Payment required page"""
+        from flask import render_template
+        return render_template('subscription.html')
+
+    @app.route('/subscription_plans')
+    def subscription_plans():
+        """Display subscription pricing page"""
+        from flask import render_template
+        
+        # Get current user if logged in
+        username = session.get('username')
+        current_tier = None
+        if username:
+            user = auth_manager.session.query(User).filter_by(email=username).first()
+            if user:
+                current_tier = user.subscription_tier or 'starter'
+        
+        return render_template('subscription_plans.html',
+                             tiers=TIERS,
+                             tiers_pakistan=TIERS_PAKISTAN,
+                             current_tier=current_tier)
+
+    @app.route('/activate_trial', methods=['POST'])
+    def activate_trial():
+        """Activate 3-day free trial"""
+        if 'logged_in' not in session:
+            return redirect(url_for('auth'))
+        
+        username = session.get('username')
+        user = auth_manager.session.query(User).filter_by(email=username).first()
+        
+        if not user:
+            flash('User not found', 'error')
+            return redirect(url_for('subscription'))
+            
+        # Check if already had trial
+        if getattr(user, 'trial_used', False):
+            flash('You have already used your trial period.', 'warning')
+            return redirect(url_for('subscription_plans'))
+        
+        # Activate 3-day trial
+        user.subscription_status = 'trial'
+        user.subscription_expiry = datetime.utcnow() + timedelta(days=3)
+        user.trial_used = True
+        
+        auth_manager.session.commit()
+        
+        # Production Security: Log Audit
+        user_id = auth_manager.get_user_id(username)
+        if user_id:
+            security_manager.log_action(user_id, 'TRIAL_ACTIVATED', 
+                                       {'expires_at': user.subscription_expiry.strftime('%Y-%m-%d')}, 
+                                       request.remote_addr, request.user_agent.string)
+        
+        flash('🎉 3-day trial activated! Enjoy full access. Pay anytime when ready.', 'success')
+        return redirect(url_for('dashboard'))
+
     @app.route('/upgrade_tier', methods=['POST'])
     def upgrade_tier():
         """Handle tier upgrade with Stripe checkout"""
@@ -49,6 +109,10 @@ def init_upgrade_routes(app, auth_manager):
         # Initialize Stripe
         stripe.api_key = os.getenv('STRIPE_SECRET_KEY')
         
+        if not stripe.api_key or stripe.api_key == 'your_stripe_secret_key_here':
+            flash('Stripe API is not configured. Please contact administrator.', 'error')
+            return redirect(url_for('subscription_plans'))
+            
         try:
             # Create Stripe checkout session
             checkout_session = stripe.checkout.Session.create(
@@ -84,7 +148,6 @@ def init_upgrade_routes(app, auth_manager):
             flash(f'Payment error: {str(e)}', 'error')
             return redirect(url_for('subscription_plans'))
     
-    
     @app.route('/upgrade_success')
     def upgrade_success():
         """Handle successful tier upgrade"""
@@ -104,6 +167,7 @@ def init_upgrade_routes(app, auth_manager):
         user.subscription_tier = new_tier
         user.billing_cycle = billing_cycle
         user.tier_upgraded_at = datetime.utcnow()
+        user.subscription_status = 'active'
         
         # Set new expiry date
         if billing_cycle == 'yearly':
@@ -111,66 +175,41 @@ def init_upgrade_routes(app, auth_manager):
         else:
             user.subscription_expiry = datetime.utcnow() + timedelta(days=30)
         
-        user.subscription_status = 'active'
-        
         auth_manager.session.commit()
+        
+        # Production Security: Log Audit
+        user_id = auth_manager.get_user_id(username)
+        if user_id:
+            security_manager.log_action(user_id, 'SUBSCRIPTION_UPGRADE', 
+                                       {'tier': new_tier, 'cycle': billing_cycle}, 
+                                       request.remote_addr, request.user_agent.string)
         
         # Send confirmation email (if email_utils available)
         try:
-            from email_utils import send_email
+            from email_utils import EmailSender
+            sender = EmailSender()
             tier_config = TIERS[new_tier]
-            send_email(
-                to=user.email,
-                subject=f'🎉 Subscription Upgraded to {tier_config["name"]}!',
-                body=f'''
-                Congratulations!
-                
-                Your subscription has been upgraded to {tier_config["name"]} plan.
-                
-                Plan Details:
-                - Members: {tier_config["limits"]["members"] if tier_config["limits"]["members"] != -1 else "Unlimited"}
-                - Gyms: {tier_config["limits"]["gyms"] if tier_config["limits"]["gyms"] != -1 else "Unlimited"}
-                - Billing: {billing_cycle}
-                
-                Thank you for your business!
+            sender.send_email(
+                user.email,
+                f'🎉 Subscription Upgraded to {tier_config["name"]}!',
+                f'''
+                <h2>Congratulations!</h2>
+                <p>Your subscription has been upgraded to <strong>{tier_config["name"]}</strong> plan.</p>
+                <p><strong>Plan Details:</strong></p>
+                <ul>
+                    <li>Members: {tier_config["limits"]["members"] if tier_config["limits"]["members"] != -1 else "Unlimited"}</li>
+                    <li>Gyms: {tier_config["limits"]["gyms"] if tier_config["limits"]["gyms"] != -1 else "Unlimited"}</li>
+                    <li>Billing: {billing_cycle}</li>
+                </ul>
+                <p>Thank you for your business!</p>
                 '''
             )
-        except:
+        except Exception as e:
+            print(f"⚠️ Email Error: {str(e)}")
             pass  # Email optional
         
         flash(f'🎉 Successfully upgraded to {TIERS[new_tier]["name"]} plan!', 'success')
         return redirect(url_for('dashboard'))
-    
-    
-    @app.route('/downgrade_tier', methods=['POST'])
-    def downgrade_tier():
-        """Schedule tier downgrade (applies at end of billing cycle)"""
-        username = session.get('username')
-        if not username:
-            return redirect(url_for('auth'))
-        
-        user = auth_manager.session.query(User).filter_by(email=username).first()
-        if not user:
-            return redirect(url_for('auth'))
-        
-        new_tier = request.form.get('tier')
-        
-        # Can't downgrade to a higher tier
-        tier_order = ['starter', 'professional', 'enterprise', 'enterprise_plus']
-        current_idx = tier_order.index(user.subscription_tier)
-        new_idx = tier_order.index(new_tier)
-        
-        if new_idx >= current_idx:
-            flash('That is not a downgrade', 'error')
-            return redirect(url_for('subscription_plans'))
-        
-        # Schedule downgrade
-        user.tier_downgrade_scheduled = new_tier
-        auth_manager.session.commit()
-        
-        flash(f'Downgrade scheduled. Will switch to {TIERS[new_tier]["name"]} at end of billing cycle.', 'info')
-        return redirect(url_for('subscription_plans'))
-    
     
     @app.route('/cancel_subscription', methods=['POST'])
     def cancel_subscription():
@@ -186,6 +225,11 @@ def init_upgrade_routes(app, auth_manager):
         # Schedule downgrade to starter
         user.tier_downgrade_scheduled = 'starter'
         auth_manager.session.commit()
+        
+        # Production Security: Log Audit
+        user_id = auth_manager.get_user_id(username)
+        if user_id:
+            security_manager.log_action(user_id, 'SUBSCRIPTION_CANCEL', {}, request.remote_addr, request.user_agent.string)
         
         flash('Subscription will be canceled at end of billing period. You will be moved to Starter plan.', 'info')
         return redirect(url_for('settings'))

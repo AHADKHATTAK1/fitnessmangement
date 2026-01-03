@@ -45,7 +45,7 @@ class AutomationManager:
         
         unpaid_members = self.session.query(Member).filter(
             Member.gym_id == gym_id,
-            Member.active == True
+            Member.is_active == True
         ).all()
         
         reminders_to_send = []
@@ -57,13 +57,24 @@ class AutomationManager:
             ).first()
             
             if not paid_this_month:
+                # Determine amount based on membership type or default
+                membership_type = getattr(member, 'membership_type', 'monthly').lower()
+                
+                # Logic to determine amount (could be expanded to a dynamic mapping)
+                if 'vip' in membership_type:
+                    amount_due = 10000
+                elif 'premium' in membership_type:
+                    amount_due = 7000
+                else:
+                    amount_due = 5000 # Default
+                
                 reminders_to_send.append({
                     'member_id': member.id,
                     'name': member.name,
                     'email': member.email,
                     'phone': member.phone,
                     'month': current_month,
-                    'amount_due': 5000  # Default, should come from membership type
+                    'amount_due': amount_due
                 })
         
         return reminders_to_send
@@ -244,10 +255,11 @@ class AutomationManager:
         """Find members who haven't checked in recently"""
         cutoff_date = datetime.now() - timedelta(days=inactive_days)
         
+        from sqlalchemy import or_
         inactive_members = self.session.query(Member).filter(
             Member.gym_id == gym_id,
             Member.is_active == True,
-            Member.last_check_in < cutoff_date
+            or_(Member.last_check_in < cutoff_date, Member.last_check_in == None)
         ).all()
         
         return [{

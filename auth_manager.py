@@ -49,6 +49,12 @@ class AuthManager:
         user = self.session.query(User).filter_by(email=username).first()
         return user is not None
     
+    def get_user_id(self, email):
+        """Get numeric user ID by email"""
+        if self.legacy: return None
+        user = self.session.query(User).filter_by(email=email).first()
+        return user.id if user else None
+        
     def validate_referral(self, code):
         """Check if referral code is valid"""
         valid_codes = ['500596AK1'] # New VIP Code

@@ -19,6 +19,11 @@ import qrcode
 import base64
 from dotenv import load_dotenv
 from google_wallet import GymWalletPass
+import stripe
+import secrets
+import traceback
+from subscription_tiers import TIERS, TIERS_PAKISTAN, TierManager
+from tier_routes import init_upgrade_routes
 
 # Load environment variables from .env file
 load_dotenv()
@@ -72,12 +77,17 @@ if not os.path.exists('users.json'):
     with open('users.json', 'w') as f:
         json.dump({}, f)
 
-# Initialize managers
-# Note: `session_factory` is not defined in the provided context.
-# Assuming it's defined elsewhere or will be added.
 auth_manager = AuthManager()
 email_sender = EmailSender()
 payment_manager = PaymentManager()
+
+# Initialize Security Manager
+from security_manager import SecurityManager
+from models import get_session
+security_manager = SecurityManager(get_session)
+
+# Initialize modular routes (Required for Gunicorn production)
+init_upgrade_routes(app, auth_manager, security_manager)
 
 def get_gym():
     """Get GymManager instance for logged-in user"""
@@ -99,21 +109,21 @@ def inject_gym_details():
         
     # Inject User Plan info
     if 'logged_in' in session:
-        user = auth_manager.users.get(session['username'], {})
-        context['user_plan'] = user.get('plan', 'standard')
+        username = session.get('username')
+        if auth_manager.legacy:
+            user_data = auth_manager.users.get(username, {})
+            context['user_plan'] = user_data.get('plan', 'standard')
+        else:
+            from models import User
+            user = auth_manager.session.query(User).filter_by(email=username).first()
+            context['user_plan'] = user.subscription_tier if user and hasattr(user, 'subscription_tier') else 'starter'
     
     return context
 
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
-@app.route('/')
-def index():
-    if 'logged_in' not in session:
-        return redirect(url_for('auth'))
     return redirect(url_for('dashboard'))
-
-import stripe
 
 # STRIPE CONFIGURATION - Loaded from environment variables
 # Get your keys from https://dashboard.stripe.com/apikeys
@@ -127,18 +137,15 @@ app.config['GOOGLE_CLIENT_ID'] = os.getenv('GOOGLE_CLIENT_ID', '')
 # JAZZCASH CONFIGURATION
 app.config['JAZZCASH_MERCHANT_ID'] = os.getenv('JAZZCASH_MERCHANT_ID', '')
 app.config['JAZZCASH_PASSWORD'] = os.getenv('JAZZCASH_PASSWORD', '')
-app.config['JAZZCASH_RETURN_URL'] = os.getenv('JAZZCASH_RETURN_URL', 'http://localhost:5000/jazzcash_success')
-
-# JAZZCASH CONFIGURATION
-app.config['JAZZCASH_MERCHANT_ID'] = os.getenv('JAZZCASH_MERCHANT_ID', '')
-app.config['JAZZCASH_PASSWORD'] = os.getenv('JAZZCASH_PASSWORD', '')
+app.config['JAZZCASH_INTEGRITY_SALT'] = os.getenv('JAZZCASH_INTEGRITY_SALT', '')
 app.config['JAZZCASH_RETURN_URL'] = os.getenv('JAZZCASH_RETURN_URL', 'http://localhost:5000/jazzcash_return')
 
 
 @app.before_request
 def check_subscription():
     # Public endpoints that don't need subscription
-    public_endpoints = ['auth', 'google_login', 'static', 'subscription', 'logout', 
+    public_endpoints = ['auth', 'google_login', 'static', 'subscription', 'subscription_plans', 
+                       'upgrade_tier', 'upgrade_success', 'activate_trial', 'logout', 
                        'create_checkout_session', 'payment_success', 'payment_cancel', 'fix_db']
     
     if request.endpoint in public_endpoints or not session.get('logged_in'):
@@ -150,161 +157,7 @@ def check_subscription():
         flash('Please renew your subscription to continue using all features. (Select US or PK plan)', 'error')
         return redirect(url_for('subscription'))
 
-@app.route('/subscription')
-def subscription():
-    """Payment required page"""
-    return render_template('subscription.html')
-
-@app.route('/subscription_plans')
-def subscription_plans():
-    """Display subscription pricing page"""
-    from subscription_tiers import TIERS, TIERS_PAKISTAN
-    
-    # Get current user if logged in
-    username = session.get('username')
-    current_tier = None
-    if username:
-        user = auth_manager.session.query(User).filter_by(email=username).first()
-        if user:
-            current_tier = user.subscription_tier or 'starter'
-    
-    return render_template('subscription_plans.html',
-                         tiers=TIERS,
-                         tiers_pakistan=TIERS_PAKISTAN,
-                         current_tier=current_tier)
-
-
-@app.route('/upgrade_tier', methods=['POST'])
-def upgrade_tier():
-    """Handle tier upgrade with Stripe checkout"""
-    import stripe
-    from subscription_tiers import TIERS
-    
-    username = session.get('username')
-    if not username:
-        flash('Please login first', 'error')
-        return redirect(url_for('auth'))
-    
-    user = auth_manager.session.query(User).filter_by(email=username).first()
-    if not user:
-        flash('User not found', 'error')
-        return redirect(url_for('auth'))
-    
-    # Get form data
-    new_tier = request.form.get('tier')
-    billing_cycle = request.form.get('cycle', 'monthly')
-    
-    # Validate tier
-    if new_tier not in TIERS:
-        flash('Invalid tier selected', 'error')
-        return redirect(url_for('subscription_plans'))
-    
-    # Get tier config
-    tier_config = TIERS[new_tier]
-    
-    # Calculate amount
-    if billing_cycle == 'yearly':
-        amount = tier_config['price_yearly']
-        interval = 'year'
-    else:
-        amount = tier_config['price_monthly']
-        interval = 'month'
-    
-    # Initialize Stripe
-    stripe.api_key = os.getenv('STRIPE_SECRET_KEY')
-    
-    if not stripe.api_key or stripe.api_key == 'your_stripe_secret_key_here':
-        flash('Payment system is not configured. Please contact support.', 'error')
-        return redirect(url_for('subscription_plans'))
-    
-    try:
-        # Create Stripe checkout session
-        checkout_session = stripe.checkout.Session.create(
-            payment_method_types=['card'],
-            line_items=[{
-                'price_data': {
-                    'currency': 'usd',
-                    'product_data': {
-                        'name': f'{tier_config["name"]} Plan',
-                        'description': f'{tier_config["description"]}',
-                    },
-                    'unit_amount': int(amount * 100),  # Convert to cents
-                    'recurring': {
-                        'interval': interval
-                    }
-                },
-                'quantity': 1,
-            }],
-            mode='subscription',
-            success_url=url_for('upgrade_success', tier=new_tier, cycle=billing_cycle, _external=True),
-            cancel_url=url_for('subscription_plans', _external=True),
-            client_reference_id=user.email,
-            metadata={
-                'tier': new_tier,
-                'billing_cycle': billing_cycle,
-                'user_email': user.email
-            }
-        )
-        
-        return redirect(checkout_session.url)
-        
-    except Exception as e:
-        flash(f'Payment error: {str(e)}', 'error')
-        return redirect(url_for('subscription_plans'))
-
-
-@app.route('/upgrade_success')
-def upgrade_success():
-    """Handle successful tier upgrade"""
-    from subscription_tiers import TIERS
-    from datetime import datetime, timedelta
-    
-    username = session.get('username')
-    if not username:
-        return redirect(url_for('auth'))
-    
-    user = auth_manager.session.query(User).filter_by(email=username).first()
-    if not user:
-        return redirect(url_for('auth'))
-    
-    # Get tier and cycle from query params
-    new_tier = request.args.get('tier')
-    billing_cycle = request.args.get('cycle', 'monthly')
-    
-    # Update user subscription
-    user.subscription_tier = new_tier
-    user.billing_cycle = billing_cycle
-    user.tier_upgraded_at = datetime.utcnow()
-    
-    # Set new expiry date
-    if billing_cycle == 'yearly':
-        user.subscription_expiry = datetime.utcnow() + timedelta(days=365)
-    else:
-        user.subscription_expiry = datetime.utcnow() + timedelta(days=30)
-    
-    auth_manager.session.commit()
-    
-    flash(f'🎉 Successfully upgraded to {TIERS[new_tier]["name"]} plan!', 'success')
-    return redirect(url_for('dashboard'))
-
-
-@app.route('/cancel_subscription', methods=['POST'])
-def cancel_subscription():
-    """Cancel subscription (switch to starter at end of period)"""
-    username = session.get('username')
-    if not username:
-        return redirect(url_for('auth'))
-    
-    user = auth_manager.session.query(User).filter_by(email=username).first()
-    if not user:
-        return redirect(url_for('auth'))
-    
-    # Schedule downgrade to starter
-    user.tier_downgrade_scheduled = 'starter'
-    auth_manager.session.commit()
-    
-    flash('Subscription will be canceled at end of billing period. You will be moved to Starter plan.', 'info')
-    return redirect(url_for('settings'))
+# Subscription and Tier routes are now handled by tier_routes.py
 
 
 #  ========== WEBHOOK MANAGEMENT ROUTES ==========
@@ -459,15 +312,6 @@ def webhook_logs(webhook_id):
     logs = WebhookManager.get_webhook_logs(webhook_id, limit=100)
     
     return render_template('webhook_logs.html', logs=logs, webhook_id=webhook_id)
-    if auth_manager.is_subscription_active(username):
-        return redirect(url_for('dashboard'))
-        
-    # Check if user is pending approval
-    user = auth_manager.users.get(username, {})
-    if user.get('subscription_status') == 'pending':
-        return render_template('payment_pending.html')
-        
-    return render_template('subscription.html', key=app.config['STRIPE_PUBLIC_KEY'])
 
 @app.route('/create_checkout_session', methods=['POST'])
 def create_checkout_session():
@@ -515,29 +359,7 @@ def payment_cancel():
     flash('Payment cancelled.', 'info')
     return redirect(url_for('subscription'))
 
-# ===== 3-DAY TRIAL & FLEXIBLE PAYMENT =====
-@app.route('/activate_trial', methods=['POST'])
-def activate_trial():
-    """Activate 3-day free trial"""
-    if 'logged_in' not in session:
-        return redirect(url_for('login'))
-    
-    username = session.get('username')
-    user = auth_manager.session.query(User).filter_by(email=username).first()
-    
-    if not user:
-        flash('User not found', 'error')
-        return redirect(url_for('subscription'))
-    
-    # Activate 3-day trial
-    from datetime import datetime, timedelta
-    user.subscription_status = 'trial'
-    user.subscription_expiry = datetime.utcnow() + timedelta(days=3)
-    
-    auth_manager.session.commit()
-    
-    flash('🎉 3-day trial activated! Enjoy full access. Pay anytime when ready.', 'success')
-    return redirect(url_for('dashboard'))
+# Trial activation is now handled by tier_routes.py
 
 @app.route('/initiate_payment', methods=['POST'])
 def initiate_payment():
@@ -680,9 +502,21 @@ def auth():
             if auth_manager.verify_user(username, password):
                 session['logged_in'] = True
                 session['username'] = username
+                
+                # Production Security: Log Audit & Session
+                user_id = auth_manager.get_user_id(username)
+                if user_id:
+                    token = security_manager.create_session_token()
+                    session['session_token'] = token
+                    security_manager.track_session(user_id, token, request.remote_addr, request.user_agent.string)
+                    security_manager.log_action(user_id, 'LOGIN_SUCCESS', {'ip': request.remote_addr}, request.remote_addr, request.user_agent.string)
+                
                 flash('Login successful!', 'success')
                 return redirect(url_for('dashboard'))
             else:
+                user_id = auth_manager.get_user_id(username)
+                if user_id:
+                    security_manager.log_action(user_id, 'LOGIN_FAILURE', {'ip': request.remote_addr}, request.remote_addr, request.user_agent.string)
                 flash('Invalid credentials!', 'error')
     
     return render_template('auth.html')
@@ -1978,6 +1812,11 @@ def delete_member(member_id):
     if not gym: return redirect(url_for('auth'))
     
     if gym.delete_member(member_id):
+        # Audit Log
+        user_id = auth_manager.get_user_id(session.get('username'))
+        if user_id:
+            security_manager.log_action(user_id, 'MEMBER_DELETE', {'member_id': member_id}, request.remote_addr, request.user_agent.string)
+        
         flash('Member deleted successfully!', 'success')
     else:
         flash('Delete failed!', 'error')
@@ -2273,6 +2112,13 @@ def bulk_import():
                 
                 # Show results
                 if success_count > 0:
+                    # Audit Log
+                    user_id = auth_manager.get_user_id(session.get('username'))
+                    if user_id:
+                        security_manager.log_action(user_id, 'BULK_IMPORT', 
+                                                   {'success_count': success_count, 'duplicate_strategy': duplicate_strategy}, 
+                                                   request.remote_addr, request.user_agent.string)
+                                                   
                     flash(f'✅ Successfully imported {success_count} members!', 'success')
                     return redirect(url_for('dashboard'))
                 if error_count > 0:
@@ -2689,8 +2535,7 @@ def generate_smart_response(message, gym_name, username=None):
         }
 
 if __name__ == '__main__':
-    # Initialize tier upgrade routes
-    init_upgrade_routes(app, auth_manager)
+    # Modular routes are now initialized at the global scope for Gunicorn compatibility
     
     port = int(os.environ.get('PORT', 5000))
     app.run(host='0.0.0.0', port=port, debug=False)

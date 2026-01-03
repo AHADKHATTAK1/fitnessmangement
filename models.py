@@ -20,10 +20,17 @@ class User(Base):
     role = Column(String(50), default='admin')
     market = Column(String(50), default='US', nullable=True)  # 'US' or 'PK' or 'VIP'
     subscription_expiry = Column(DateTime, nullable=True)  # Subscription expiry date
+    subscription_tier = Column(String(50), default='starter')
+    billing_cycle = Column(String(20), default='monthly')
+    tier_upgraded_at = Column(DateTime)
+    tier_downgrade_scheduled = Column(String(50))
+    subscription_status = Column(String(50), default='active')
     created_at = Column(DateTime, default=datetime.utcnow)
     
     # Relationships
     gyms = relationship('Gym', back_populates='user', cascade='all, delete-orphan')
+    audit_logs = relationship('AuditLog', back_populates='user', cascade='all, delete-orphan')
+    sessions = relationship('UserSession', back_populates='user', cascade='all, delete-orphan')
 
 class Gym(Base):
     __tablename__ = 'gyms'
@@ -83,7 +90,7 @@ class Attendance(Base):
     
     id = Column(Integer, primary_key=True)
     member_id = Column(Integer, ForeignKey('members.id'), nullable=False)
-    # check_in_time column removed - database doesn't have it, using created_at instead
+    check_in_time = Column(DateTime, default=datetime.utcnow, index=True)
     emotion = Column(String(50))
     confidence = Column(DECIMAL(5, 2))
     created_at = Column(DateTime, default=datetime.utcnow)
@@ -176,3 +183,31 @@ def get_session():
     except Exception as e:
         print(f"❌ Database connection failed: {str(e)}")
         return None
+
+class AuditLog(Base):
+    __tablename__ = 'audit_logs'
+    
+    id = Column(Integer, primary_key=True)
+    user_id = Column(Integer, ForeignKey('users.id'), nullable=False, index=True)
+    action = Column(String(100), nullable=False, index=True)
+    details = Column(Text)  # JSON string
+    ip_address = Column(String(45))  # IPv6 support
+    user_agent = Column(String(500))
+    timestamp = Column(DateTime, default=datetime.utcnow, index=True)
+    
+    user = relationship('User', back_populates='audit_logs')
+
+
+class UserSession(Base):
+    __tablename__ = 'user_sessions'
+    
+    id = Column(Integer, primary_key=True)
+    user_id = Column(Integer, ForeignKey('users.id'), nullable=False, index=True)
+    token_hash = Column(String(64), unique=True, nullable=False)
+    ip_address = Column(String(45))
+    user_agent = Column(String(500))
+    created_at = Column(DateTime, default=datetime.utcnow)
+    expires_at = Column(DateTime, nullable=False, index=True)
+    is_active = Column(Boolean, default=True, index=True)
+    
+    user = relationship('User', back_populates='sessions')
