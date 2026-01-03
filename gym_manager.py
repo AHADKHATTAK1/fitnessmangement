@@ -1263,3 +1263,193 @@ class GymManager:
         }, {
             'revenue_trend': revenue_trend
         }
+
+    def get_batch_analytics_data(self):
+        """Fetch all data needed for analytics in optimized batches"""
+        if self.legacy or not self.gym:
+            return None
+
+        now = datetime.now()
+        six_months_ago = now - timedelta(days=180)
+        
+        # 1. Get all members for this gym
+        all_members = self.session.query(Member).filter_by(gym_id=self.gym.id).all()
+        member_ids = [m.id for m in all_members]
+        
+        if not member_ids:
+            return {'members': [], 'fees': [], 'attendance': []}
+        
+        # 2. Get all fees for last 6 months
+        fees = self.session.query(Fee).filter(
+            Fee.member_id.in_(member_ids),
+            Fee.paid_date >= six_months_ago
+        ).order_by(Fee.paid_date.asc()).all()
+        
+        # 3. Get all attendance for last 30 days
+        thirty_days_ago = now - timedelta(days=30)
+        attendance = self.session.query(Attendance).filter(
+            Attendance.member_id.in_(member_ids),
+            Attendance.check_in_time >= thirty_days_ago
+        ).order_by(Attendance.check_in_time.asc()).all()
+        
+        return {
+            'members': all_members,
+            'fees': fees,
+            'attendance': attendance
+        }
+
+    def calculate_business_metrics(self, data):
+        """Calculate advanced metrics from batch data in-memory"""
+        if not data or not data['members']:
+            return {}
+
+        now = datetime.now()
+        current_month = now.strftime('%Y-%m')
+        last_month = (now.replace(day=1) - timedelta(days=1)).strftime('%Y-%m')
+        
+        # Organize fees by month and member
+        fees_by_month = {}
+        member_payments = {m.id: [] for m in data['members']}
+        
+        for fee in data['fees']:
+            month = fee.month
+            fees_by_month[month] = fees_by_month.get(month, 0) + float(fee.amount)
+            member_payments[fee.member_id].append(month)
+            
+        current_revenue = fees_by_month.get(current_month, 0)
+        last_month_revenue = fees_by_month.get(last_month, 0)
+        revenue_growth = round(((current_revenue - last_month_revenue) / last_month_revenue * 100), 1) if last_month_revenue > 0 else 0
+        
+        # Revenue Forecast
+        forecast_months = []
+        actual_revenue_data = []
+        forecasted_revenue_data = []
+        
+        for i in range(5, -1, -1):
+            date = now - timedelta(days=30*i)
+            month_str = date.strftime('%Y-%m')
+            forecast_months.append(date.strftime('%b'))
+            actual_revenue_data.append(fees_by_month.get(month_str, 0))
+            forecasted_revenue_data.append(None)
+            
+        avg_growth = revenue_growth / 6 if revenue_growth else 0
+        last_val = actual_revenue_data[-1] if actual_revenue_data else 1000
+        
+        for i in range(1, 7):
+            date = now + timedelta(days=30*i)
+            forecast_months.append(date.strftime('%b'))
+            actual_revenue_data.append(None)
+            val = last_val * (1 + avg_growth/100) ** i
+            forecasted_revenue_data.append(round(val, 2))
+            
+        # Attendance Heatmap
+        heatmap_hours = ['6AM', '8AM', '10AM', '12PM', '2PM', '4PM', '6PM', '8PM', '10PM']
+        heatmap_data = [0] * 9
+        
+        for record in data['attendance']:
+            hour = record.check_in_time.hour
+            if 6 <= hour < 24:
+                idx = min((hour - 6) // 2, 8)
+                heatmap_data[idx] += 1
+                
+        peak_hour = heatmap_hours[heatmap_data.index(max(heatmap_data))] if any(heatmap_data) else 'N/A'
+        
+        # Segments & CRM Logic
+        vip_count = sum(1 for m in data['members'] if m.membership_type == 'Personal Training')
+        active_count = sum(1 for m in data['members'] if current_month in member_payments[m.id])
+        
+        # CRM Definitions:
+        # 1. At Risk: Paid last month, NOT this month, and NO attendance in 7 days
+        # 2. Churned: No payment in 60 days AND no attendance in 30 days
+        thirty_days_ago = now - timedelta(days=30)
+        seven_days_ago = now - timedelta(days=7)
+        sixty_days_ago = now - timedelta(days=60)
+        
+        at_risk_count = 0
+        churned_count = 0
+        
+        for m in data['members']:
+            # All check-ins for this member from batch data
+            m_attendance = [a for a in data['attendance'] if a.member_id == m.id]
+            last_attn = max([a.check_in_time for a in m_attendance]) if m_attendance else None
+            
+            has_paid_this_month = current_month in member_payments[m.id]
+            has_paid_last_month = last_month in member_payments[m.id]
+            
+            # Churn Logic
+            is_churned = False
+            if not has_paid_this_month and not has_paid_last_month:
+                if not last_attn or last_attn < thirty_days_ago:
+                    churned_count += 1
+                    is_churned = True
+            
+            # At Risk Logic
+            if not is_churned and not has_paid_this_month:
+                if not last_attn or last_attn < seven_days_ago:
+                    at_risk_count += 1
+                    
+        # Collection Rate (Actual vs Expected)
+        collection_months = []
+        collection_rates_data = []
+        
+        type_price_map = {
+            'vip': 10000.0,
+            'premium': 7000.0,
+            'gym': 5000.0,
+            'monthly': 5000.0,
+            'regular': 5000.0
+        }
+        
+        total_expected_per_month = 0
+        for m in data['members']:
+            if not m.is_active: continue
+            mtype = m.membership_type.lower() if m.membership_type else 'monthly'
+            price = 5000.0
+            for key, val in type_price_map.items():
+                if key in mtype:
+                    price = val
+                    break
+            total_expected_per_month += price
+
+        for i in range(5, -1, -1):
+            date = now - timedelta(days=30*i)
+            month_str = date.strftime('%Y-%m')
+            collection_months.append(date.strftime('%b'))
+            
+            actual = fees_by_month.get(month_str, 0)
+            rate = round((actual / total_expected_per_month * 100), 1) if total_expected_per_month > 0 else 0
+            collection_rates_data.append(min(rate, 100.0))
+                    
+        # Churn Trend (last 6 months)
+        churn_trend_data = []
+        for i in range(5, -1, -1):
+            date = now - timedelta(days=30*i)
+            m_str = date.strftime('%Y-%m')
+            
+            # Simple churn Proxy: members who hadn't paid by this month point and hadn't attended
+            # (Note: This is an estimation from current data snapshot)
+            m_churned = 0
+            for m in data['members']:
+                has_paid = any(p >= m_str for p in member_payments[m.id])
+                if not has_paid:
+                    m_churned += 1
+            churn_trend_data.append(m_churned)
+            
+        return {
+            'total_revenue': current_revenue,
+            'revenue_growth': revenue_growth,
+            'forecast_months': forecast_months,
+            'actual_revenue': actual_revenue_data,
+            'forecasted_revenue': forecasted_revenue_data,
+            'heatmap_hours': heatmap_hours,
+            'heatmap_data': heatmap_data,
+            'peak_hour': peak_hour,
+            'vip_count': vip_count,
+            'active_count': active_count,
+            'at_risk_count': at_risk_count,
+            'churned_count': churned_count,
+            'retention_rate': round((active_count / len(data['members']) * 100), 1) if data['members'] else 0,
+            'collection_months': collection_months,
+            'collection_rates': collection_rates_data,
+            'churn_trend': churn_trend_data
+        }

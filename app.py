@@ -956,201 +956,79 @@ def analytics():
 
 @app.route('/advanced-analytics')
 def advanced_analytics():
-    """Advanced Analytics with Forecasting and Insights"""
-    gym = get_gym()
-    if not gym: return redirect(url_for('auth'))
+    """Advanced Analytics optimized with Batch Data Engine"""
+    gym_man = get_gym()
+    if not gym_man: return redirect(url_for('auth'))
     
-    all_members = gym.get_all_members()
-    current_month = datetime.now().strftime('%Y-%m')
+    # Use high-performance batch engine
+    data = gym_man.get_batch_analytics_data()
+    if not data or not data['members']:
+        flash('No data available for analytics yet.', 'info')
+        return redirect(url_for('dashboard'))
+        
+    metrics = gym_man.calculate_business_metrics(data)
     
-    # Calculate Revenue Metrics
-    total_revenue = 0
-    revenue_by_month = {}
-    
-    for member in all_members:
-        payment_history = gym.get_payment_history(member['id'])
-        for payment in payment_history:
-            month = payment.get('month', '')
-            amount = float(payment.get('amount', 0))
-            revenue_by_month[month] = revenue_by_month.get(month, 0) + amount
-            if month == current_month:
-                total_revenue += amount
-    
-    # Revenue Growth
-    last_month = (datetime.now().replace(day=1) - timedelta(days=1)).strftime('%Y-%m')
-    last_month_revenue = revenue_by_month.get(last_month, 0)
-    revenue_growth = round(((total_revenue - last_month_revenue) / last_month_revenue * 100), 1) if last_month_revenue > 0 else 0
-    
-    # Revenue Forecast (Simple linear trend)
-    forecast_months = []
-    actual_revenue = []
-    forecasted_revenue = []
-    
-    # Get last 6 months actual
+    # Additional data for UI charts
+    growth_months = metrics['forecast_months'][:6]
+    new_members_data = [] # Logic moved to metrics in future, currently 0 for churn logic
     for i in range(5, -1, -1):
         date = datetime.now() - timedelta(days=30*i)
         month_str = date.strftime('%Y-%m')
-        month_label = date.strftime('%b')
-        forecast_months.append(month_label)
-        actual_revenue.append(revenue_by_month.get(month_str, 0))
-        forecasted_revenue.append(None)
+        new_members_data.append(sum(1 for m in data['members'] if m.joined_date and m.joined_date.strftime('%Y-%m') == month_str))
     
-    # Forecast next 6 months
-    avg_growth = revenue_growth / 6 if revenue_growth else 0
-    last_revenue = actual_revenue[-1] if actual_revenue else 1000
-    
-    for i in range(1, 7):
-        date = datetime.now() + timedelta(days=30*i)
-        month_label = date.strftime('%b')
-        forecast_months.append(month_label)
-        actual_revenue.append(None)
-        forecast_value = last_revenue * (1 + avg_growth/100) ** i
-        forecasted_revenue.append(round(forecast_value, 2))
-    
-    # Member Growth
-    new_members_this_month = sum(1 for m in all_members 
-                                  if m.get('joined_date', '').startswith(current_month[:7]))
-    
-    growth_months = []
-    new_members_data = []
-    churned_members_data = []
-    
-    for i in range(5, -1, -1):
-        date = datetime.now() - timedelta(days=30*i)
-        month_str = date.strftime('%Y-%m')
-        month_label = date.strftime('%b')
-        growth_months.append(month_label)
-        
-        new = sum(1 for m in all_members if m.get('joined_date', '').startswith(month_str))
-        new_members_data.append(new)
-        churned_members_data.append(0)  # TODO: Track churned members
-    
-    # Retention Rate
-    paid_count = sum(1 for m in all_members if gym.is_fee_paid(m['id'], current_month))
-    retention_rate = round((paid_count / len(all_members) * 100), 1) if all_members else 0
-    
-    # Attendance Analysis
-    total_checkins = 0
-    heatmap_hours = ['6AM', '8AM', '10AM', '12PM', '2PM', '4PM', '6PM', '8PM', '10PM']
-    heatmap_data = [0] * 9
-    peak_hour = 'N/A'
-    
-    for member in all_members:
-        attendance = gym.get_attendance(member['id'])
-        total_checkins += len(attendance)
-        
-        for record in attendance:
-            try:
-                time = datetime.strptime(record['timestamp'], '%Y-%m-%d %H:%M:%S')
-                hour = time.hour
-                if 6 <= hour < 24:
-                    idx = min((hour - 6) // 2, 8)
-                    heatmap_data[idx] += 1
-            except:
-                pass
-    
-    if heatmap_data:
-        peak_idx = heatmap_data.index(max(heatmap_data))
-        peak_hour = heatmap_hours[peak_idx]
-    
-    avg_attendance = round(total_checkins / 30, 1) if total_checkins else 0
-    
-    # Revenue by Membership Type
+    churned_members_data = metrics['churn_trend']
     membership_types = ['Gym', 'Gym + Cardio', 'Personal Training', 'Other']
     revenue_by_type = [0] * 4
     
-    for member in all_members:
-        mtype = member.get('membership_type', 'Gym')
-        try:
-            idx = membership_types.index(mtype)
-        except:
-            idx = 3
-        
-        payment_history = gym.get_payment_history(member['id'])
-        for payment in payment_history:
-            if payment.get('month') == current_month:
-                revenue_by_type[idx] += float(payment.get('amount', 0))
-    
-    # Collection Rate (last 6 months)
-    collection_months = []
-    collection_rates = []
-    
-    for i in range(5, -1, -1):
-        date = datetime.now() - timedelta(days=30*i)
-        month_str = date.strftime('%Y-%m')
-        month_label = date.strftime('%b')
-        collection_months.append(month_label)
-        
-        paid = sum(1 for m in all_members if gym.is_fee_paid(m['id'], month_str))
-        rate = round((paid / len(all_members) * 100), 1) if all_members else 0
-        collection_rates.append(rate)
-    
-    # Smart Insights
+    # Calculate revenue by type in-memory from batch fees
+    current_month = datetime.now().strftime('%Y-%m')
+    member_map = {m.id: m for m in data['members']}
+    for fee in data['fees']:
+        if fee.month == current_month:
+            m = member_map.get(fee.member_id)
+            if m:
+                try:
+                    idx = membership_types.index(m.membership_type)
+                    revenue_by_type[idx] += float(fee.amount)
+                except:
+                    revenue_by_type[3] += float(fee.amount)
+                    
+    # Intelligent Insights
     insights = []
-    
-    if revenue_growth > 10:
-        insights.append({
-            'type': 'success',
-            'icon': '📈',
-            'title': 'Strong Revenue Growth',
-            'message': f'Revenue is up {revenue_growth}% compared to last month! Keep up the great work.'
-        })
-    elif revenue_growth < -10:
-        insights.append({
-            'type': 'warning',
-            'icon': '⚠️',
-            'title': 'Revenue Decline Detected',
-            'message': f'Revenue dropped {abs(revenue_growth)}%. Consider running promotions or member campaigns.'
-        })
-    
-    if retention_rate < 70:
-        insights.append({
-            'type': 'danger',
-            'icon': '🚨',
-            'title': 'Low Retention Rate',
-            'message': f'Only {retention_rate}% of members paid this month. Focus on member engagement and reminders.'
-        })
-    
-    if new_members_this_month > 10:
-        insights.append({
-            'type': 'success',
-            'icon': '🎉',
-            'title': 'Member Growth Surge',
-            'message': f'{new_members_this_month} new members joined this month! Your marketing is working.'
-        })
-    
-    # Member Segments
-    vip_count = sum(1 for m in all_members if m.get('membership_type') == 'Personal Training')
-    active_count = sum(1 for m in all_members if gym.is_fee_paid(m['id'], current_month))
-    at_risk_count = len(all_members) - active_count
-    churned_count = 0  # TODO: Track properly
-    
+    if metrics['revenue_growth'] > 10:
+        insights.append({'type': 'success', 'icon': '📈', 'title': 'Revenue Surge', 'message': f'Revenue increased by {metrics["revenue_growth"]}%! Your growth strategy is working.'})
+    elif metrics['revenue_growth'] < -10:
+        insights.append({'type': 'warning', 'icon': '⚠️', 'title': 'Revenue Warning', 'message': f'Revenue dropped by {abs(metrics["revenue_growth"])}%. Check for churn or late payments.'})
+        
+    if metrics['at_risk_count'] > 5:
+        insights.append({'type': 'danger', 'icon': '🚨', 'title': 'At-Risk Members', 'message': f'{metrics["at_risk_count"]} members are at risk of churning (no attendance in 7 days).'})
+
     return render_template('advanced_analytics.html',
-                         total_revenue=total_revenue,
-                         revenue_growth=revenue_growth,
-                         total_members=len(all_members),
-                         new_members_this_month=new_members_this_month,
-                         retention_rate=retention_rate,
-                         avg_attendance=avg_attendance,
-                         peak_hour=peak_hour,
-                         forecast_months=forecast_months,
-                         actual_revenue=actual_revenue,
-                         forecasted_revenue=forecasted_revenue,
+                         total_revenue=metrics['total_revenue'],
+                         revenue_growth=metrics['revenue_growth'],
+                         total_members=len(data['members']),
+                         new_members_this_month=new_members_data[-1],
+                         retention_rate=metrics['retention_rate'],
+                         avg_attendance=round(len(data['attendance']) / 30, 1),
+                         peak_hour=metrics['peak_hour'],
+                         forecast_months=metrics['forecast_months'],
+                         actual_revenue=metrics['actual_revenue'],
+                         forecasted_revenue=metrics['forecasted_revenue'],
                          growth_months=growth_months,
                          new_members_data=new_members_data,
                          churned_members_data=churned_members_data,
-                         heatmap_hours=heatmap_hours,
-                         heatmap_data=heatmap_data,
                          membership_types=membership_types,
                          revenue_by_type=revenue_by_type,
-                         collection_months=collection_months,
-                         collection_rates=collection_rates,
-                         insights=insights,
-                         vip_count=vip_count,
-                         active_count=active_count,
-                         at_risk_count=at_risk_count,
-                         churned_count=churned_count)
-
+                         collection_months=metrics['collection_months'],
+                         collection_rates=metrics['collection_rates'],
+                         heatmap_hours=metrics['heatmap_hours'],
+                         heatmap_data=metrics['heatmap_data'],
+                            insights=insights,
+                         vip_count=metrics['vip_count'],
+                         active_count=metrics['active_count'],
+                         at_risk_count=metrics['at_risk_count'],
+                         churned_count=metrics['churned_count'])
+    
 @app.route('/bulk-operations')
 def bulk_operations():
     gym = get_gym()
