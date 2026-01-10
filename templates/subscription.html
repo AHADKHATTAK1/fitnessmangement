@@ -1,0 +1,116 @@
+{% extends "base.html" %}
+
+{% block title %}Subscription Required - Gym Manager{% endblock %}
+
+{% block content %}
+<div style="display: flex; justify-content: center; align-items: center; min-height: 80vh;">
+    <div class="card" style="max-width: 500px; width: 100%; border: 1px solid var(--primary);">
+        <div style="text-align: center; margin-bottom: 2rem;">
+            <div style="font-size: 3rem; margin-bottom: 1rem;">🔒</div>
+            <h1
+                style="margin-bottom: 0.5rem; background: linear-gradient(135deg, var(--primary), var(--secondary)); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;">
+                Subscription Required</h1>
+            <p style="color: var(--text-muted);">Your 30-day access has expired or is inactive.</p>
+        </div>
+
+        <div style="margin-bottom: 2rem; display: flex; justify-content: center; gap: 1rem;">
+            <button onclick="setMarket('US')" id="btn-us" class="btn"
+                style="background: var(--primary); color: white; border: 1px solid var(--primary);">🇺🇸 US Market
+                ($60)</button>
+            <button onclick="setMarket('PK')" id="btn-pk" class="btn"
+                style="background: transparent; border: 1px solid var(--text-muted); color: var(--text-muted);">🇵🇰
+                Pakistan (Rs 5,000)</button>
+        </div>
+
+        <div id="us-plan" style="display: block;">
+            <div
+                style="background: hsla(260, 80%, 20%, 0.5); padding: 1.5rem; border-radius: 12px; margin-bottom: 2rem; border: 1px solid var(--border);">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                    <span style="color: var(--text-muted);">Plan</span>
+                    <span style="font-weight: 600;">Standard Monthly (US)</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <span style="color: var(--text-muted);">Amount Due</span>
+                    <span style="font-size: 1.5rem; font-weight: 700; color: var(--success);">$60.00</span>
+                </div>
+            </div>
+
+            <form action="{{ url_for('initiate_payment') }}" method="POST">
+                <input type="hidden" name="provider" value="stripe">
+                <button type="submit" class="btn btn-success"
+                    style="width: 100%; padding: 1rem; font-size: 1.1rem; display: flex; justify-content: center; align-items: center; gap: 0.5rem; transition: transform 0.1s;">
+                    <span>Pay with Card 💳</span>
+                </button>
+                <p style="text-align: center; margin-top: 1rem; font-size: 0.8rem; color: var(--text-muted);">
+                    Secured by <strong>Stripe</strong>. Automatic activation.
+                </p>
+            </form>
+        </div>
+
+        <div id="pk-plan" style="display: none;">
+            <div
+                style="background: hsla(150, 80%, 20%, 0.5); padding: 1.5rem; border-radius: 12px; margin-bottom: 2rem; border: 1px solid var(--success);">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                    <span style="color: var(--text-muted);">Plan</span>
+                    <span style="font-weight: 600;">Standard Monthly (PK)</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <span style="color: var(--text-muted);">Amount Due</span>
+                    <span style="font-size: 1.5rem; font-weight: 700; color: var(--success);">Rs 5,000</span>
+                </div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.5rem;">
+                <form action="{{ url_for('initiate_payment') }}" method="POST">
+                    <input type="hidden" name="provider" value="jazzcash">
+                    <button type="submit" class="btn"
+                        style="width: 100%; padding: 1rem; background: #c2121c; color: white; border: none; border-radius: 8px;">
+                        <span>🔴 JazzCash</span>
+                    </button>
+                </form>
+
+                <form action="{{ url_for('initiate_payment') }}" method="POST">
+                    <input type="hidden" name="provider" value="easypaisa">
+                    <button type="submit" class="btn"
+                        style="width: 100%; padding: 1rem; background: #00a859; color: white; border: none; border-radius: 8px;">
+                        <span>🟢 EasyPaisa</span>
+                    </button>
+                </form>
+            </div>
+
+            <p style="text-align: center; font-size: 0.8rem; color: var(--text-muted);">
+                Instant activation. Secured payment gateways.
+            </p>
+        </div>
+
+        <script>
+            function setMarket(market) {
+                const usBtn = document.getElementById('btn-us');
+                const pkBtn = document.getElementById('btn-pk');
+                const usPlan = document.getElementById('us-plan');
+                const pkPlan = document.getElementById('pk-plan');
+
+                if (market === 'US') {
+                    usPlan.style.display = 'block';
+                    pkPlan.style.display = 'none';
+
+                    usBtn.style.background = 'var(--primary)';
+                    usBtn.style.color = 'white';
+
+                    pkBtn.style.background = 'transparent';
+                    pkBtn.style.color = 'var(--text-muted)';
+                } else {
+                    usPlan.style.display = 'none';
+                    pkPlan.style.display = 'block';
+
+                    pkBtn.style.background = 'var(--primary)';
+                    pkBtn.style.color = 'white';
+
+                    usBtn.style.background = 'transparent';
+                    usBtn.style.color = 'var(--text-muted)';
+                }
+            }
+        </script>
+    </div>
+</div>
+{% endblock %}

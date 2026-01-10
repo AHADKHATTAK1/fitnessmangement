@@ -1,0 +1,203 @@
+{% extends "base.html" %}
+
+{% block title %}Bulk Import - Gym Manager{% endblock %}
+
+{% block content %}
+<div style="text-align: center; margin-bottom: 2rem;">
+    <h1
+        style="font-size: 2.8rem; background: linear-gradient(135deg, #fff 0%, var(--primary) 30%, var(--secondary) 60%, var(--accent-gold) 100%); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 0.5rem; filter: drop-shadow(0 0 12px rgba(139, 92, 246, 0.4));">
+        📊 Advanced Import Center
+    </h1>
+    <p style="color: var(--text-muted); font-size: 1.05rem;">Upload Excel or CSV with validation, preview & smart
+        duplicate handling</p>
+</div>
+
+<!-- Instructions Card -->
+<div class="card"
+    style="margin-bottom: 2rem; background: linear-gradient(145deg, hsla(210, 100%, 50%, 0.1), hsla(210, 100%, 40%, 0.05));">
+    <h2 style="margin-bottom: 1rem;">📋 How to Use</h2>
+
+    <ol style="color: var(--text); line-height: 2; font-size: 1.05rem;">
+        <li><strong>📥 Download Template</strong> - Get sample Excel with all required columns</li>
+        <li><strong>✍️ Fill Your Data</strong> - Add member details in the Excel file</li>
+        <li><strong>⬆️ Upload File</strong> - System validates data automatically</li>
+        <li><strong>👁️ Preview Results</strong> - Review validation, see duplicates, choose strategy</li>
+        <li><strong>✅ Confirm Import</strong> - Import only valid data with your chosen duplicate handling</li>
+    </ol>
+
+    <div
+        style="margin-top: 1.5rem; padding: 1.25rem; background: linear-gradient(135deg, rgba(234, 179, 8, 0.15), rgba(234, 179, 8, 0.05)); border-left: 4px solid var(--accent-gold); border-radius: 12px;">
+        <strong style="color: var(--accent-gold); font-size: 1.1rem;">✨ New: Smart Import Features</strong>
+        <ul style="margin: 0.75rem 0 0 1.5rem; line-height: 1.8;">
+            <li><strong>Auto-Validation:</strong> Required fields checked automatically</li>
+            <li><strong>Duplicate Detection:</strong> Phone numbers matched against existing members</li>
+            <li><strong>Smart Handling:</strong> Choose Skip/Update/Merge for duplicates</li>
+            <li><strong>Auto-Payments:</strong> Mark "Paid" to record fees for joining month</li>
+            <li><strong>Preview Mode:</strong> See validation results before importing</li>
+            <li><strong>Error Reports:</strong> Detailed messages for each issue found</li>
+        </ul>
+    </div>
+
+    <div
+        style="margin-top: 1rem; padding: 1rem; background: rgba(139, 92, 246, 0.1); border-left: 4px solid var(--primary); border-radius: 12px;">
+        <strong style="color: var(--primary);">📝 Required Fields:</strong>
+        <ul style="margin: 0.5rem 0 0 1.5rem; line-height: 1.6;">
+            <li><strong>Name</strong> - Member's full name (minimum 2 characters)</li>
+            <li><strong>Phone</strong> - Unique phone number (10-15 digits)</li>
+        </ul>
+        <div style="margin-top: 0.75rem; color: var(--text-muted); font-size: 0.9rem;">
+            <em>Email, Membership Type, and Dates are optional but recommended</em>
+        </div>
+    </div>
+</div>
+
+<!-- Download Template Card -->
+<div class="card" style="margin-bottom: 2rem;">
+    <h2 style="margin-bottom: 1rem; color: var(--accent-gold);">📄 Step 1: Download Template</h2>
+    <p style="color: var(--text-muted); margin-bottom: 1.5rem;">
+        Download the sample Excel file with pre-filled headers and example data
+    </p>
+
+    <a href="{{ url_for('download_template') }}" class="btn btn-secondary" style="font-size: 1.1rem;">
+        📥 Download Excel Template
+    </a>
+</div>
+
+<!-- Upload File Card -->
+<div class="card">
+    <h2 style="margin-bottom: 1rem; color: var(--secondary);">📤 Step 2: Upload Your File</h2>
+    <p style="color: var(--text-muted); margin-bottom: 1.5rem;">
+        Select your completed Excel (.xlsx) or CSV (.csv) file
+    </p>
+
+    <form method="POST" enctype="multipart/form-data" id="uploadForm">
+        <div class="form-group">
+            <label for="import_file">Select File *</label>
+            <div style="position: relative;">
+                <input type="file" id="import_file" name="import_file" accept=".xlsx,.csv" required
+                    style="width: 100%; padding: 1rem; border-radius: 8px; border: 2px dashed var(--border); background: var(--bg-card); color: var(--text); cursor: pointer; transition: all 0.3s;"
+                    onchange="updateFileName(this)">
+            </div>
+            <div id="fileName" style="margin-top: 0.5rem; color: var(--text-muted); font-size: 0.9rem;"></div>
+        </div>
+
+        <input type="hidden" name="action" value="upload">
+
+        <div style="display: flex; gap: 1rem; margin-top: 1.5rem;">
+            <button type="submit" class="btn btn-success" style="flex: 1; font-size: 1.1rem; padding: 1rem;">
+                ⬆️ Upload & Preview
+            </button>
+            <a href="{{ url_for('dashboard') }}" class="btn" style="flex: 1; font-size: 1.1rem; padding: 1rem;">
+                ❌ Cancel
+            </a>
+        </div>
+
+        <div style="margin-top: 1rem; text-align: center; color: var(--text-muted); font-size: 0.9rem;">
+            <em>✨ You'll see a preview before importing</em>
+        </div>
+    </form>
+</div>
+
+<!-- File Format Example -->
+<div class="card" style="margin-top: 2rem; background: hsla(230, 20%, 15%, 0.5);">
+    <h3 style="margin-bottom: 1rem; color: var(--primary);">📊 Expected File Format</h3>
+
+    <div style="overflow-x: auto;">
+        <table style="width: 100%; font-size: 0.9rem;">
+            <thead>
+                <tr>
+                    <th>Name *</th>
+                    <th>Phone *</th>
+                    <th>Email</th>
+                    <th>Membership Type</th>
+                    <th>Joined Date</th>
+                    <th>Status</th>
+                    <th>Month</th>
+                    <th>Amount</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Ahmed Ali</td>
+                    <td>03001234567</td>
+                    <td>ahmed@example.com</td>
+                    <td>Gym</td>
+                    <td>2025-01-01</td>
+                    <td><span style="color: var(--success); font-weight: bold;">Paid</span></td>
+                    <td>2025-01</td>
+                    <td>3000</td>
+                </tr>
+                <tr>
+                    <td>Jane Smith</td>
+                    <td>03117654321</td>
+                    <td>jane@example.com</td>
+                    <td>Gym + Cardio</td>
+                    <td>2025-01-05</td>
+                    <td><span style="color: var(--error);">Unpaid</span></td>
+                    <td></td>
+                    <td></td>
+                </tr>
+                <tr>
+                    <td>John Doe</td>
+                    <td>03009876543</td>
+                    <td>john@example.com</td>
+                    <td>Gym</td>
+                    <td>2025-01-10</td>
+                    <td><span style="color: var(--success); font-weight: bold;">Paid</span></td>
+                    <td>2025-01</td>
+                    <td>2500</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div
+        style="margin-top: 1rem; padding: 0.75rem; background: hsla(0, 0%, 100%, 0.05); border-radius: 6px; font-size: 0.85rem;">
+        <strong>Note:</strong> Fields marked with * are required. Date format should be YYYY-MM-DD.
+    </div>
+</div>
+
+<script>
+    function updateFileName(input) {
+        const fileName = document.getElementById('fileName');
+        if (input.files && input.files[0]) {
+            const file = input.files[0];
+            const fileSize = (file.size / 1024).toFixed(2);
+            fileName.innerHTML = `<strong>Selected:</strong> ${file.name} (${fileSize} KB)`;
+            fileName.style.color = 'var(--success)';
+        }
+    }
+
+    // Drag and drop support
+    const fileInput = document.getElementById('import_file');
+    fileInput.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        e.target.style.borderColor = 'var(--primary)';
+        e.target.style.background = 'hsla(210, 100%, 50%, 0.1)';
+    });
+
+    fileInput.addEventListener('dragleave', (e) => {
+        e.target.style.borderColor = 'var(--border)';
+        e.target.style.background = 'var(--bg-card)';
+    });
+
+    fileInput.addEventListener('drop', (e) => {
+        e.preventDefault();
+        e.target.style.borderColor = 'var(--border)';
+        e.target.style.background = 'var(--bg-card)';
+
+        if (e.dataTransfer.files.length > 0) {
+            fileInput.files = e.dataTransfer.files;
+            updateFileName(fileInput);
+        }
+    });
+
+    // Form submission animation
+    document.getElementById('uploadForm').addEventListener('submit', function (e) {
+        const btn = this.querySelector('button[type="submit"]');
+        btn.innerHTML = '⏳ Importing...';
+        btn.disabled = true;
+    });
+</script>
+
+{% endblock %}

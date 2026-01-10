@@ -1,0 +1,193 @@
+{% extends "base.html" %}
+
+{% block title %}Import Preview - Gym Manager{% endblock %}
+
+{% block content %}
+<div style="max-width: 1400px; margin: 0 auto; padding: 2rem;">
+    <div style="margin-bottom: 2rem;">
+        <a href="{{ url_for('bulk_import') }}" style="color: var(--text-muted); text-decoration: none;">
+            ← Back to Upload
+        </a>
+    </div>
+
+    <h1
+        style="font-size: 2.5rem; background: linear-gradient(135deg, var(--primary), var(--secondary)); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 0.5rem;">
+        📊 Import Preview
+    </h1>
+    <p style="color: var(--text-muted); margin-bottom: 2rem;">Review data before importing: {{ filename }}</p>
+
+    <!-- Summary Cards -->
+    <div
+        style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem; margin-bottom: 2rem;">
+        <!-- Total -->
+        <div class="card" style="text-align: center; background: rgba(139, 92, 246, 0.1);">
+            <div style="font-size: 2.5rem; margin-bottom: 0.5rem;">📋</div>
+            <div style="font-size: 2rem; font-weight: 800; color: var(--primary);">{{ validation.total }}</div>
+            <div style="color: var(--text-muted); font-size: 0.9rem;">Total Rows</div>
+        </div>
+
+        <!-- Valid -->
+        <div class="card" style="text-align: center; background: rgba(16, 185, 129, 0.1);">
+            <div style="font-size: 2.5rem; margin-bottom: 0.5rem;">✅</div>
+            <div style="font-size: 2rem; font-weight: 800; color: #10b981;">{{ validation.valid }}</div>
+            <div style="color: var(--text-muted); font-size: 0.9rem;">Valid</div>
+        </div>
+
+        <!-- Warnings -->
+        <div class="card" style="text-align: center; background: rgba(234, 179, 8, 0.1);">
+            <div style="font-size: 2.5rem; margin-bottom: 0.5rem;">⚠️</div>
+            <div style="font-size: 2rem; font-weight: 800; color: #eab308;">{{ validation.warnings }}</div>
+            <div style="color: var(--text-muted); font-size: 0.9rem;">Warnings</div>
+        </div>
+
+        <!-- Errors -->
+        <div class="card" style="text-align: center; background: rgba(239, 68, 68, 0.1);">
+            <div style="font-size: 2.5rem; margin-bottom: 0.5rem;">❌</div>
+            <div style="font-size: 2rem; font-weight: 800; color: #ef4444;">{{ validation.errors }}</div>
+            <div style="color: var(--text-muted); font-size: 0.9rem;">Errors</div>
+        </div>
+    </div>
+
+    <!-- Duplicate Handling (if duplicates found) -->
+    {% if duplicate_count > 0 %}
+    <div class="card"
+        style="margin-bottom: 2rem; background: linear-gradient(145deg, rgba(234, 179, 8, 0.1), rgba(234, 179, 8, 0.05));">
+        <h2 style="margin-bottom: 1rem; color: #eab308;">⚠️ Duplicates Found: {{ duplicate_count }}</h2>
+        <p style="color: var(--text-muted); margin-bottom: 1.5rem;">
+            These members already exist in your database. Choose how to handle them:
+        </p>
+
+        <form id="importForm" method="POST" action="{{ url_for('bulk_import') }}">
+            <input type="hidden" name="action" value="confirm">
+
+            <div style="display: grid; gap: 1rem; margin-bottom: 1.5rem;">
+                <label
+                    style="padding: 1rem; background: rgba(255, 255, 255, 0.05); border-radius: 12px; cursor: pointer; border: 2px solid transparent; transition: all 0.3s;">
+                    <input type="radio" name="duplicate_strategy" value="skip" checked style="margin-right: 0.75rem;">
+                    <strong>Skip Duplicates</strong><br>
+                    <span style="color: var(--text-muted); font-size: 0.9rem; margin-left: 1.75rem;">
+                        Keep existing members unchanged, only add new members
+                    </span>
+                </label>
+
+                <label
+                    style="padding: 1rem; background: rgba(255, 255, 255, 0.05); border-radius: 12px; cursor: pointer; border: 2px solid transparent; transition: all 0.3s;">
+                    <input type="radio" name="duplicate_strategy" value="update" style="margin-right: 0.75rem;">
+                    <strong>Update All Fields</strong><br>
+                    <span style="color: var(--text-muted); font-size: 0.9rem; margin-left: 1.75rem;">
+                        Replace all member information with data from Excel
+                    </span>
+                </label>
+
+                <label
+                    style="padding: 1rem; background: rgba(255, 255, 255, 0.05); border-radius: 12px; cursor: pointer; border: 2px solid transparent; transition: all 0.3s;">
+                    <input type="radio" name="duplicate_strategy" value="merge" style="margin-right: 0.75rem;">
+                    <strong>Smart Merge</strong><br>
+                    <span style="color: var(--text-muted); font-size: 0.9rem; margin-left: 1.75rem;">
+                        Update only non-empty fields, add new payments, keep existing data
+                    </span>
+                </label>
+            </div>
+        </form>
+    </div>
+    {% endif %}
+
+    <!-- Preview Table -->
+    <div class="card" style="overflow-x: auto;">
+        <h2 style="margin-bottom: 1.5rem;">📋 Preview (First 20 Rows)</h2>
+
+        <table style="width: 100%; border-collapse: collapse;">
+            <thead>
+                <tr style="background: rgba(139, 92, 246, 0.1);">
+                    <th style="padding: 0.75rem; text-align: left;">#</th>
+                    <th style="padding: 0.75rem; text-align: left;">Status</th>
+                    <th style="padding: 0.75rem; text-align: left;">Name</th>
+                    <th style="padding: 0.75rem; text-align: left;">Phone</th>
+                    <th style="padding: 0.75rem; text-align: left;">Email</th>
+                    <th style="padding: 0.75rem; text-align: left;">Joined</th>
+                    <th style="padding: 0.75rem; text-align: left;">Payment</th>
+                    <th style="padding: 0.75rem; text-align: left;">Issues</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in validation.rows[:20] %}
+                <tr
+                    style="border-bottom: 1px solid var(--border); {% if row.status == 'error' %}background: rgba(239, 68, 68, 0.05);{% elif row.status == 'warning' %}background: rgba(234, 179, 8, 0.05);{% endif %}">
+                    <td style="padding: 0.75rem;">{{ row.row_num }}</td>
+                    <td style="padding: 0.75rem;">
+                        {% if row.status == 'valid' %}
+                        <span style="color: #10b981; font-size: 1.2rem;">✅</span>
+                        {% elif row.status == 'warning' %}
+                        <span style="color: #eab308; font-size: 1.2rem;">⚠️</span>
+                        {% else %}
+                        <span style="color: #ef4444; font-size: 1.2rem;">❌</span>
+                        {% endif %}
+                    </td>
+                    <td style="padding: 0.75rem; font-weight: 600;">{{ row.data.name or '-' }}</td>
+                    <td style="padding: 0.75rem;">{{ row.data.phone or '-' }}</td>
+                    <td style="padding: 0.75rem; font-size: 0.9rem; color: var(--text-muted);">{{ row.data.email or '-'
+                        }}</td>
+                    <td style="padding: 0.75rem; font-size: 0.9rem;">{{ row.data.joined_date }}</td>
+                    <td style="padding: 0.75rem;">
+                        {% if row.data.status == 'paid' %}
+                        <span
+                            style="background: #10b981; color: white; padding: 0.25rem 0.5rem; border-radius: 4px; font-size: 0.8rem;">PAID</span>
+                        {% elif row.data.status == 'unpaid' %}
+                        <span
+                            style="background: #ef4444; color: white; padding: 0.25rem 0.5rem; border-radius: 4px; font-size: 0.8rem;">UNPAID</span>
+                        {% else %}
+                        <span style="color: var(--text-muted);">-</span>
+                        {% endif %}
+                    </td>
+                    <td style="padding: 0.75rem; font-size: 0.85rem; color: var(--text-muted);">
+                        {% if row.messages %}
+                        {% for msg in row.messages %}
+                        <div style="margin-bottom: 0.25rem;">• {{ msg }}</div>
+                        {% endfor %}
+                        {% else %}
+                        <span style="color: #10b981;">OK</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        {% if validation.total > 20 %}
+        <div style="text-align: center; padding: 1rem; color: var(--text-muted); font-size: 0.9rem;">
+            Showing first 20 of {{ validation.total }} rows
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Action Buttons -->
+    <div style="margin-top: 2rem; display: flex; gap: 1rem; justify-content: flex-end;">
+        <a href="{{ url_for('bulk_import') }}" class="btn"
+            style="background: transparent; border: 1px solid var(--border);">
+            ❌ Cancel
+        </a>
+
+        {% if validation.errors > 0 %}
+        <button disabled class="btn" style="opacity: 0.5; cursor: not-allowed;" title="Fix errors before importing">
+            ⚠️ Cannot Import ({{ validation.errors }} errors)
+        </button>
+        {% else %}
+        <button type="submit" form="importForm" class="btn btn-success" style="font-size: 1.1rem;">
+            ✅ Proceed with Import ({{ validation.valid + validation.warnings }} rows)
+        </button>
+        {% endif %}
+    </div>
+</div>
+
+<style>
+    /* Radio button hover effects */
+    label:has(input[type="radio"]:checked) {
+        border-color: var(--primary) !important;
+        background: rgba(139, 92, 246, 0.1) !important;
+    }
+
+    label:hover {
+        background: rgba(255, 255, 255, 0.08) !important;
+    }
+</style>
+{% endblock %}

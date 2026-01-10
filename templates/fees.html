@@ -1,0 +1,435 @@
+{% extends "base.html" %}
+
+{% block title %}💰 Payment Center - Premium{% endblock %}
+
+{% block content %}
+<style>
+    @media (max-width: 768px) {
+        .payment-container {
+            padding: 80px 16px 16px 16px;
+        }
+    }
+
+    .payment-container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 40px 20px;
+    }
+
+    .payment-header {
+        background: linear-gradient(135deg, #8b5cf6 0%, #ec4899 100%);
+        padding: 40px;
+        border-radius: 24px;
+        color: white;
+        margin-bottom: 40px;
+        box-shadow: 0 20px 60px rgba(139, 92, 246, 0.3);
+    }
+
+    .payment-header h1 {
+        font-size: 36px;
+        margin: 0 0 10px 0;
+        font-weight: 800;
+    }
+
+    .payment-header p {
+        font-size: 18px;
+        opacity: 0.95;
+        margin: 0;
+    }
+
+    .payment-tabs {
+        display: flex;
+        gap: 16px;
+        margin-bottom: 32px;
+        flex-wrap: wrap;
+    }
+
+    .payment-tab {
+        flex: 1;
+        min-width: 200px;
+        padding: 20px;
+        background: white;
+        border-radius: 16px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+        cursor: pointer;
+        transition: all 0.3s ease;
+        border: 2px solid transparent;
+    }
+
+    .payment-tab.active {
+        border-color: #8b5cf6;
+        background: linear-gradient(135deg, #f3e8ff 0%, #fdf4ff 100%);
+        box-shadow: 0 8px 24px rgba(139, 92, 246, 0.2);
+    }
+
+    .payment-tab:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 12px 32px rgba(0, 0, 0, 0.12);
+    }
+
+    .payment-form-card {
+        background: white;
+        padding: 40px;
+        border-radius: 24px;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+        margin-bottom: 32px;
+    }
+
+    .form-group {
+        margin-bottom: 24px;
+    }
+
+    .form-group label {
+        display: block;
+        font-weight: 600;
+        margin-bottom: 8px;
+        color: #1f2937;
+        font-size: 15px;
+    }
+
+    .form-input {
+        width: 100%;
+        padding: 16px;
+        border: 2px solid #e5e7eb;
+        border-radius: 12px;
+        font-size: 16px;
+        transition: all 0.3s ease;
+        background: #f9fafb;
+    }
+
+    .form-input:focus {
+        outline: none;
+        border-color: #8b5cf6;
+        background: white;
+        box-shadow: 0 0 0 4px rgba(139, 92, 246, 0.1);
+    }
+
+    .payment-history-table {
+        background: white;
+        border-radius: 24px;
+        overflow: hidden;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+    }
+
+    .table-header {
+        background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+        color: white;
+        padding: 20px;
+        font-weight: 600;
+    }
+
+    .table-row {
+        padding: 20px;
+        border-bottom: 1px solid #f3f4f6;
+        transition: all 0.2s ease;
+    }
+
+    .table-row:hover {
+        background: #f9fafb;
+    }
+
+    .status-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 6px 14px;
+        border-radius: 20px;
+        font-size: 13px;
+        font-weight: 600;
+    }
+
+    .status-paid {
+        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        color: white;
+    }
+
+    .status-pending {
+        background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+        color: white;
+    }
+
+    .empty-state {
+        text-align: center;
+        padding: 80px 20px;
+        color: #9ca3af;
+    }
+
+    .empty-state-icon {
+        font-size: 64px;
+        margin-bottom: 20px;
+    }
+</style>
+
+<div class="payment-container">
+    <!-- Premium Header with Subscription Button -->
+    <div class="payment-header">
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+            <div>
+                <h1 style="margin: 0;">💰 Payment Center</h1>
+                <p style="margin: 0.5rem 0 0 0;">Record payments & manage transaction history</p>
+            </div>
+            <a href="{{ url_for('subscription_plans') }}" class="btn"
+                style="background: linear-gradient(135deg, var(--accent-gold), #d97706); color: #000; font-weight: 700; padding: 1rem 2rem; text-decoration: none; display: inline-flex; align-items: center; gap: 0.5rem; box-shadow: 0 0 20px var(--gold-shadow); border: none;">
+                💎 Subscription Plans
+            </a>
+        </div>
+    </div>
+
+    <!-- Enhanced Tabs with Paid/Unpaid -->
+    <div class="payment-tabs">
+        <div class="payment-tab active" onclick="showTab('record')">
+            <div style="font-size: 28px; margin-bottom: 8px;">💳</div>
+            <div style="font-weight: 600; font-size: 16px;">Record Payment</div>
+            <div style="font-size: 13px; color: #6b7280; margin-top: 4px;">Add new transaction</div>
+        </div>
+        <div class="payment-tab" onclick="showTab('paid')">
+            <div style="font-size: 28px; margin-bottom: 8px;">✅</div>
+            <div style="font-weight: 600; font-size: 16px;">Paid Members</div>
+            <div style="font-size: 13px; color: #10b981; margin-top: 4px;">{{ paid_members|length }} this month</div>
+        </div>
+        <div class="payment-tab" onclick="showTab('unpaid')">
+            <div style="font-size: 28px; margin-bottom: 8px;">❌</div>
+            <div style="font-weight: 600; font-size: 16px;">Unpaid Members</div>
+            <div style="font-size: 13px; color: #ef4444; margin-top: 4px;">{{ unpaid_members|length }} pending</div>
+        </div>
+        <div class="payment-tab" onclick="showTab('history')">
+            <div style="font-size: 28px; margin-bottom: 8px;">📜</div>
+            <div style="font-weight: 600; font-size: 16px;">Payment History</div>
+            <div style="font-size: 13px; color: #6b7280; margin-top: 4px;">{{ fees|length }} total</div>
+        </div>
+    </div>
+
+    <!-- Record Payment Form -->
+    <div id="record-tab" class="tab-content">
+        <div class="payment-form-card">
+            <h2 style="margin-bottom: 24px; display: flex; align-items: center; gap: 12px;">
+                <span style="font-size: 32px;">💳</span>
+                Record New Payment
+            </h2>
+
+            <form action="/fees" method="POST">
+                <div class="form-group">
+                    <label for="member_id">
+                        <span style="color: #ef4444;">*</span> Select Member
+                    </label>
+                    <select name="member_id" id="member_id" class="form-input" required>
+                        <option value="">Choose a member...</option>
+                        {% for member in members %}
+                        <option value="{{ member.id }}">
+                            {{ member.name }} - {{ member.phone }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                    <div class="form-group">
+                        <label for="amount">
+                            <span style="color: #ef4444;">*</span> Amount (Rs)
+                        </label>
+                        <input type="number" name="amount" id="amount" class="form-input" placeholder="e.g., 3000"
+                            required min="1">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="month">
+                            <span style="color: #ef4444;">*</span> Month
+                        </label>
+                        <input type="month" name="month" id="month" class="form-input" required>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="payment_method">Payment Method</label>
+                    <select name="payment_method" id="payment_method" class="form-input">
+                        <option value="cash">💵 Cash</option>
+                        <option value="online">💳 Online Transfer</option>
+                        <option value="jazzcash">📱 JazzCash</option>
+                        <option value="easypaisa">📱 EasyPaisa</option>
+                        <option value="card">💳 Debit/Credit Card</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="notes">Notes (Optional)</label>
+                    <textarea name="notes" id="notes" class="form-input" rows="3"
+                        placeholder="Add any additional notes..."></textarea>
+                </div>
+
+                <button type="submit" class="btn-primary" style="width: 100%; margin-top: 20px;">
+                    <span style="font-size: 20px; margin-right: 8px;">✓</span>
+                    Record Payment
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Paid Members Tab -->
+    <div id="paid-tab" class="tab-content" style="display: none;">
+        <div class="payment-form-card">
+            <h2 style="margin-bottom: 24px; display: flex; align-items: center; gap: 12px; color: #10b981;">
+                <span style="font-size: 32px;">✅</span>
+                Paid Members ({{ current_month }})
+            </h2>
+            {% if paid_members %}
+            <div style="display: grid; gap: 1rem;">
+                {% for member in paid_members %}
+                <div
+                    style="padding: 1.5rem; background: linear-gradient(135deg, rgba(16, 185, 129, 0.05), rgba(16, 185, 129, 0.02)); border-left: 4px solid #10b981; border-radius: 12px; display: flex; justify-content: space-between; align-items: center;">
+                    <div style="flex: 1;">
+                        <div style="font-weight: 700; font-size: 1.1rem; color: #1f2937; margin-bottom: 0.25rem;">{{
+                            member.name }}</div>
+                        <div style="font-size: 0.9rem; color: #6b7280;">📱 {{ member.phone }}</div>
+                    </div>
+                    <div style="text-align: right;">
+                        <span
+                            style="background: #10b981; color: white; padding: 0.5rem 1rem; border-radius: 8px; font-weight: 600; font-size: 0.9rem;">✓
+                            PAID</span>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="empty-state">
+                <div class="empty-state-icon">😔</div>
+                <h3 style="color: #6b7280;">No Paid Members This Month</h3>
+                <p style="color: #9ca3af;">Record payments to see them here!</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Unpaid Members Tab -->
+    <div id="unpaid-tab" class="tab-content" style="display: none;">
+        <div class="payment-form-card">
+            <h2 style="margin-bottom: 24px; display: flex; align-items: center; gap: 12px; color: #ef4444;">
+                <span style="font-size: 32px;">❌</span>
+                Unpaid Members ({{ current_month }})
+            </h2>
+            {% if unpaid_members %}
+            <div style="display: grid; gap: 1rem;">
+                {% for member in unpaid_members %}
+                <div
+                    style="padding: 1.5rem; background: linear-gradient(135deg, rgba(239, 68, 68, 0.05), rgba(239, 68, 68, 0.02)); border-left: 4px solid #ef4444; border-radius: 12px; display: flex; justify-content: space-between; align-items: center;">
+                    <div style="flex: 1;">
+                        <div style="font-weight: 700; font-size: 1.1rem; color: #1f2937; margin-bottom: 0.25rem;">{{
+                            member.name }}</div>
+                        <div style="font-size: 0.9rem; color: #6b7280;">📱 {{ member.phone }}</div>
+                    </div>
+                    <div style="text-align: right;">
+                        <span
+                            style="background: #ef4444; color: white; padding: 0.5rem 1rem; border-radius: 8px; font-weight: 600; font-size: 0.9rem;">❌
+                            UNPAID</span>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="empty-state">
+                <div class="empty-state-icon">🎉</div>
+                <h3 style="color: #10b981;">All Members Paid!</h3>
+                <p style="color: #9ca3af;">Great job collecting this month's fees!</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Payment History Tab -->
+    <div id="history-tab" class="tab-content" style="display: none;">
+        <div class="payment-form-card">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+                <h2 style="margin: 0; display: flex; align-items: center; gap: 12px;">
+                    <span style="font-size: 32px;">📜</span>
+                    Payment History
+                </h2>
+                <div style="text-align: right;">
+                    <div style="font-size: 0.9rem; color: #6b7280;">Total Collected</div>
+                    <div style="font-size: 1.5rem; font-weight: 800; color: #10b981;">{{ gym_details.currency or 'Rs' }}
+                        {{ total_collected }}</div>
+                </div>
+            </div>
+
+            {% if fees %}
+            <div style="display: grid; gap: 0.75rem;">
+                {% for fee in fees %}
+                <div
+                    style="padding: 1.25rem; background: rgba(139, 92, 246, 0.03); border-left: 3px solid var(--primary); border-radius: 12px; display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; gap: 1rem; align-items: center;">
+                    <div>
+                        <div style="font-weight: 700; color: #1f2937; margin-bottom: 0.25rem;">{{ fee.member.name }}
+                        </div>
+                        <div style="font-size: 0.85rem; color: #6b7280;">📱 {{ fee.member.phone }}</div>
+                    </div>
+                    <div>
+                        <div
+                            style="font-size: 0.75rem; color: #6b7280; text-transform: uppercase; letter-spacing: 0.5px;">
+                            Amount</div>
+                        <div style="font-weight: 700; color: #10b981; font-size: 1.1rem;">{{ gym_details.currency or
+                            'Rs' }} {{ fee.amount }}</div>
+                    </div>
+                    <div>
+                        <div
+                            style="font-size: 0.75rem; color: #6b7280; text-transform: uppercase; letter-spacing: 0.5px;">
+                            Month</div>
+                        <div style="font-weight: 600; color: #1f2937;">{{ fee.month }}</div>
+                    </div>
+                    <div style="text-align: right;">
+                        <div
+                            style="font-size: 0.75rem; color: #6b7280; text-transform: uppercase; letter-spacing: 0.5px;">
+                            Paid On</div>
+                        <div style="font-weight: 600; color: #1f2937; font-size: 0.9rem;">{{ fee.paid_date.strftime('%d
+                            %b %Y') }}</div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="empty-state">
+                <div class="empty-state-icon">📭</div>
+                <h3 style="color: #6b7280; margin-bottom: 8px;">No Payment History</h3>
+                <p style="color: #9ca3af;">Record your first payment to see it here!</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<script>
+    function showTab(tabName) {
+        // Hide all tabs
+        document.querySelectorAll('.tab-content').forEach(tab => {
+            tab.style.display = 'none';
+        });
+
+        // Remove active class from all tabs
+        document.querySelectorAll('.payment-tab').forEach(tab => {
+            tab.classList.remove('active');
+        });
+
+        // Show selected tab and activate corresponding button
+        const tabs = document.querySelectorAll('.payment-tab');
+        if (tabName === 'record') {
+            document.getElementById('record-tab').style.display = 'block';
+            tabs[0].classList.add('active');
+        } else if (tabName === 'paid') {
+            document.getElementById('paid-tab').style.display = 'block';
+            tabs[1].classList.add('active');
+        } else if (tabName === 'unpaid') {
+            document.getElementById('unpaid-tab').style.display = 'block';
+            tabs[2].classList.add('active');
+        } else if (tabName === 'history') {
+            document.getElementById('history-tab').style.display = 'block';
+            tabs[3].classList.add('active');
+        }
+    }
+
+    // Set current month as default
+    document.addEventListener('DOMContentLoaded', function () {
+        const monthInput = document.getElementById('month');
+        const now = new Date();
+        const year = now.getFullYear();
+        const month = String(now.getMonth() + 1).padStart(2, '0');
+        monthInput.value = `${year}-${month}`;
+    });
+</script>
+
+{% endblock %}

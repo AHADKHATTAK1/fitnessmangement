@@ -1,0 +1,190 @@
+{% extends "base.html" %}
+
+{% block title %}Settings - Gym Manager{% endblock %}
+
+{% block content %}
+<h1
+    style="font-size: 3rem; font-weight: 800; margin-bottom: 2.5rem; text-align: center; background: linear-gradient(135deg, #fff 0%, var(--primary) 50%, var(--secondary) 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; filter: drop-shadow(0 0 20px rgba(139, 92, 246, 0.5));">
+    ⚙️ Gym Settings</h1>
+
+<!-- NEW: Subscription Status Card -->
+<div class="card"
+    style="max-width: 600px; margin: 0 auto 2rem auto; border: 1px solid var(--border); background: linear-gradient(145deg, rgba(15, 23, 42, 0.8), rgba(15, 23, 42, 0.4));">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+        <h2 style="margin: 0; font-size: 1.25rem; display: flex; align-items: center; gap: 0.5rem;">
+            💎 My Subscription
+        </h2>
+        {% if subscription.status == 'Active' %}
+        <span class="badge"
+            style="background: rgba(16, 185, 129, 0.2); color: var(--success); border: 1px solid var(--success);">
+            ✅ Active
+        </span>
+        {% else %}
+        <span class="badge"
+            style="background: rgba(239, 68, 68, 0.2); color: var(--error); border: 1px solid var(--error);">
+            ❌ Expired
+        </span>
+        {% endif %}
+    </div>
+
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+        <div style="background: rgba(255,255,255,0.05); padding: 1rem; border-radius: 8px;">
+            <div style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.2rem;">Current Plan</div>
+            <div style="font-size: 1.1rem; font-weight: 600;">Standard {{ subscription.market }}</div>
+        </div>
+        <div style="background: rgba(255,255,255,0.05); padding: 1rem; border-radius: 8px;">
+            <div style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.2rem;">Valid Until</div>
+            <div style="font-size: 1.1rem; font-weight: 600;">
+                {{ subscription.expiry }}
+                {% if subscription.days_left < 5 and subscription.days_left> 0 %}
+                    <span style="font-size: 0.7rem; color: var(--warning);">({{ subscription.days_left }} days
+                        left)</span>
+                    {% endif %}
+            </div>
+        </div>
+    </div>
+
+    {% if subscription.status != 'Active' or subscription.days_left < 5 %} <div style="margin-top: 1.5rem;">
+        <a href="{{ url_for('subscription') }}" class="btn btn-primary" style="width: 100%; justify-content: center;">
+            🔄 Renew / Upgrade Plan
+        </a>
+</div>
+{% endif %}
+</div>
+
+<div class="card" style="max-width: 600px; margin: 0 auto;">
+    <form method="POST" enctype="multipart/form-data">
+        <div class="form-group">
+            <label for="gym_name">Gym Name</label>
+            <input type="text" id="gym_name" name="gym_name" value="{{ details.name }}" required
+                placeholder="Enter your gym name">
+        </div>
+
+        <div class="form-group">
+            <label>Currency Symbol</label>
+            <select name="currency"
+                style="width: 100%; padding: 0.8rem; background: var(--bg-card); color: var(--text-main); border: 1px solid var(--border); border-radius: 8px;">
+                <option value="$" {% if details.currency=='$' %}selected{% endif %}>$ (USD)</option>
+                <option value="Rs" {% if details.currency=='Rs' %}selected{% endif %}>Rs (PKR)</option>
+                <option value="€" {% if details.currency=='€' %}selected{% endif %}>€ (EUR)</option>
+                <option value="£" {% if details.currency=='£' %}selected{% endif %}>£ (GBP)</option>
+                <option value="¥" {% if details.currency=='¥' %}selected{% endif %}>¥ (JPY)</option>
+                <option value="AED" {% if details.currency=='AED' %}selected{% endif %}>AED</option>
+                <option value="INR" {% if details.currency=='INR' %}selected{% endif %}>INR</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label>Gym Logo</label>
+            {% if details.logo %}
+            <div style="margin-bottom: 1rem;">
+                <img src="{{ url_for('static', filename='uploads/' + details.logo) }}" alt="Gym Logo"
+                    style="max-width: 200px; border-radius: 8px;">
+            </div>
+            {% endif %}
+
+            <label for="gym_logo" class="btn btn-secondary" style="cursor: pointer; margin: 0; display: inline-block;">
+                📁 Upload New Logo
+            </label>
+            <input type="file" id="gym_logo" name="gym_logo" accept="image/*" style="display: none;"
+                onchange="document.getElementById('file-name').textContent = this.files[0].name">
+            <span id="file-name" style="margin-left: 1rem; color: var(--text-muted);"></span>
+        </div>
+
+        <button type="submit" class="btn btn-success" style="width: 100%; margin-top: 1.5rem;">
+            💾 Save Settings
+        </button>
+    </form>
+    </form>
+</div>
+
+<div class="card" style="max-width: 600px; margin: 2rem auto; border-left: 4px solid var(--warning);">
+    <h2 style="margin-bottom: 1rem;">🔄 Restore Data (Backup)</h2>
+    <p style="color: var(--text-muted); margin-bottom: 1rem;">
+        Upload your gym data file (<code>.json</code>) to restore all members, fees, and history.
+        <br><strong>⚠️ Warning:</strong> This will replace all current data!
+    </p>
+
+    <form action="{{ url_for('restore_backup') }}" method="POST" enctype="multipart/form-data">
+        <div class="form-group">
+            <label for="backup_file" class="btn btn-secondary" style="cursor: pointer; display: inline-block;">
+                📂 Select Backup File
+            </label>
+            <input type="file" id="backup_file" name="backup_file" accept=".json" required style="display: none;"
+                onchange="document.getElementById('backup-name').textContent = this.files[0].name">
+            <span id="backup-name" style="margin-left: 1rem; color: var(--text-muted);"></span>
+        </div>
+
+        <button type="submit" class="btn btn-warning" style="width: 100%; margin-top: 1rem;"
+            onclick="return confirm('⚠️ Are you sure? This will OVERWRITE all current data permanently!')">
+            🔄 Restore Data Now
+        </button>
+    </form>
+</div>
+
+
+<div class="card" style="max-width: 600px; margin: 2rem auto; border-left: 4px solid var(--primary);">
+    <h2 style="margin-bottom: 1rem;">🧹 Data Cleanup</h2>
+    <p style="color: var(--text-muted); margin-bottom: 1rem;">
+        Automatically find and merge duplicate members (same name & phone).
+        <br>It keeps the oldest member and moves all fees/attendance to them.
+    </p>
+
+    <form action="{{ url_for('merge_duplicates') }}" method="POST">
+        <button type="submit" class="btn btn-primary" style="width: 100%;"
+            onclick="return confirm('⚠️ confirm merge? This will combine duplicates and cannot be undone.')">
+            🔍 Scan & Merge Duplicates
+        </button>
+    </form>
+</div>
+
+<div class="card" style="max-width: 600px; margin: 2rem auto; border-left: 4px solid var(--error);">
+    <h2 style="margin-bottom: 1rem;">🗑️ Reset All Data</h2>
+    <p style="color: var(--text-muted); margin-bottom: 1rem;">
+        <strong>⚠️ DANGER ZONE:</strong> This will delete ALL members, fees, and attendance records permanently.
+        <br>This cannot be undone!
+    </p>
+
+    <form action="{{ url_for('reset_admin') }}" method="GET">
+        <button type="submit" class="btn btn-danger" style="width: 100%;"
+            onclick="return confirm('⚠️⚠️⚠️ FINAL WARNING!\n\nThis will DELETE EVERYTHING:\n• All Members\n• All Fees\n• All Attendance Records\n\nAre you ABSOLUTELY SURE?')">
+            🗑️ Reset All Data
+        </button>
+    </form>
+</div>
+
+<div class="card" style="max-width: 800px; margin: 2rem auto;">
+    <h2 style="margin-bottom: 1.5rem; color: var(--primary);">🧾 Subscription / Billing History</h2>
+    {% if payments %}
+    <table>
+        <thead>
+            <tr>
+                <th>Date</th>
+                <th>Amount</th>
+                <th>Method</th>
+                <th>Status</th>
+                <th>Invoice</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for p in payments %}
+            <tr>
+                <td>{{ p.date }}</td>
+                <td>{{ details.currency or '$' }}{{ p.amount }}</td>
+                <td>{{ p.method }}</td>
+                <td><span class="badge paid">{{ p.status }}</span></td>
+                <td>
+                    <button class="btn btn-secondary" style="padding: 0.25rem 0.5rem; font-size: 0.8rem;"
+                        onclick="alert('Invoice download simulated.')">
+                        📄 Download
+                    </button>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <p style="color: var(--text-muted); text-align: center; padding: 2rem;">No billing history found.</p>
+    {% endif %}
+</div>
+{% endblock %}

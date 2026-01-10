@@ -1,0 +1,5 @@
+# Force Rebuild Trigger
+# Updated: 2025-12-29 15:33 PKT
+# Reason: Render cache - force clean deploy
+# Status: Tier fields REMOVED from models.py
+# Commit: Emergency rollback deployed

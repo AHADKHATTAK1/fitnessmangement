@@ -1,0 +1,42 @@
+# Production dependencies for Render.com deployment
+Flask==3.0.0
+Flask-Compress==1.14
+gunicorn==21.2.0
+Werkzeug==3.0.1
+python-dotenv==1.0.0
+
+# Image processing
+Pillow==10.2.0
+qrcode[pil]==7.4.2
+
+# PDF generation
+reportlab==4.0.9
+
+# HTTP requests
+requests==2.31.0
+
+# Payments
+stripe>=11.0.0
+
+# Google APIs
+google-auth==2.26.2
+google-auth-oauthlib==1.2.0
+google-api-python-client==2.114.0
+
+# Database (PostgreSQL)
+psycopg2-binary==2.9.9
+SQLAlchemy==2.0.23
+
+# Data processing  
+pandas==2.1.4
+openpyxl==3.1.2
+
+# Task Automation
+APScheduler==3.10.4
+
+# Machine Learning (AI Churn Prediction)
+scikit-learn==1.3.2
+joblib==1.3.2
+
+# Security (2FA)
+pyotp==2.9.0

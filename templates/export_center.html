@@ -1,0 +1,114 @@
+{% extends "base.html" %}
+
+{% block title %}Export Center - Gym Manager{% endblock %}
+
+{% block content %}
+<div style="max-width: 1200px; margin: 0 auto; padding: 2rem;">
+    <h1
+        style="font-size: 2.5rem; font-weight: 700; margin-bottom: 2rem; text-align: center; background: linear-gradient(135deg, var(--primary), var(--secondary)); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
+        📊 Export Center
+    </h1>
+
+    <p style="text-align: center; color: var(--text-muted); margin-bottom: 3rem;">
+        Download comprehensive reports and data exports for your gym management
+    </p>
+
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 2rem;">
+
+        <!-- Complete Members Database -->
+        <div class="card" style="padding: 2rem; text-align: center; transition: transform 0.2s;">
+            <div style="font-size: 3rem; margin-bottom: 1rem;">👥</div>
+            <h2 style="font-size: 1.5rem; margin-bottom: 1rem;">Complete Members</h2>
+            <p style="color: var(--text-muted); margin-bottom: 1.5rem; font-size: 0.9rem;">
+                Full member database with personal info, payment history, and membership details
+            </p>
+            <a href="{{ url_for('export_members_complete') }}" class="btn btn-primary"
+                style="width: 100%; justify-content: center;">
+                📥 Download Excel
+            </a>
+        </div>
+
+        <!-- Revenue Report -->
+        <div class="card" style="padding: 2rem; text-align: center; transition: transform 0.2s;">
+            <div style="font-size: 3rem; margin-bottom: 1rem;">💰</div>
+            <h2 style="font-size: 1.5rem; margin-bottom: 1rem;">Revenue Report</h2>
+            <p style="color: var(--text-muted); margin-bottom: 1.5rem; font-size: 0.9rem;">
+                Detailed revenue breakdown by month, member type, and payment method
+            </p>
+            <a href="{{ url_for('export_revenue_report') }}" class="btn btn-success"
+                style="width: 100%; justify-content: center;">
+                📥 Download Excel
+            </a>
+        </div>
+
+        <!-- Unpaid Members -->
+        <div class="card" style="padding: 2rem; text-align: center; transition: transform 0.2s;">
+            <div style="font-size: 3rem; margin-bottom: 1rem;">⚠️</div>
+            <h2 style="font-size: 1.5rem; margin-bottom: 1rem;">Unpaid Members</h2>
+            <p style="color: var(--text-muted); margin-bottom: 1.5rem; font-size: 0.9rem;">
+                List of members with pending payments and overdue amounts
+            </p>
+            <a href="{{ url_for('export_unpaid_members') }}" class="btn"
+                style="width: 100%; justify-content: center; background: var(--warning); color: white;">
+                📥 Download Excel
+            </a>
+        </div>
+
+        <!-- Attendance Analysis (Coming Soon) -->
+        <div class="card" style="padding: 2rem; text-align: center; opacity: 0.6;">
+            <div style="font-size: 3rem; margin-bottom: 1rem;">📈</div>
+            <h2 style="font-size: 1.5rem; margin-bottom: 1rem;">Attendance Analysis</h2>
+            <p style="color: var(--text-muted); margin-bottom: 1.5rem; font-size: 0.9rem;">
+                Member check-in frequency and engagement statistics
+            </p>
+            <button class="btn" disabled style="width: 100%; justify-content: center; opacity: 0.5;">
+                🔜 Coming Soon
+            </button>
+        </div>
+
+        <!-- Quick Dashboard Export -->
+        <div class="card" style="padding: 2rem; text-align: center; transition: transform 0.2s;">
+            <div style="font-size: 3rem; margin-bottom: 1rem;">⚡</div>
+            <h2 style="font-size: 1.5rem; margin-bottom: 1rem;">Quick Export</h2>
+            <p style="color: var(--text-muted); margin-bottom: 1.5rem; font-size: 0.9rem;">
+                Basic member list with current month payment status
+            </p>
+            <a href="{{ url_for('download_excel') }}" class="btn"
+                style="width: 100%; justify-content: center; background: var(--secondary); color: white;">
+                📥 Download Excel
+            </a>
+        </div>
+
+        <!-- Custom Report Builder (Coming Soon) -->
+        <div class="card" style="padding: 2rem; text-align: center; opacity: 0.6;">
+            <div style="font-size: 3rem; margin-bottom: 1rem;">🎯</div>
+            <h2 style="font-size: 1.5rem; margin-bottom: 1rem;">Custom Report</h2>
+            <p style="color: var(--text-muted); margin-bottom: 1.5rem; font-size: 0.9rem;">
+                Build custom reports with date ranges and filters
+            </p>
+            <button class="btn" disabled style="width: 100%; justify-content: center; opacity: 0.5;">
+                🔜 Coming Soon
+            </button>
+        </div>
+
+    </div>
+
+    <div class="card"
+        style="margin-top: 3rem; padding: 1.5rem; background: rgba(139, 92, 246, 0.1); border: 1px solid var(--primary);">
+        <h3 style="margin-bottom: 1rem;">💡 Pro Tips</h3>
+        <ul style="list-style: none; padding: 0; margin: 0;">
+            <li style="margin-bottom: 0.5rem;">✅ All exports are professionally formatted Excel files</li>
+            <li style="margin-bottom: 0.5rem;">✅ Column widths auto-adjusted for readability</li>
+            <li style="margin-bottom: 0.5rem;">✅ Headers are styled with your gym colors</li>
+            <li>✅ Files include timestamp in filename for easy organization</li>
+        </ul>
+    </div>
+</div>
+
+<style>
+    .card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 12px 24px rgba(0, 0, 0, 0.15);
+    }
+</style>
+{% endblock %}
