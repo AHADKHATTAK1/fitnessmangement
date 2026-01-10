@@ -5,7 +5,8 @@
             "src": "app.py",
             "use": "@vercel/python",
             "config": {
-                "maxLambdaSize": "15mb"
+                "maxLambdaSize": "50mb",
+                "runtime": "python3.12"
             }
         }
     ],
@@ -17,5 +18,11 @@
     ],
     "env": {
         "FLASK_APP": "app.py"
+    },
+    "functions": {
+        "app.py": {
+            "memory": 1024,
+            "maxDuration": 10
+        }
     }
 }
