@@ -121,13 +121,21 @@ def run_scheduled_automations():
         finally:
             session.close()
 
-# Start the scheduler
-scheduler = BackgroundScheduler(daemon=True)
-scheduler.add_job(func=run_scheduled_summaries, trigger="cron", hour=23, minute=59)
-scheduler.add_job(func=run_scheduled_automations, trigger="cron", hour=9, minute=0)
-scheduler.start()
 
-print("⏰ Background Scheduler started successfully (Summaries @ 23:59, Automations @ 09:00)")
+# Start the scheduler (DISABLED FOR VERCEL SERVERLESS)
+try:
+    # Only start scheduler if not in serverless environment
+    if os.getenv('VERCEL') != '1':
+        scheduler = BackgroundScheduler(daemon=True)
+        scheduler.add_job(func=run_scheduled_summaries, trigger="cron", hour=23, minute=59)
+        scheduler.add_job(func=run_scheduled_automations, trigger="cron", hour=9, minute=0)
+        scheduler.start()
+        print("⏰ Background Scheduler started successfully (Summaries @ 23:59, Automations @ 09:00)")
+    else:
+        print("ℹ️  Running in Vercel serverless - Background scheduler disabled")
+except Exception as e:
+    print(f"⚠️  Scheduler initialization skipped: {str(e)}")
+
 
 def get_gym():
     """Get GymManager instance for logged-in user"""
