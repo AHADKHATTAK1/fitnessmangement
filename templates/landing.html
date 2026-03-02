@@ -84,6 +84,38 @@
         margin-bottom: 0.75rem;
     }
 
+    .landing-trust {
+        margin-top: 1.25rem;
+    }
+
+    .trust-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        gap: 1rem;
+    }
+
+    .trust-value {
+        font-size: 1.6rem;
+        font-weight: 700;
+        margin-bottom: 0.35rem;
+    }
+
+    .trust-label {
+        color: var(--text-muted);
+        font-size: 0.9rem;
+    }
+
+    .landing-cta-strip {
+        margin-top: 1.25rem;
+        text-align: center;
+    }
+
+    .landing-cta-text {
+        color: var(--text-muted);
+        margin-top: 0.5rem;
+        font-size: 0.9rem;
+    }
+
     .landing-footer {
         text-align: center;
         margin-top: 1.5rem;
@@ -147,6 +179,33 @@
             <p class="pricing-note">Unlimited scale with premium support.</p>
         </article>
     </div>
+</section>
+
+<section class="landing-trust">
+    <h2 class="landing-section-title">Built for Real Gym Operations</h2>
+    <div class="trust-grid">
+        <article class="card">
+            <div class="trust-value">24/7</div>
+            <div class="trust-label">Cloud access across devices</div>
+        </article>
+        <article class="card">
+            <div class="trust-value">3-in-1</div>
+            <div class="trust-label">Members, billing, and reports in one tool</div>
+        </article>
+        <article class="card">
+            <div class="trust-value">Fast</div>
+            <div class="trust-label">Setup in minutes with guided workflows</div>
+        </article>
+    </div>
+</section>
+
+<section class="card landing-cta-strip">
+    <h2 class="landing-section-title">Ready to Run Your Gym Like a SaaS Business?</h2>
+    <div class="landing-actions">
+        <a class="btn" href="{{ url_for('auth') }}">Create Account</a>
+        <a class="btn btn-secondary" href="{{ url_for('subscription_plans') }}">Compare Plans</a>
+    </div>
+    <p class="landing-cta-text">Secure sessions, subscription tiers, billing portal, and health monitoring included.</p>
 </section>
 
 <div class="landing-footer">
