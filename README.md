@@ -127,6 +127,28 @@ ADMIN_EMAILS=admin@gym.com
 - Use `/subscription_plans` for upgrade flow and `/create_billing_portal_session` for customer self-service billing.
 - Keep `SESSION_COOKIE_SECURE=1` in production (HTTPS).
 
+## Production publish checklist
+
+- Set strong secrets and runtime mode:
+	- `FLASK_SECRET_KEY` to a long random value
+	- `SESSION_COOKIE_SECURE=1` behind HTTPS
+	- `DATABASE_URL` to production Postgres (non-placeholder)
+- Configure billing/webhooks:
+	- `STRIPE_PUBLIC_KEY`, `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`
+	- Verify `/stripe/webhook` is reachable by Stripe
+- Configure email notifications (staff share/revoke/resend + password reset):
+	- `SMTP_SERVER`, `SMTP_PORT`, `SMTP_EMAIL`, `SMTP_PASSWORD`
+- Configure optional auth/admin:
+	- `GOOGLE_CLIENT_ID`
+	- `ADMIN_EMAILS`
+- Use production server process:
+	- `Procfile` included: `web: gunicorn --bind 0.0.0.0:$PORT app:app`
+	- `gunicorn` is included in `requirements.txt`
+- Verify core routes after deploy:
+	- `/auth`, `/dashboard`, `/settings`, `/subscription_plans`, `/webhooks`
+
+Note: local VS Code task output may show `exit code: 1` after stopping/restarting the task terminal; startup is healthy when you see `Running on http://127.0.0.1:5000`.
+
 ## Reproducible setup
 
 This repository includes a pinned `requirements.txt` to keep local and deployment environments consistent.
