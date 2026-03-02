@@ -6,7 +6,7 @@
 <style>
     .landing-hero {
         text-align: center;
-        padding: 2.5rem 1rem 1rem;
+        padding: 2.5rem 1rem 1.25rem;
     }
 
     .landing-title {
@@ -28,14 +28,24 @@
         gap: 0.75rem;
         justify-content: center;
         flex-wrap: wrap;
-        margin-bottom: 1rem;
+        margin: 1.25rem 0 0.5rem;
+    }
+
+    .landing-badge {
+        display: inline-block;
+        font-size: 0.8rem;
+        color: var(--text-muted);
+        border: 1px solid var(--border);
+        border-radius: 999px;
+        padding: 0.35rem 0.75rem;
+        margin-bottom: 0.85rem;
     }
 
     .landing-grid {
         display: grid;
         grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
         gap: 1rem;
-        margin-top: 1rem;
+        margin-top: 1.25rem;
     }
 
     .landing-card-title {
@@ -48,6 +58,32 @@
         font-size: 0.95rem;
     }
 
+    .landing-pricing {
+        margin-top: 1.25rem;
+    }
+
+    .pricing-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+        gap: 1rem;
+    }
+
+    .pricing-price {
+        font-size: 1.5rem;
+        font-weight: 700;
+        margin-bottom: 0.4rem;
+    }
+
+    .pricing-note {
+        color: var(--text-muted);
+        font-size: 0.9rem;
+    }
+
+    .landing-section-title {
+        text-align: center;
+        margin-bottom: 0.75rem;
+    }
+
     .landing-footer {
         text-align: center;
         margin-top: 1.5rem;
@@ -57,38 +93,63 @@
 </style>
 
 <section class="card landing-hero">
+    <div class="landing-badge">SaaS Tool for Modern Gyms</div>
     <h1 class="landing-title">Professional Gym Management Website</h1>
     <p class="landing-subtitle">
-        Manage members, payments, reports, webhooks, and subscription billing from one modern SaaS platform.
+        Launch and scale your gym operations with a complete SaaS platform for member management, billing,
+        analytics, and automation.
     </p>
     <div class="landing-actions">
-        <a class="btn" href="{{ url_for('auth') }}">Get Started</a>
+        <a class="btn" href="{{ url_for('auth') }}">Start Free</a>
         <a class="btn btn-secondary" href="{{ url_for('subscription_plans') }}">View Pricing</a>
-        <a class="btn btn-success" href="{{ url_for('healthz') }}">System Status</a>
+        <a class="btn btn-success" href="{{ url_for('auth') }}">Login</a>
     </div>
 </section>
 
 <section class="landing-grid">
     <article class="card">
-        <h2 class="landing-card-title">Member Management</h2>
+        <h2 class="landing-card-title">Member Lifecycle</h2>
         <p class="landing-card-text">Add, edit, and track members with attendance, measurements, and profile history.
         </p>
     </article>
 
     <article class="card">
-        <h2 class="landing-card-title">Billing & Subscriptions</h2>
+        <h2 class="landing-card-title">Billing & SaaS Plans</h2>
         <p class="landing-card-text">Use tiered plans, secure payments, and billing portal workflows for SaaS
             operations.</p>
     </article>
 
     <article class="card">
-        <h2 class="landing-card-title">Reports & Analytics</h2>
+        <h2 class="landing-card-title">Reports & Automation</h2>
         <p class="landing-card-text">Monitor revenue, unpaid dues, growth trends, and actionable gym performance
             insights.</p>
     </article>
 </section>
 
+<section class="landing-pricing">
+    <h2 class="landing-section-title">Simple SaaS Pricing</h2>
+    <div class="pricing-grid">
+        <article class="card">
+            <h3 class="landing-card-title">Starter</h3>
+            <div class="pricing-price">$49/mo</div>
+            <p class="pricing-note">Perfect for a single growing gym.</p>
+        </article>
+
+        <article class="card">
+            <h3 class="landing-card-title">Professional</h3>
+            <div class="pricing-price">$149/mo</div>
+            <p class="pricing-note">Advanced features for multi-gym operations.</p>
+        </article>
+
+        <article class="card">
+            <h3 class="landing-card-title">Enterprise</h3>
+            <div class="pricing-price">Custom</div>
+            <p class="pricing-note">Unlimited scale with premium support.</p>
+        </article>
+    </div>
+</section>
+
 <div class="landing-footer">
-    Ready for production deployment with health checks, secure sessions, and webhook support.
+    Ready for production deployment with secure sessions, billing portal, and health monitoring.
 </div>
 {% endblock %}
