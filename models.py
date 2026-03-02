@@ -140,6 +140,17 @@ class BodyMeasurement(Base):
     # Relationships
     member = relationship('Member', back_populates='measurements')
 
+
+class StaffAccess(Base):
+    __tablename__ = 'staff_access'
+
+    id = Column(Integer, primary_key=True)
+    staff_user_id = Column(Integer, ForeignKey('users.id'), nullable=False, index=True)
+    owner_user_id = Column(Integer, ForeignKey('users.id'), nullable=False, index=True)
+    gym_id = Column(Integer, ForeignKey('gyms.id'), nullable=False, index=True)
+    is_active = Column(Boolean, default=True, index=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
 # Database connection helper
 def _is_placeholder_database_url(db_url: str) -> bool:
     """Detect common template/placeholder DATABASE_URL values."""

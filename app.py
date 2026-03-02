@@ -1,7 +1,7 @@
 from flask import Flask, render_template, request, redirect, url_for, session, flash, send_file, jsonify
 from flask_compress import Compress
 from werkzeug.utils import secure_filename
-from models import Gym, Member, Fee, MemberNote, User, get_session
+from models import Gym, Member, Fee, MemberNote, User, StaffAccess, get_session
 from gym_manager import GymManager
 from auth_manager import AuthManager
 from payment_manager import PaymentManager
@@ -22,6 +22,7 @@ from google_wallet import GymWalletPass
 import stripe
 import secrets
 import traceback
+import threading
 from subscription_tiers import TIERS, TIERS_PAKISTAN, TierManager
 from tier_routes import init_upgrade_routes
 from automation_manager import AutomationManager
@@ -55,6 +56,15 @@ except Exception as e:
 
 app = Flask(__name__)
 
+# ==================== SECURITY HARDENING ====================
+_rate_limit_lock = threading.Lock()
+_rate_limit_attempts = {}
+
+LOGIN_RATE_WINDOW_SECONDS = 15 * 60
+LOGIN_RATE_MAX_ATTEMPTS = 10
+RESET_RATE_WINDOW_SECONDS = 15 * 60
+RESET_RATE_MAX_ATTEMPTS = 8
+
 
 @app.template_filter('from_json')
 def from_json_filter(value):
@@ -76,6 +86,11 @@ if secret_key == 'dev-secret-key-change-in-production':
 else:
     print("✅ Custom secret key configured")
 app.secret_key = secret_key
+
+app.config['SESSION_COOKIE_HTTPONLY'] = True
+app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
+app.config['SESSION_COOKIE_SECURE'] = os.getenv('SESSION_COOKIE_SECURE', '0') == '1'
+app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(hours=12)
 
 # Enable compression for all responses
 Compress(app)
@@ -162,7 +177,27 @@ def get_gym():
     if 'logged_in' not in session:
         return None
     username = session.get('username')
-    return GymManager(username)  # Now uses email directly
+
+    if auth_manager.legacy or not getattr(auth_manager, 'session', None):
+        return GymManager(username)
+
+    user = auth_manager.session.query(User).filter_by(email=username).first()
+    if not user:
+        return None
+
+    if (user.role or '').lower() == 'staff':
+        access = auth_manager.session.query(StaffAccess).filter_by(
+            staff_user_id=user.id,
+            is_active=True
+        ).order_by(StaffAccess.created_at.desc()).first()
+
+        if access:
+            owner = auth_manager.session.query(User).filter_by(id=access.owner_user_id).first()
+            if owner:
+                return GymManager(owner.email)
+        return None
+
+    return GymManager(username)
 
 
 def _get_month_floor(gym, default_year=1970):
@@ -634,6 +669,37 @@ def inject_gym_details():
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
+
+def _client_ip():
+    forwarded = request.headers.get('X-Forwarded-For', '').strip()
+    if forwarded:
+        return forwarded.split(',')[0].strip()
+    return request.remote_addr or 'unknown'
+
+
+def _is_rate_limited(key, max_attempts, window_seconds):
+    now = datetime.utcnow()
+    window_start = now - timedelta(seconds=window_seconds)
+    with _rate_limit_lock:
+        attempts = _rate_limit_attempts.get(key, [])
+        attempts = [t for t in attempts if t >= window_start]
+        _rate_limit_attempts[key] = attempts
+        return len(attempts) >= max_attempts
+
+
+def _register_rate_limit_attempt(key):
+    now = datetime.utcnow()
+    with _rate_limit_lock:
+        attempts = _rate_limit_attempts.get(key, [])
+        attempts.append(now)
+        _rate_limit_attempts[key] = attempts[-100:]
+
+
+def _clear_rate_limit_attempts(key):
+    with _rate_limit_lock:
+        if key in _rate_limit_attempts:
+            del _rate_limit_attempts[key]
+
 # STRIPE CONFIGURATION - Loaded from environment variables
 # Get your keys from https://dashboard.stripe.com/apikeys
 app.config['STRIPE_PUBLIC_KEY'] = os.getenv('STRIPE_PUBLIC_KEY', '')
@@ -765,8 +831,13 @@ def check_subscription():
 
 @app.after_request
 def add_no_cache_headers(response):
-    """Avoid stale cached HTML so latest UI fixes always appear."""
+    """Add security and cache headers."""
     try:
+        response.headers.setdefault('X-Content-Type-Options', 'nosniff')
+        response.headers.setdefault('X-Frame-Options', 'SAMEORIGIN')
+        response.headers.setdefault('Referrer-Policy', 'strict-origin-when-cross-origin')
+        response.headers.setdefault('Permissions-Policy', 'camera=(), microphone=(), geolocation=()')
+
         if response.mimetype == 'text/html':
             response.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
             response.headers['Pragma'] = 'no-cache'
@@ -1292,9 +1363,22 @@ def auth():
                 flash('Username already exists!', 'error')
         
         elif action == 'login':
+            login_ip = _client_ip()
+            login_user = (username or '').strip().lower()
+            ip_key = f'login:ip:{login_ip}'
+            user_key = f'login:user:{login_user}'
+
+            if _is_rate_limited(ip_key, LOGIN_RATE_MAX_ATTEMPTS, LOGIN_RATE_WINDOW_SECONDS) or \
+               _is_rate_limited(user_key, LOGIN_RATE_MAX_ATTEMPTS, LOGIN_RATE_WINDOW_SECONDS):
+                flash('Too many login attempts. Please wait a few minutes and try again.', 'error')
+                return redirect(url_for('auth'))
+
             if auth_manager.verify_user(username, password):
                 session['logged_in'] = True
                 session['username'] = username
+                session.permanent = True
+                _clear_rate_limit_attempts(ip_key)
+                _clear_rate_limit_attempts(user_key)
                 
                 # Production Security: Log Audit & Session
                 user_id = auth_manager.get_user_id(username)
@@ -1307,6 +1391,8 @@ def auth():
                 flash('Login successful!', 'success')
                 return redirect(url_for('dashboard'))
             else:
+                _register_rate_limit_attempt(ip_key)
+                _register_rate_limit_attempt(user_key)
                 user_id = auth_manager.get_user_id(username)
                 if user_id:
                     security_manager.log_action(user_id, 'LOGIN_FAILURE', {'ip': request.remote_addr}, request.remote_addr, request.user_agent.string)
@@ -1382,14 +1468,22 @@ def logout():
 def forgot_password():
     """Request password reset code"""
     if request.method == 'POST':
+        reset_ip = _client_ip()
+        reset_key = f'reset:ip:{reset_ip}'
+        if _is_rate_limited(reset_key, RESET_RATE_MAX_ATTEMPTS, RESET_RATE_WINDOW_SECONDS):
+            flash('Too many reset attempts. Please wait a few minutes before trying again.', 'error')
+            return redirect(url_for('forgot_password'))
+
         email = request.form.get('email', '').strip()
         
         if not email:
+            _register_rate_limit_attempt(reset_key)
             flash('Please enter your email address.', 'error')
             return redirect(url_for('forgot_password'))
         
         # Check if user exists
         if not auth_manager.user_exists(email):
+            _register_rate_limit_attempt(reset_key)
             flash('No account found with that email.', 'error')
             return redirect(url_for('forgot_password'))
         
@@ -1397,6 +1491,7 @@ def forgot_password():
         reset_code = auth_manager.generate_reset_code(email)
         
         if reset_code:
+            _register_rate_limit_attempt(reset_key)
             # Try to send email
             from email_utils import EmailSender
             email_sender = EmailSender()
@@ -1411,6 +1506,7 @@ def forgot_password():
             # Redirect to reset page
             return redirect(url_for('reset_password', email=email))
         else:
+            _register_rate_limit_attempt(reset_key)
             flash('Error generating reset code. Please try again.', 'error')
     
     return render_template('forgot_password.html')
@@ -2526,8 +2622,99 @@ def delete_member(member_id):
 def settings():
     gym = get_gym()
     if not gym: return redirect(url_for('auth'))
+
+    current_user = None
+    if not auth_manager.legacy and session.get('username'):
+        current_user = auth_manager.session.query(User).filter_by(email=session['username']).first()
     
     if request.method == 'POST':
+        action = request.form.get('action', '').strip()
+
+        if action == 'share_staff_access':
+            if auth_manager.legacy:
+                flash('Staff sharing requires database mode.', 'error')
+                return redirect(url_for('settings'))
+
+            if not current_user:
+                flash('Session expired. Please login again.', 'error')
+                return redirect(url_for('auth'))
+
+            staff_email = (request.form.get('staff_email') or '').strip().lower()
+            if not staff_email or '@' not in staff_email:
+                flash('Please enter a valid staff email address.', 'error')
+                return redirect(url_for('settings'))
+
+            if staff_email == current_user.email.lower():
+                flash('You cannot share staff access with your own email.', 'error')
+                return redirect(url_for('settings'))
+
+            owner_gym = auth_manager.session.query(Gym).filter_by(user_id=current_user.id).first()
+            if not owner_gym:
+                flash('No gym found for your account. Please update gym settings first.', 'error')
+                return redirect(url_for('settings'))
+
+            staff_user = auth_manager.session.query(User).filter_by(email=staff_email).first()
+            temp_password = None
+            if not staff_user:
+                temp_password = secrets.token_urlsafe(8)
+                staff_user = User(
+                    email=staff_email,
+                    password_hash=auth_manager.hash_password(temp_password),
+                    role='staff',
+                    market=current_user.market,
+                    subscription_expiry=current_user.subscription_expiry,
+                    subscription_tier=current_user.subscription_tier,
+                    billing_cycle=current_user.billing_cycle,
+                    subscription_status=current_user.subscription_status
+                )
+                auth_manager.session.add(staff_user)
+                auth_manager.session.flush()
+            else:
+                staff_user.role = 'staff'
+
+            existing_access = auth_manager.session.query(StaffAccess).filter_by(
+                staff_user_id=staff_user.id,
+                owner_user_id=current_user.id,
+                gym_id=owner_gym.id
+            ).first()
+
+            if existing_access:
+                existing_access.is_active = True
+            else:
+                auth_manager.session.add(StaffAccess(
+                    staff_user_id=staff_user.id,
+                    owner_user_id=current_user.id,
+                    gym_id=owner_gym.id,
+                    is_active=True
+                ))
+
+            auth_manager.session.commit()
+
+            login_url = request.host_url.rstrip('/') + url_for('auth')
+            subject = f"Staff Access Granted - {owner_gym.name}"
+            if temp_password:
+                body = f"""
+                <h3>Staff Access Granted</h3>
+                <p>You have been granted staff access to <strong>{owner_gym.name}</strong>.</p>
+                <p><strong>Login Email:</strong> {staff_email}<br>
+                <strong>Temporary Password:</strong> {temp_password}</p>
+                <p>Please login at: <a href=\"{login_url}\">{login_url}</a> and change your password immediately.</p>
+                """
+            else:
+                body = f"""
+                <h3>Staff Access Updated</h3>
+                <p>Your account now has staff access to <strong>{owner_gym.name}</strong>.</p>
+                <p>Login at: <a href=\"{login_url}\">{login_url}</a></p>
+                """
+
+            try:
+                email_sender.send_email(staff_email, subject, body)
+                flash(f'Staff access shared with {staff_email} and email notification sent.', 'success')
+            except Exception:
+                flash(f'Staff access shared with {staff_email}, but email notification failed.', 'warning')
+
+            return redirect(url_for('settings'))
+
         name = request.form.get('gym_name')
         currency = request.form.get('currency', '$')
         if currency == 'AUTO':
@@ -2589,7 +2776,25 @@ def settings():
                     'plan_name': TierManager.get_tier_config(user.subscription_tier or 'starter').get('name', 'Starter')
                 }
         
-    return render_template('settings.html', details=gym.get_gym_details(), payments=payments, subscription=subscription)
+    shared_staff = []
+    if not auth_manager.legacy and current_user:
+        owner_gym = auth_manager.session.query(Gym).filter_by(user_id=current_user.id).first()
+        if owner_gym:
+            accesses = auth_manager.session.query(StaffAccess, User).join(
+                User, User.id == StaffAccess.staff_user_id
+            ).filter(
+                StaffAccess.owner_user_id == current_user.id,
+                StaffAccess.gym_id == owner_gym.id,
+                StaffAccess.is_active == True
+            ).all()
+
+            shared_staff = [{
+                'email': user.email,
+                'role': user.role,
+                'created_at': access.created_at.strftime('%Y-%m-%d') if access.created_at else ''
+            } for access, user in accesses]
+
+    return render_template('settings.html', details=gym.get_gym_details(), payments=payments, subscription=subscription, shared_staff=shared_staff)
 
 @app.route('/restore_backup', methods=['POST'])
 def restore_backup():

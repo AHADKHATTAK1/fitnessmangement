@@ -225,6 +225,25 @@
     .api-pill {
         cursor: default;
     }
+
+    .staff-share-form {
+        margin-bottom: 1rem;
+    }
+
+    .staff-share-button {
+        margin-top: 0.75rem;
+        width: 100%;
+    }
+
+    .shared-staff-list {
+        margin: 0;
+        color: var(--text-muted);
+    }
+
+    .shared-staff-item {
+        margin-bottom: 0.25rem;
+        padding-left: 0.25rem;
+    }
 </style>
 
 <h1 class="settings-title">
@@ -538,6 +557,29 @@
         });
     });
 </script>
+
+<div class="card settings-card">
+    <h2 class="section-title">👥 Share Staff Access</h2>
+    <p class="muted-text">Grant staff login access by email and send notification automatically.</p>
+
+    <form method="POST" class="form-group staff-share-form">
+        <input type="hidden" name="action" value="share_staff_access">
+        <label for="staff_email">Staff Email</label>
+        <input type="email" id="staff_email" name="staff_email" required placeholder="staff@example.com"
+            class="currency-select">
+        <button type="submit" class="btn btn-secondary btn-center staff-share-button">📧 Share
+            Access & Notify</button>
+    </form>
+
+    {% if shared_staff %}
+    <div class="form-group">
+        <label>Shared Staff</label>
+        <div class="shared-staff-list">{% for staff in shared_staff %}<div class="shared-staff-item">• {{ staff.email }}
+                ({{
+                staff.role }}) - shared on {{ staff.created_at }}</div>{% endfor %}</div>
+    </div>
+    {% endif %}
+</div>
 
 <div class="card settings-card">
     <form method="POST" enctype="multipart/form-data">
