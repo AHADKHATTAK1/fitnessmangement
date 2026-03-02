@@ -307,6 +307,13 @@
         </a>
 </div>
 {% endif %}
+
+<div class="renew-wrap">
+    <form method="POST" action="{{ url_for('create_billing_portal_session') }}">
+        <button type="submit" class="btn btn-secondary full-width-btn btn-center">💳 Manage Billing (SaaS
+            Portal)</button>
+    </form>
+</div>
 </div>
 
 <div class="card settings-card-spaced">
@@ -592,9 +599,14 @@
     {% if shared_staff %}
     <div class="form-group">
         <label>Shared Staff</label>
-        <div class="shared-staff-list">{% for staff in shared_staff %}<div class="shared-staff-item"><div class="shared-staff-text">• {{ staff.email }}
-            ({{
-            staff.role }}) - shared on {{ staff.created_at }}</div><form method="POST"><input type="hidden" name="action" value="revoke_staff_access"><input type="hidden" name="access_id" value="{{ staff.access_id }}"><button type="submit" class="revoke-access-btn">Revoke</button></form></div>{% endfor %}</div>
+        <div class="shared-staff-list">{% for staff in shared_staff %}<div class="shared-staff-item">
+                <div class="shared-staff-text">• {{ staff.email }}
+                    ({{
+                    staff.role }}) - shared on {{ staff.created_at }}</div>
+                <form method="POST"><input type="hidden" name="action" value="revoke_staff_access"><input type="hidden"
+                        name="access_id" value="{{ staff.access_id }}"><button type="submit"
+                        class="revoke-access-btn">Revoke</button></form>
+            </div>{% endfor %}</div>
     </div>
     {% endif %}
 </div>

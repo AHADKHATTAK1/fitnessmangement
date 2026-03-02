@@ -1083,6 +1083,36 @@ def create_checkout_session():
         flash(f'Error creating payment session: {str(e)}', 'error')
         return redirect(url_for('subscription'))
 
+
+@app.route('/create_billing_portal_session', methods=['POST'])
+def create_billing_portal_session():
+    username = session.get('username')
+    if not username:
+        return redirect(url_for('auth'))
+
+    if not app.config.get('STRIPE_SECRET_KEY'):
+        flash('Billing portal is not configured yet. Please set Stripe keys in environment settings.', 'warning')
+        return redirect(url_for('settings'))
+
+    try:
+        customers = stripe.Customer.list(email=username, limit=1)
+        customer_id = None
+
+        if customers and getattr(customers, 'data', None):
+            customer_id = customers.data[0].id
+        else:
+            customer = stripe.Customer.create(email=username, metadata={'source': 'gym-manager-saas'})
+            customer_id = customer.id
+
+        portal_session = stripe.billing_portal.Session.create(
+            customer=customer_id,
+            return_url=url_for('settings', _external=True)
+        )
+        return redirect(portal_session.url, code=303)
+    except Exception as e:
+        flash(f'Unable to open billing portal: {str(e)}', 'error')
+        return redirect(url_for('settings'))
+
 @app.route('/payment_success')
 def payment_success():
     username = session.get('username')

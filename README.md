@@ -103,6 +103,7 @@ ADMIN_EMAILS=admin@gym.com
 - `/bulk_import` → import workflow
 - `/reports` → analytics reports
 - `/webhooks` → webhook management
+- `/create_billing_portal_session` → Stripe customer billing self-service portal
 - `/backup/download/json` → full JSON backup (restore-compatible)
 - `/backup/download/excel` → full Excel backup (old structure)
 - `/backup/download/template` → sample Excel template (old structure)
@@ -119,6 +120,12 @@ ADMIN_EMAILS=admin@gym.com
 - If login-protected routes return `302`, authenticate first at `/auth`.
 - If `APScheduler` is missing, the app still starts; background jobs are simply disabled.
 - If payment providers are not configured, keep provider keys empty and use non-provider flows locally.
+
+## SaaS mode checklist
+
+- Configure Stripe keys in `.env`: `STRIPE_PUBLIC_KEY`, `STRIPE_SECRET_KEY`, and `STRIPE_WEBHOOK_SECRET`.
+- Use `/subscription_plans` for upgrade flow and `/create_billing_portal_session` for customer self-service billing.
+- Keep `SESSION_COOKIE_SECURE=1` in production (HTTPS).
 
 ## Reproducible setup
 
