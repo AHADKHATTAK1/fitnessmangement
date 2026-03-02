@@ -9,8 +9,8 @@ from datetime import datetime, timedelta
 TIERS = {
     'starter': {
         'name': 'Starter',
-        'price_monthly': 49,
-        'price_yearly': 490,  # ~10% discount
+        'price_monthly': 19,
+        'price_yearly': 190,  # ~17% discount
         'currency': 'USD',
         'limits': {
             'gyms': 1,
@@ -34,8 +34,8 @@ TIERS = {
     
     'professional': {
         'name': 'Professional',
-        'price_monthly': 149,
-        'price_yearly': 1490,  # ~17% discount
+        'price_monthly': 49,
+        'price_yearly': 490,  # ~17% discount
         'currency': 'USD',
         'limits': {
             'gyms': 5,
@@ -62,8 +62,8 @@ TIERS = {
     
     'enterprise': {
         'name': 'Enterprise',
-        'price_monthly': 499,
-        'price_yearly': 4990,
+        'price_monthly': 129,
+        'price_yearly': 1290,
         'currency': 'USD',
         'limits': {
             'gyms': -1,  # unlimited
@@ -91,8 +91,8 @@ TIERS = {
     
     'enterprise_plus': {
         'name': 'Enterprise+',
-        'price_monthly': 1999,
-        'price_yearly': 19990,
+        'price_monthly': 299,
+        'price_yearly': 2990,
         'currency': 'USD',
         'limits': {
             'gyms': -1,
@@ -121,8 +121,8 @@ TIERS = {
 TIERS_PAKISTAN = {
     'starter_pk': {
         'name': 'Starter (Pakistan)',
-        'price_monthly': 4000,  # PKR
-        'price_yearly': 40000,
+        'price_monthly': 2500,  # PKR
+        'price_yearly': 25000,
         'currency': 'PKR',
         'limits': TIERS['starter']['limits'],
         'features': TIERS['starter']['features'],
@@ -131,8 +131,8 @@ TIERS_PAKISTAN = {
     },
     'professional_pk': {
         'name': 'Professional (Pakistan)',
-        'price_monthly': 12000,
-        'price_yearly': 120000,
+        'price_monthly': 7000,
+        'price_yearly': 70000,
         'currency': 'PKR',
         'limits': TIERS['professional']['limits'],
         'features': TIERS['professional']['features'],
