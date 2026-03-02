@@ -1380,10 +1380,10 @@ def approve_payment(target_username):
 
 @app.route('/')
 def index():
-    """Root route - redirect to dashboard if logged in, otherwise to auth"""
+    """Root route - dashboard for logged-in users, marketing landing for visitors."""
     if session.get('logged_in'):
         return redirect(url_for('dashboard'))
-    return redirect(url_for('auth'))
+    return render_template('landing.html')
 
 @app.route('/auth', methods=['GET', 'POST'])
 def auth():

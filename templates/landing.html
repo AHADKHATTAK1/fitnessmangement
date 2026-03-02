@@ -1,0 +1,94 @@
+{% extends "base.html" %}
+
+{% block title %}Gym Manager | Professional Gym SaaS{% endblock %}
+
+{% block content %}
+<style>
+    .landing-hero {
+        text-align: center;
+        padding: 2.5rem 1rem 1rem;
+    }
+
+    .landing-title {
+        font-size: clamp(2rem, 4vw, 3rem);
+        line-height: 1.1;
+        margin-bottom: 0.75rem;
+        letter-spacing: -0.5px;
+    }
+
+    .landing-subtitle {
+        color: var(--text-muted);
+        max-width: 760px;
+        margin: 0 auto 1.5rem;
+        font-size: 1.05rem;
+    }
+
+    .landing-actions {
+        display: flex;
+        gap: 0.75rem;
+        justify-content: center;
+        flex-wrap: wrap;
+        margin-bottom: 1rem;
+    }
+
+    .landing-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 1rem;
+        margin-top: 1rem;
+    }
+
+    .landing-card-title {
+        font-size: 1.05rem;
+        margin-bottom: 0.5rem;
+    }
+
+    .landing-card-text {
+        color: var(--text-muted);
+        font-size: 0.95rem;
+    }
+
+    .landing-footer {
+        text-align: center;
+        margin-top: 1.5rem;
+        color: var(--text-muted);
+        font-size: 0.9rem;
+    }
+</style>
+
+<section class="card landing-hero">
+    <h1 class="landing-title">Professional Gym Management Website</h1>
+    <p class="landing-subtitle">
+        Manage members, payments, reports, webhooks, and subscription billing from one modern SaaS platform.
+    </p>
+    <div class="landing-actions">
+        <a class="btn" href="{{ url_for('auth') }}">Get Started</a>
+        <a class="btn btn-secondary" href="{{ url_for('subscription_plans') }}">View Pricing</a>
+        <a class="btn btn-success" href="{{ url_for('healthz') }}">System Status</a>
+    </div>
+</section>
+
+<section class="landing-grid">
+    <article class="card">
+        <h2 class="landing-card-title">Member Management</h2>
+        <p class="landing-card-text">Add, edit, and track members with attendance, measurements, and profile history.
+        </p>
+    </article>
+
+    <article class="card">
+        <h2 class="landing-card-title">Billing & Subscriptions</h2>
+        <p class="landing-card-text">Use tiered plans, secure payments, and billing portal workflows for SaaS
+            operations.</p>
+    </article>
+
+    <article class="card">
+        <h2 class="landing-card-title">Reports & Analytics</h2>
+        <p class="landing-card-text">Monitor revenue, unpaid dues, growth trends, and actionable gym performance
+            insights.</p>
+    </article>
+</section>
+
+<div class="landing-footer">
+    Ready for production deployment with health checks, secure sessions, and webhook support.
+</div>
+{% endblock %}
