@@ -635,6 +635,22 @@
 </div>
 
 <script>
+    function updateBackupFileInfo(input) {
+        const nameEl = document.getElementById('backup-name');
+        const sizeEl = document.getElementById('backup-size');
+        if (!input || !input.files || input.files.length === 0) {
+            if (nameEl) nameEl.textContent = '';
+            if (sizeEl) sizeEl.textContent = '';
+            return;
+        }
+
+        const file = input.files[0];
+        if (nameEl) nameEl.textContent = file.name;
+
+        const sizeInMb = (Number(file.size || 0) / (1024 * 1024)).toFixed(2);
+        if (sizeEl) sizeEl.textContent = `Selected size: ${sizeInMb} MB`;
+    }
+
     document.addEventListener('DOMContentLoaded', function () {
         const featureLabelPathMap = {
             'Member Management': '{{ feature_paths.member_management }}',
@@ -805,16 +821,30 @@
         Upload your gym data file (<code>.json</code>) to restore all members, fees, and history.
         <br><strong><i class="fa-solid fa-triangle-exclamation" aria-hidden="true"></i> Warning:</strong> This will
         replace all current data!
+        <br>Accepted formats: <code>.json</code>, <code>.json.gz</code>, <code>.xlsx</code> (max 10MB).
     </p>
+
+    <div class="quick-actions">
+        <a href="{{ url_for('download_backup_json_compressed') }}" class="btn btn-secondary btn-center">
+            <i class="fa-solid fa-file-zipper" aria-hidden="true"></i> Download Compressed Backup (.json.gz)
+        </a>
+        <a href="{{ url_for('download_backup_json') }}" class="btn btn-secondary btn-center">
+            <i class="fa-solid fa-file-code" aria-hidden="true"></i> Download JSON Backup (.json)
+        </a>
+        <a href="{{ url_for('download_backup_excel') }}" class="btn btn-secondary btn-center">
+            <i class="fa-solid fa-file-excel" aria-hidden="true"></i> Download Excel Backup (.xlsx)
+        </a>
+    </div>
 
     <form action="{{ url_for('restore_backup') }}" method="POST" enctype="multipart/form-data">
         <div class="form-group">
             <label for="backup_file" class="btn btn-secondary upload-label">
                 <i class="fa-solid fa-folder-tree" aria-hidden="true"></i> Select Backup File
             </label>
-            <input type="file" id="backup_file" name="backup_file" accept=".json" required class="hidden-input"
-                onchange="document.getElementById('backup-name').textContent = this.files[0].name">
+            <input type="file" id="backup_file" name="backup_file" accept=".json,.json.gz,.xlsx,.gz" required
+                class="hidden-input" onchange="updateBackupFileInfo(this)">
             <span id="backup-name" class="file-name"></span>
+            <small id="backup-size" class="muted-text"></small>
         </div>
 
         <button type="submit" class="btn btn-warning full-width-btn"

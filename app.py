@@ -8,6 +8,7 @@ from payment_manager import PaymentManager
 from email_utils import EmailSender
 import os
 import json
+import gzip
 from datetime import datetime, timedelta
 from reportlab.lib.pagesizes import letter
 from reportlab.pdfgen import canvas
@@ -100,6 +101,8 @@ UPLOAD_FOLDER = 'static/uploads'
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif'}
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max file size
+BACKUP_RESTORE_MAX_BYTES = 10 * 1024 * 1024  # 10MB max backup file upload size
+COMPRESSED_BACKUP_MAX_DECOMPRESSED_BYTES = 50 * 1024 * 1024  # 50MB safety cap after decompression
 
 # Create upload folder if it doesn't exist
 try:
@@ -3159,12 +3162,38 @@ def restore_backup():
     if file.filename == '':
         flash('No file selected!', 'error')
         return redirect(url_for('settings'))
+
+    # Enforce explicit backup file size limits for safer restore operations.
+    try:
+        file.stream.seek(0, os.SEEK_END)
+        file_size = file.stream.tell()
+        file.stream.seek(0)
+    except Exception:
+        file_size = 0
+
+    if file_size and file_size > BACKUP_RESTORE_MAX_BYTES:
+        flash('Backup file is too large. Max allowed size is 10MB.', 'error')
+        return redirect(url_for('settings'))
         
-    ext = os.path.splitext(file.filename.lower())[1]
-    if file and ext in ['.json', '.xlsx']:
+    filename_lower = (file.filename or '').lower()
+    ext = os.path.splitext(filename_lower)[1]
+    is_compressed_json = filename_lower.endswith('.json.gz') or ext == '.gz'
+
+    if file and (ext in ['.json', '.xlsx'] or is_compressed_json):
         try:
             # Read backup payload
-            if ext == '.json':
+            if is_compressed_json:
+                compressed = file.read()
+                try:
+                    decompressed = gzip.decompress(compressed)
+                except Exception as gzip_error:
+                    raise ValueError(f'Invalid compressed backup (.json.gz): {gzip_error}')
+
+                if len(decompressed) > COMPRESSED_BACKUP_MAX_DECOMPRESSED_BYTES:
+                    raise ValueError('Compressed backup expands beyond safe limit (50MB).')
+
+                data = json.loads(decompressed.decode('utf-8'))
+            elif ext == '.json':
                 data = json.load(file)
             else:
                 data = _parse_excel_backup_to_legacy(file)
@@ -3192,7 +3221,7 @@ def restore_backup():
         except Exception as e:
             flash(f'Error restoring data: {str(e)}', 'error')
     else:
-        flash('Invalid file type! Please upload a JSON or Excel (.xlsx) backup file.', 'error')
+        flash('Invalid file type! Please upload JSON (.json), compressed JSON (.json.gz), or Excel (.xlsx) backup file.', 'error')
         
     return redirect(url_for('settings'))
 
@@ -3211,6 +3240,25 @@ def download_backup_json():
 
     filename = f"gym_backup_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
     return send_file(output, as_attachment=True, download_name=filename, mimetype='application/json')
+
+
+@app.route('/backup/download/json_compressed')
+def download_backup_json_compressed():
+    """Download full backup in compressed JSON format (.json.gz)."""
+    gym = get_gym()
+    if not gym:
+        return redirect(url_for('auth'))
+
+    payload = _build_legacy_backup_payload(gym)
+    json_bytes = json.dumps(payload, separators=(',', ':'), default=str).encode('utf-8')
+    compressed_bytes = gzip.compress(json_bytes, compresslevel=9)
+
+    output = BytesIO()
+    output.write(compressed_bytes)
+    output.seek(0)
+
+    filename = f"gym_backup_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json.gz"
+    return send_file(output, as_attachment=True, download_name=filename, mimetype='application/gzip')
 
 
 @app.route('/backup/download/excel')
